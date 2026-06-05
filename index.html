@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <script>
         tailwind.config = {
             theme: { extend: { fontFamily: { sans: ['Nunito','sans-serif'] }, colors: { dojo: { blue:'#33a3dc', green:'#8bc34a', red:'#f44336', yellow:'#ffc107', bg:'#f0f4f8' } } } }
@@ -61,15 +62,53 @@
         <h2 class="text-gray-600 font-bold text-sm uppercase tracking-wide">Học sinh (<span id="studentCount">0</span>)</h2>
         <div class="flex gap-2">
             <button class="text-orange-500 text-xs font-bold bg-orange-50 px-3 py-1.5 rounded-full hover:bg-orange-100 transition border border-orange-100 shadow-sm flex items-center" onclick="startRandomSelection()"><i class="fas fa-random mr-1"></i>Gọi bất kỳ</button>
-            <button class="text-dojo-blue text-xs font-bold bg-blue-50 px-3 py-1.5 rounded-full hover:bg-blue-100 transition shadow-sm flex items-center" onclick="awardAll()"><i class="fas fa-users mr-1"></i>Thưởng cả lớp</button>
+            <button id="btnSttPanel" class="text-purple-600 text-xs font-bold bg-purple-50 px-3 py-1.5 rounded-full hover:bg-purple-100 transition border border-purple-100 shadow-sm flex items-center" onclick="toggleSttPanel()"><i class="fas fa-hashtag mr-1"></i>Theo STT</button>
+            <button class="text-dojo-blue text-xs font-bold bg-blue-50 px-3 py-1.5 rounded-full hover:bg-blue-100 transition shadow-sm flex items-center" onclick="awardAll()"><i class="fas fa-users mr-1"></i>Cả lớp</button>
         </div>
     </div>
-    <div class="mb-4 relative">
+    <div class="mb-3 relative">
         <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-        <input type="text" id="searchInput" onkeyup="filterStudents()" placeholder="Tìm theo STT hoặc Tên..." class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-dojo-blue focus:ring-2 focus:ring-blue-100 transition-all text-sm font-semibold text-gray-700 shadow-sm">
+        <input type="text" id="searchInput" onkeyup="filterStudents()" placeholder="Tìm theo STT hoặc Tên, cách nhau dấu , (VD: 1,3,Trâm)" class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-dojo-blue focus:ring-2 focus:ring-blue-100 transition-all text-sm font-semibold text-gray-700 shadow-sm">
     </div>
+
+    <!-- Panel chọn theo STT -->
+    <div id="sttPanel" class="hidden mb-3 bg-purple-50 border border-purple-100 rounded-xl p-3 shadow-sm">
+        <div class="flex justify-between items-center mb-2">
+            <p class="text-xs font-bold text-purple-700">Chọn STT để cho/trừ điểm:</p>
+            <div class="flex gap-2">
+                <button onclick="selectAllStt()" class="text-xs text-purple-600 hover:text-purple-800 font-bold bg-white px-2.5 py-1 rounded-full border border-purple-200 shadow-sm">✅ Tất cả</button>
+                <button onclick="clearSttSelection()" class="text-xs text-gray-400 hover:text-gray-600 font-bold bg-white px-2.5 py-1 rounded-full border border-gray-200 shadow-sm">☐ Bỏ chọn</button>
+            </div>
+        </div>
+        <div id="sttChips" class="flex flex-wrap gap-2 mb-3 min-h-[2rem]"></div>
+        <button id="btnAwardByStt" onclick="awardByStt()" class="hidden w-full py-2 bg-purple-600 text-white font-bold rounded-xl shadow text-sm flex items-center justify-center gap-2">
+            <i class="fas fa-star"></i><span id="sttAwardLabel">Cho điểm (0 hs)</span>
+        </button>
+    </div>
+
+    <!-- Thanh multi-select (hiện khi tìm ≥2 từ khóa) -->
+    <div id="multiSelectBar" class="hidden mb-3 bg-blue-50 border border-blue-100 rounded-xl p-3 flex items-center justify-between gap-2">
+        <span id="multiSelectInfo" class="text-xs font-bold text-dojo-blue"></span>
+        <div class="flex gap-2">
+            <button onclick="awardAllFiltered()" class="text-xs bg-dojo-blue text-white font-bold px-3 py-1.5 rounded-full shadow-sm whitespace-nowrap">
+                <i class="fas fa-bolt mr-1"></i>Thưởng tất cả
+            </button>
+            <button onclick="toggleGroupSelectMode()" id="btnGroupMode" class="text-xs bg-white text-dojo-blue font-bold px-3 py-1.5 rounded-full border border-dojo-blue whitespace-nowrap">
+                <i class="fas fa-check-square mr-1"></i>Chọn riêng
+            </button>
+        </div>
+    </div>
+
     <div id="studentGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
 </main>
+
+<!-- Floating button cho điểm nhóm đã chọn -->
+<div id="floatingGroupBtn" class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 z-20">
+    <button onclick="openGroupPointsModal()" class="bg-dojo-blue text-white font-bold px-6 py-3 rounded-full shadow-2xl flex items-center gap-2 text-sm active:scale-95 transition-transform">
+        <i class="fas fa-star"></i>
+        <span id="floatingGroupCount">Cho điểm (0 học sinh)</span>
+    </button>
+</div>
 
 <!-- VIEW: BÁO CÁO -->
 <main id="reportView" class="p-4 hidden">
@@ -80,11 +119,30 @@
     </div>
     <div class="flex justify-between items-center mb-4 bg-white p-3 rounded-xl shadow-sm border border-gray-100">
         <div><h2 id="reportTitle" class="text-gray-800 font-bold text-base">Bảng Xếp Hạng</h2><span class="text-xs text-gray-500">Tổng kết điểm thi đua</span></div>
-        <select id="sortOrder" onchange="renderReport()" class="bg-gray-50 border border-gray-200 text-gray-700 py-1.5 px-3 rounded-lg text-sm outline-none font-semibold focus:border-dojo-blue">
-            <option value="points">Từ cao xuống thấp</option>
-            <option value="name">Theo danh sách lớp</option>
-        </select>
+        <div class="flex items-center gap-2">
+            <button onclick="toggleCharts()" id="btnToggleChart" class="w-9 h-9 rounded-xl bg-blue-50 text-dojo-blue flex items-center justify-center hover:bg-blue-100 transition" title="Biểu đồ"><i class="fas fa-chart-line"></i></button>
+            <select id="sortOrder" onchange="renderReport()" class="bg-gray-50 border border-gray-200 text-gray-700 py-1.5 px-3 rounded-lg text-sm outline-none font-semibold focus:border-dojo-blue">
+                <option value="points">Từ cao xuống thấp</option>
+                <option value="name">Theo danh sách lớp</option>
+            </select>
+        </div>
     </div>
+
+    <!-- CHART SECTION -->
+    <div id="chartSection" class="mb-4 hidden">
+        <div class="flex gap-2 mb-3">
+            <button id="btnTrend" onclick="showChartType('trend')" class="flex-1 py-2 text-sm font-bold rounded-xl bg-dojo-blue text-white shadow transition">📈 Xu hướng</button>
+            <button id="btnComparison" onclick="showChartType('comparison')" class="flex-1 py-2 text-sm font-bold rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 transition">📊 So sánh kỳ</button>
+        </div>
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <p id="chartLabel" class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Điểm tích lũy theo ngày</p>
+            <div style="position:relative; height:220px">
+                <canvas id="mainChart"></canvas>
+            </div>
+            <p id="chartEmpty" class="hidden text-center text-gray-400 text-sm py-6 font-semibold"></p>
+        </div>
+    </div>
+
     <div class="flex gap-3 mb-4" id="reportActions">
         <button onclick="endPeriod()" class="flex-1 py-2 bg-orange-50 text-orange-600 font-bold rounded-xl border border-orange-100 hover:bg-orange-100 transition flex items-center justify-center gap-2"><i class="fas fa-flag-checkered"></i> Kết thúc kỳ</button>
         <button onclick="exportToExcel()" class="flex-1 py-2 bg-green-50 text-green-600 font-bold rounded-xl border border-green-100 hover:bg-green-100 transition flex items-center justify-center gap-2"><i class="fas fa-file-excel"></i> Xuất Excel</button>
@@ -136,6 +194,54 @@
     <button onclick="resetSkillsToDefault()" class="w-full py-3 bg-gray-50 text-gray-500 font-bold rounded-xl border border-gray-200 hover:bg-gray-100 transition text-sm"><i class="fas fa-undo mr-2"></i>Khôi phục kỹ năng mặc định</button>
 </main>
 
+<!-- VIEW: ĐIỂM SỐ -->
+<main id="gradesView" class="p-4 hidden">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-gray-800 font-bold text-lg">Đánh giá học tập</h2>
+        <button onclick="openNewGradePeriodModal()" class="text-xs bg-dojo-blue text-white font-bold px-3 py-2 rounded-xl shadow flex items-center gap-1">
+            <i class="fas fa-plus"></i> Đợt mới
+        </button>
+    </div>
+
+    <!-- Period tabs -->
+    <div class="flex gap-2 mb-4 overflow-x-auto no-scrollbar pb-1" id="gradePeriodTabs">
+        <p class="text-sm text-gray-400 italic py-2">Chưa có đợt đánh giá nào. Bấm "Đợt mới" để bắt đầu.</p>
+    </div>
+
+    <!-- Empty state -->
+    <div id="gradesEmpty" class="text-center py-16 text-gray-400">
+        <i class="fas fa-graduation-cap text-5xl mb-4 opacity-30"></i>
+        <p class="font-semibold">Nhập file Excel để bắt đầu đánh giá</p>
+        <p class="text-sm mt-1">Tải file mẫu → điền điểm → upload lại</p>
+    </div>
+
+    <!-- Controls (ẩn khi chưa có period) -->
+    <div id="gradesControls" class="hidden mb-4 flex flex-col gap-3">
+        <div class="flex gap-2">
+            <button onclick="downloadGradeTemplate()" class="flex-1 py-2.5 bg-blue-50 text-dojo-blue font-bold rounded-xl border border-blue-100 hover:bg-blue-100 transition flex items-center justify-center gap-2 text-sm">
+                <i class="fas fa-download"></i> Tải file mẫu
+            </button>
+            <button onclick="document.getElementById('gradeExcelInput').click()" class="flex-1 py-2.5 bg-green-50 text-green-700 font-bold rounded-xl border border-green-100 hover:bg-green-100 transition flex items-center justify-center gap-2 text-sm">
+                <i class="fas fa-file-excel"></i> Nhập điểm
+            </button>
+            <input type="file" id="gradeExcelInput" class="hidden" accept=".xlsx,.xls,.csv" onchange="handleGradeUpload(event)">
+        </div>
+        <div class="flex gap-2">
+            <button onclick="exportGradeSummary()" class="flex-1 py-2.5 bg-orange-50 text-orange-600 font-bold rounded-xl border border-orange-100 hover:bg-orange-100 transition flex items-center justify-center gap-2 text-sm">
+                <i class="fas fa-file-export"></i> Xuất báo cáo
+            </button>
+            <button onclick="deleteCurrentGradePeriod()" class="py-2.5 px-4 bg-red-50 text-red-500 font-bold rounded-xl border border-red-100 hover:bg-red-100 transition text-sm">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Grade table container -->
+    <div id="gradesTableWrap" class="hidden overflow-x-auto rounded-2xl shadow-sm border border-gray-100 bg-white">
+        <table id="gradesTable" class="w-full text-xs border-collapse min-w-max"></table>
+    </div>
+</main>
+
 <!-- ============ MODALS ============ -->
 
 <!-- Add class -->
@@ -185,9 +291,11 @@
                 <h3 id="modalStudentName" class="font-bold text-lg text-gray-800">Tên</h3>
                 <p class="text-xs text-gray-500 mb-0.5" id="modalStudentInfo">STT: - | NS: -</p>
                 <p class="text-sm text-gray-500">Đang có <span id="modalStudentPoints" class="font-bold text-dojo-blue">0</span> điểm</p>
+                <p id="modalComment" class="text-[11px] text-blue-400 italic mt-0.5 hidden"></p>
             </div>
         </div>
         <div class="flex items-center gap-2">
+            <button id="btnStudentProfile" onclick="openStudentProfile(selectedStudentId)" class="w-8 h-8 bg-green-50 rounded-full text-green-600 flex items-center justify-center hover:bg-green-100 transition" title="Thống kê học sinh"><i class="fas fa-chart-bar text-sm"></i></button>
             <button id="btnEditStudent" onclick="openEditStudentModal(selectedStudentId)" class="w-8 h-8 bg-blue-50 rounded-full text-dojo-blue flex items-center justify-center hover:bg-blue-100 transition" title="Sửa học sinh"><i class="fas fa-edit text-sm"></i></button>
             <button id="btnDeleteStudent" onclick="deleteStudentFromModal()" class="w-8 h-8 bg-red-50 rounded-full text-red-500 flex items-center justify-center hover:bg-red-100 transition" title="Xóa học sinh"><i class="fas fa-trash text-sm"></i></button>
             <button onclick="closePointsModal()" class="w-8 h-8 bg-gray-100 rounded-full text-gray-500 flex items-center justify-center"><i class="fas fa-times"></i></button>
@@ -236,6 +344,92 @@
     <div class="flex gap-3"><button onclick="closeSkillModal()" class="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl">Hủy</button><button onclick="saveSkill()" class="flex-1 py-3 bg-dojo-blue text-white font-bold rounded-xl shadow-lg">Lưu lại</button></div>
 </div>
 
+<!-- MODAL: Tạo đợt đánh giá mới -->
+<div id="newGradePeriodBackdrop" class="fixed inset-0 bg-black bg-opacity-40 z-50 hidden" onclick="closeNewGradePeriodModal()"></div>
+<div id="newGradePeriodModal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm bg-white rounded-2xl z-50 hidden shadow-2xl p-5">
+    <h3 class="font-bold text-xl text-center mb-4 text-gray-800">Tạo đợt đánh giá</h3>
+    <div class="mb-4">
+        <label class="text-xs font-bold text-gray-500 mb-1 block">Tên đợt (VD: Giữa kỳ I, Cuối kỳ I)</label>
+        <input type="text" id="newGradePeriodName" placeholder="VD: Giữa kỳ I - 2024-2025" class="w-full border-2 border-gray-200 p-3 rounded-xl focus:outline-none focus:border-dojo-blue text-base" onkeypress="if(event.key==='Enter')createGradePeriod()">
+    </div>
+    <div class="flex gap-3">
+        <button onclick="closeNewGradePeriodModal()" class="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl">Hủy</button>
+        <button onclick="createGradePeriod()" class="flex-1 py-3 bg-dojo-blue text-white font-bold rounded-xl shadow-lg">Tạo</button>
+    </div>
+</div>
+
+<!-- MODAL: Tin nhắn phụ huynh -->
+<div id="parentMsgBackdrop" class="fixed inset-0 bg-black bg-opacity-50 z-[80] hidden" onclick="closeParentMsg()"></div>
+<div id="parentMsgModal" class="fixed bottom-0 left-0 w-full bg-white rounded-t-3xl z-[90] transform translate-y-full transition-transform duration-300 ease-out shadow-2xl max-h-[85vh] flex flex-col">
+    <div class="p-4 border-b flex justify-between items-center flex-shrink-0">
+        <div>
+            <h3 id="parentMsgTitle" class="font-bold text-gray-800">Tin nhắn phụ huynh</h3>
+            <p class="text-xs text-gray-400 mt-0.5">Sao chép và gửi qua Zalo / SMS</p>
+        </div>
+        <button onclick="closeParentMsg()" class="w-8 h-8 bg-gray-100 rounded-full text-gray-500 flex items-center justify-center"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-4 no-scrollbar">
+        <textarea id="parentMsgText" class="w-full h-72 text-sm text-gray-700 border border-gray-200 rounded-xl p-3 resize-none focus:outline-none focus:border-dojo-blue leading-relaxed" readonly></textarea>
+    </div>
+    <div class="p-4 border-t flex gap-3 flex-shrink-0">
+        <button onclick="copyParentMsg()" class="flex-1 py-3 bg-dojo-blue text-white font-bold rounded-xl shadow flex items-center justify-center gap-2">
+            <i class="fas fa-copy"></i> Sao chép
+        </button>
+        <button onclick="exportAllParentMessages()" class="flex-1 py-3 bg-green-50 text-green-700 font-bold rounded-xl border border-green-100 flex items-center justify-center gap-2">
+            <i class="fas fa-file-excel"></i> Xuất tất cả
+        </button>
+    </div>
+</div>
+
+<!-- STUDENT PROFILE MODAL -->
+<div id="profileBackdrop" class="fixed inset-0 bg-black bg-opacity-50 z-[80] hidden" onclick="closeStudentProfile()"></div>
+<div id="profileModal" class="fixed inset-0 z-[90] hidden flex flex-col bg-dojo-bg overflow-hidden">
+    <!-- Header -->
+    <div class="bg-dojo-blue text-white px-4 pt-10 pb-6 relative flex-shrink-0">
+        <button onclick="closeStudentProfile()" class="absolute top-4 right-4 w-9 h-9 bg-white bg-opacity-20 rounded-full flex items-center justify-center"><i class="fas fa-times"></i></button>
+        <div class="flex items-center gap-4">
+            <img id="profileAvatar" src="" class="w-20 h-20 rounded-full bg-white bg-opacity-20 p-1 object-contain border-2 border-white border-opacity-50 flex-shrink-0">
+            <div class="flex-1 overflow-hidden">
+                <h2 id="profileName" class="text-xl font-black truncate"></h2>
+                <p id="profileMeta" class="text-xs opacity-80 mt-0.5"></p>
+                <div class="flex gap-2 mt-2 flex-wrap">
+                    <span id="profileBadge" class="hidden text-2xl"></span>
+                    <span id="profileScorePos" class="inline-flex items-center gap-1 text-xs font-bold bg-white bg-opacity-20 px-2 py-1 rounded-full"><i class="fas fa-plus"></i><span id="profilePosVal">0</span></span>
+                    <span id="profileScoreNeg" class="inline-flex items-center gap-1 text-xs font-bold bg-white bg-opacity-20 px-2 py-1 rounded-full"><i class="fas fa-minus"></i><span id="profileNegVal">0</span></span>
+                    <span class="inline-flex items-center gap-1 text-xs font-bold bg-white bg-opacity-30 px-2 py-1 rounded-full">Tổng: <span id="profileTotal" class="ml-0.5 font-black">0</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Body scrollable -->
+    <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-4 no-scrollbar">
+
+        <!-- Nhận xét cá nhân -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <h3 class="font-bold text-gray-700 mb-2 flex items-center gap-2"><i class="fas fa-comment-dots text-dojo-blue"></i> Nhận xét của giáo viên</h3>
+            <p id="profileComment" class="text-sm text-gray-600 italic leading-relaxed"></p>
+        </div>
+
+        <!-- Thống kê kỹ năng -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2"><i class="fas fa-chart-bar text-green-500"></i> Thống kê kỹ năng</h3>
+            <div id="profileSkillBreakdown" class="flex flex-col gap-2"></div>
+            <p id="profileSkillEmpty" class="hidden text-sm text-gray-400 italic text-center py-2">Chưa có lịch sử chấm điểm.</p>
+        </div>
+
+        <!-- Lịch sử gần đây -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="font-bold text-gray-700 flex items-center gap-2"><i class="fas fa-history text-orange-400"></i> Lịch sử gần đây</h3>
+                <span id="profileHistoryCount" class="text-xs text-gray-400 font-semibold"></span>
+            </div>
+            <div id="profileHistoryList" class="flex flex-col gap-2"></div>
+            <p id="profileHistoryEmpty" class="hidden text-sm text-gray-400 italic text-center py-2">Chưa có lịch sử.</p>
+        </div>
+    </div>
+</div>
+
 <!-- Toast -->
 <div id="toast" class="fixed top-20 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg z-[80] transition-opacity duration-300 opacity-0 pointer-events-none flex items-center gap-2 whitespace-nowrap">
     <i class="fas fa-check-circle text-dojo-green text-xl"></i>
@@ -249,11 +443,12 @@
 <audio id="soundTaDa" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3" preload="auto"></audio>
 
 <!-- BOTTOM NAV (4 tabs) -->
-<nav class="fixed bottom-0 w-full bg-white border-t border-gray-200 flex justify-around p-2 pb-4 text-xs font-semibold text-gray-400 z-10 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-    <button id="nav-classroom" onclick="switchView('classroom')" class="flex flex-col items-center gap-1 p-2 w-16 text-dojo-blue transition-colors"><i class="fas fa-chalkboard text-xl"></i><span>Lớp học</span></button>
-    <button id="nav-report"    onclick="switchView('report')"    class="flex flex-col items-center gap-1 p-2 w-16 text-gray-400 hover:text-gray-600 transition-colors"><i class="fas fa-chart-pie text-xl"></i><span>Báo cáo</span></button>
-    <button id="nav-history"   onclick="switchView('history')"   class="flex flex-col items-center gap-1 p-2 w-16 text-gray-400 hover:text-gray-600 transition-colors"><i class="fas fa-history text-xl"></i><span>Lịch sử</span></button>
-    <button id="nav-settings"  onclick="switchView('settings')"  class="flex flex-col items-center gap-1 p-2 w-16 text-gray-400 hover:text-gray-600 transition-colors"><i class="fas fa-sliders-h text-xl"></i><span>Kỹ năng</span></button>
+<nav class="fixed bottom-0 w-full bg-white border-t border-gray-200 flex justify-around p-2 pb-4 text-[10px] font-semibold text-gray-400 z-10 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+    <button id="nav-classroom" onclick="switchView('classroom')" class="flex flex-col items-center gap-0.5 p-1 w-[19%] text-dojo-blue transition-colors"><i class="fas fa-chalkboard text-lg"></i><span>Lớp học</span></button>
+    <button id="nav-report"    onclick="switchView('report')"    class="flex flex-col items-center gap-0.5 p-1 w-[19%] text-gray-400 hover:text-gray-600 transition-colors"><i class="fas fa-chart-pie text-lg"></i><span>Báo cáo</span></button>
+    <button id="nav-grades"    onclick="switchView('grades')"    class="flex flex-col items-center gap-0.5 p-1 w-[19%] text-gray-400 hover:text-gray-600 transition-colors"><i class="fas fa-graduation-cap text-lg"></i><span>Điểm số</span></button>
+    <button id="nav-history"   onclick="switchView('history')"   class="flex flex-col items-center gap-0.5 p-1 w-[19%] text-gray-400 hover:text-gray-600 transition-colors"><i class="fas fa-history text-lg"></i><span>Lịch sử</span></button>
+    <button id="nav-settings"  onclick="switchView('settings')"  class="flex flex-col items-center gap-0.5 p-1 w-[19%] text-gray-400 hover:text-gray-600 transition-colors"><i class="fas fa-sliders-h text-lg"></i><span>Kỹ năng</span></button>
 </nav>
 
 <script>
@@ -268,6 +463,91 @@ const MILESTONES = [
     { threshold: 30, icon: '🏆', label: 'Vàng',      bg: 'bg-amber-50',  border: 'border-amber-200'  },
     { threshold: 50, icon: '👑', label: 'Vô địch',   bg: 'bg-purple-50', border: 'border-purple-200' },
 ];
+
+// ============================================================
+// NHẬN XÉT TỰ ĐỘNG
+// ============================================================
+const COMMENTS = {
+    // Điểm cộng cao, điểm trừ thấp
+    excellent: [
+        'Xuất sắc! Em là nguồn cảm hứng cho cả lớp. 🌟',
+        'Thầy/cô rất tự hào về em! Tiếp tục tỏa sáng nhé! 🏆',
+        'Em đang viết nên câu chuyện thành công của chính mình! 🚀',
+        'Thành tích của em thật ấn tượng và đáng ngưỡng mộ! 🌠',
+        'Em chứng minh rằng nỗ lực luôn được đền đáp xứng đáng! 💫',
+        'Cả lớp học hỏi được rất nhiều tinh thần từ em! 👑',
+        'Em là minh chứng sống động cho câu "Có công mài sắt có ngày nên kim"! ⭐',
+        'Phong độ tuyệt vời! Thầy/cô tin em sẽ còn tiến xa hơn nữa! 🦅',
+        'Không có gì là không thể với em khi em nỗ lực như vậy! 💎',
+        'Em đang đặt những bước chân vững chắc nhất trên hành trình học tập! 🎯',
+    ],
+    // Điểm tốt, ổn định
+    positive: [
+        'Em đang học tập rất tích cực, thầy/cô hài lòng lắm! 😊',
+        'Thái độ học tập của em đáng được ghi nhận và khen thưởng! 👍',
+        'Em đang trên đà tiến bộ rất tốt, hãy duy trì nhé! 📈',
+        'Sự chăm chỉ của em đang được đền đáp từng ngày! 🌻',
+        'Em đóng góp rất tích cực cho không khí lớp học! 🎉',
+        'Thầy/cô nhận thấy em ngày càng tiến bộ hơn! ✨',
+        'Em có nhiều điểm mạnh tuyệt vời, hãy tiếp tục phát huy! 💪',
+        'Sự cố gắng của em truyền cảm hứng cho các bạn xung quanh! 🌈',
+        'Em đang làm rất tốt! Thầy/cô luôn theo dõi và cổ vũ em! 🤩',
+        'Tinh thần học tập của em thật đáng khen ngợi! 🥰',
+    ],
+    // Điểm cộng nhiều hơn trừ, đang tiến bộ
+    improving: [
+        'Em đang tiến bộ từng ngày, thầy/cô tin tưởng vào em! 💚',
+        'Hướng đi đúng rồi! Tiếp tục cố gắng thêm một chút nữa nhé! 👊',
+        'Mỗi ngày một chút tiến bộ chính là thành công bền vững! 🌱',
+        'Em có tiềm năng lớn, hãy tự tin hơn vào bản thân mình! 🦋',
+        'Thầy/cô thấy em đang cố gắng và rất trân trọng điều đó! 🤝',
+        'Con đường phía trước rộng mở hơn khi em tiếp tục như thế này! 🛤️',
+        'Mỗi bước tiến nhỏ đều có giá trị rất lớn đối với thầy/cô! 🐾',
+        'Em đang học hỏi và trưởng thành qua từng ngày! 📚',
+        'Sự kiên trì của em sẽ sớm mang lại kết quả xứng đáng! ⏳',
+        'Em đang xây dựng nền tảng vững chắc cho tương lai! 🏗️',
+    ],
+    // Có điểm trừ nhiều hơn, cần cố gắng — vẫn tích cực
+    needsWork: [
+        'Thầy/cô tin rằng em có thể làm tốt hơn nhiều! 💛',
+        'Hãy để ngày mai là cơ hội tuyệt vời để em tỏa sáng nhé! 🌅',
+        'Em có nhiều tài năng chưa được khám phá hết, đừng bỏ lỡ! 💎',
+        'Thầy/cô luôn sẵn sàng đồng hành cùng em trên hành trình tiến bộ! 🤗',
+        'Mỗi ngày là một trang mới — hãy viết thật đẹp nhé em! 📖',
+        'Hãy biến những thử thách thành bậc thang vươn cao em nhé! 🦅',
+        'Thầy/cô tin rằng bên trong em có một học sinh xuất sắc! ✊',
+        'Đừng ngại vấp ngã — đó chính là cách em học cách đứng vững! 🌱',
+        'Mỗi lần cố gắng là em đang đầu tư cho tương lai của chính mình! 🎯',
+        'Em đặc biệt theo cách của riêng mình, thầy/cô trân trọng điều đó! 🌈',
+    ],
+    // Chưa có điểm
+    neutral: [
+        'Chào mừng em đến với hành trình học tập tuyệt vời! 🎒',
+        'Mỗi ngày đến lớp là một ngày em lớn lên và trưởng thành! 🌱',
+        'Em có tất cả những gì cần thiết để thành công! 🌈',
+        'Thầy/cô mong được chứng kiến em tỏa sáng theo cách của em! ⭐',
+        'Hành trình vạn dặm bắt đầu từ một bước chân đầu tiên! 👣',
+        'Em là một phần không thể thiếu của lớp học này! 🏠',
+        'Cả lớp rất vui khi có em! Hãy luôn mỉm cười nhé! 🎈',
+        'Hãy bắt đầu ngày mới với năng lượng tích cực em nhé! ☀️',
+        'Tiềm năng của em đang chờ được khơi dậy! 💥',
+        'Thầy/cô tin em sẽ để lại dấu ấn đặc biệt! 🦋',
+    ],
+};
+
+function generateComment(student) {
+    const p = student.positivePoints || 0;
+    const n = student.negativePoints || 0;
+    let pool;
+    if (p === 0 && n === 0)             pool = COMMENTS.neutral;
+    else if (p >= 10 && n <= 2)         pool = COMMENTS.excellent;
+    else if (p >= 5 && n <= p * 0.35)  pool = COMMENTS.positive;
+    else if (p > n)                     pool = COMMENTS.improving;
+    else                                pool = COMMENTS.needsWork;
+    // Seed deterministic theo id + tổng điểm (thay đổi khi điểm thay đổi)
+    const seed = Math.abs((student.id * 7 + p * 3 + n * 5)) % pool.length;
+    return pool[seed];
+}
 
 const DEFAULT_SKILLS = {
     positive: [
@@ -301,9 +581,11 @@ let students = [
     { id:3, classId:1, stt:3, name:'Tuấn Tú',   dob:'',           points:-1, positivePoints:1, negativePoints:2, avatar:avatarBaseUrl+'Tuan'  },
     { id:4, classId:2, stt:1, name:'David',      dob:'01/01/2014', points:8,  positivePoints:8, negativePoints:0, avatar:avatarBaseUrl+'David' },
 ];
-let skills   = JSON.parse(JSON.stringify(DEFAULT_SKILLS));
-let history  = [];  // { id, classId, studentId, studentName, skillName, points, timestamp }
-let periods  = [];  // { id, classId, name, endDate, students:[] }
+let skills       = JSON.parse(JSON.stringify(DEFAULT_SKILLS));
+let history      = [];  // { id, classId, studentId, studentName, skillName, points, timestamp }
+let periods      = [];  // { id, classId, name, endDate, students:[] }
+let gradeRecords = [];  // { id, classId, periodName, createdAt, studentGrades:[{studentId,name,stt,grades:{}}] }
+let currentGradePeriodId = null;
 let currentPeriodId  = null;
 let selectedStudentId = null;
 let isAwardAll = false;
@@ -318,8 +600,9 @@ function saveData() {
         localStorage.setItem('dojo_classes',  JSON.stringify(classes));
         localStorage.setItem('dojo_students', JSON.stringify(students));
         localStorage.setItem('dojo_skills',   JSON.stringify(skills));
-        localStorage.setItem('dojo_history',  JSON.stringify(history));
-        localStorage.setItem('dojo_periods',  JSON.stringify(periods));
+        localStorage.setItem('dojo_history',       JSON.stringify(history));
+        localStorage.setItem('dojo_periods',       JSON.stringify(periods));
+        localStorage.setItem('dojo_gradeRecords',  JSON.stringify(gradeRecords));
     } catch(e) { console.warn('Lưu thất bại:', e); }
 }
 
@@ -333,8 +616,10 @@ function loadData() {
         if(c)  classes  = JSON.parse(c);
         if(s)  students = JSON.parse(s);
         if(sk) skills   = JSON.parse(sk);
-        if(h)  history  = JSON.parse(h);
-        if(p)  periods  = JSON.parse(p);
+        if(h)  history      = JSON.parse(h);
+        if(p)  periods      = JSON.parse(p);
+        const gr=localStorage.getItem('dojo_gradeRecords');
+        if(gr) gradeRecords = JSON.parse(gr);
         if(classes.length > 0) currentClassId = classes[0].id;
     } catch(e) { console.warn('Tải thất bại:', e); }
 }
@@ -387,14 +672,18 @@ function checkMilestone(student, oldPoints) {
 // ============================================================
 function switchView(view) {
     currentView=view;
-    ['classroom','report','history','settings'].forEach(v=>{
+    ['classroom','report','grades','history','settings'].forEach(v=>{
         document.getElementById(v+'View').classList.toggle('hidden', v!==view);
         const nav=document.getElementById('nav-'+v);
-        if(nav) nav.className=`flex flex-col items-center gap-1 p-2 w-16 transition-colors ${v===view?'text-dojo-blue':'text-gray-400 hover:text-gray-600'}`;
+        if(nav) nav.className=`flex flex-col items-center gap-0.5 p-1 w-[19%] transition-colors ${v===view?'text-dojo-blue':'text-gray-400 hover:text-gray-600'}`;
     });
     document.getElementById('headerAddBtn').classList.toggle('hidden', view!=='classroom');
+    if(view !== 'report' && mainChartInstance) { mainChartInstance.destroy(); mainChartInstance=null; }
+    if(view !== 'report') { chartVisible=false; document.getElementById('chartSection').classList.add('hidden'); document.getElementById('btnToggleChart') && (document.getElementById('btnToggleChart').className='w-9 h-9 rounded-xl bg-blue-50 text-dojo-blue flex items-center justify-center hover:bg-blue-100 transition'); }
+
     if(view==='classroom') renderStudents();
     else if(view==='report') { currentPeriodId=null; renderReport(); }
+    else if(view==='grades') renderGradeView();
     else if(view==='history') renderHistory();
     else if(view==='settings') renderSettings();
 }
@@ -492,13 +781,19 @@ function renderStudents() {
     grid.innerHTML='';
     let total=0;
     const si=document.getElementById('searchInput'); if(si) si.value='';
+    // Reset STT panel khi đổi lớp hoặc re-render
+    if(sttPanelOpen) { sttSelected.clear(); renderSttChips(); updateSttAwardBtn(); }
     students.filter(s=>s.classId===currentClassId).forEach((student,i)=>{
         total+=student.points;
         const pColor=student.points>0?'bg-dojo-green text-white shadow-green-200':(student.points<0?'bg-dojo-red text-white shadow-red-200':'bg-gray-200 text-gray-700');
         const stt=student.stt||(i+1);
         const ms=getMilestone(student.points);
         grid.insertAdjacentHTML('beforeend',`
-            <div id="student-card-${student.id}" data-name="${student.name.toLowerCase()}" data-stt="${stt}" class="student-card bg-white rounded-2xl shadow-sm border border-gray-100 p-3 flex flex-col items-center cursor-pointer relative transition-all duration-300" onclick="openPointsModal(${student.id})">
+            <div id="student-card-${student.id}" data-name="${student.name.toLowerCase()}" data-stt="${stt}" data-id="${student.id}" class="student-card bg-white rounded-2xl shadow-sm border border-gray-100 p-3 flex flex-col items-center cursor-pointer relative transition-all duration-300" onclick="handleCardClick(${student.id})">
+                <!-- Checkbox overlay (ẩn, chỉ hiện trong group mode) -->
+                <div id="check-${student.id}" class="card-checkbox hidden absolute inset-0 rounded-2xl bg-dojo-blue bg-opacity-15 flex items-end justify-center pb-2 pointer-events-none z-10">
+                    <div class="w-6 h-6 bg-dojo-blue rounded-full flex items-center justify-center shadow-md"><i class="fas fa-check text-white text-xs"></i></div>
+                </div>
                 <div class="absolute top-2 left-2 bg-gray-100 text-gray-500 text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm">#${stt}</div>
                 <div class="absolute top-2 right-2 ${pColor} w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" id="badge-${student.id}">${student.points}</div>
                 <img src="${student.avatar}" class="w-16 h-16 bg-blue-50 rounded-full mb-2 p-1 object-contain mt-2">
@@ -510,11 +805,126 @@ function renderStudents() {
     document.getElementById('studentCount').innerText=students.filter(s=>s.classId===currentClassId).length;
 }
 
+// ---- Multi-select state ----
+let groupSelectMode = false;
+let groupSelected   = new Set();
+let _isGroupAward   = false;
+let _groupTargetIds = [];
+
 function filterStudents() {
-    const q=document.getElementById('searchInput').value.toLowerCase().trim();
+    const raw   = document.getElementById('searchInput').value.trim();
+    const terms = raw.split(',').map(t=>t.trim().toLowerCase()).filter(t=>t.length>0);
+
+    const visibleIds = [];
     document.querySelectorAll('.student-card').forEach(card=>{
-        card.style.display=(q===''||card.dataset.stt===q||card.dataset.name.includes(q))?'flex':'none';
+        const match = !raw || terms.some(t => card.dataset.stt===t || card.dataset.name.includes(t));
+        card.style.display = match ? 'flex' : 'none';
+        if (match) visibleIds.push(parseInt(card.dataset.id));
     });
+
+    const bar = document.getElementById('multiSelectBar');
+    // Hiện thanh multi-select khi có ≥2 từ khóa VÀ tìm được ≥2 học sinh
+    if (terms.length >= 2 && visibleIds.length >= 2) {
+        bar.classList.remove('hidden');
+        document.getElementById('multiSelectInfo').innerText = `${visibleIds.length} học sinh được chọn`;
+    } else {
+        bar.classList.add('hidden');
+        exitGroupSelectMode();
+    }
+}
+
+function handleCardClick(id) {
+    if (groupSelectMode) toggleSelectStudent(id);
+    else openPointsModal(id);
+}
+
+function toggleGroupSelectMode() {
+    groupSelectMode = !groupSelectMode;
+    const btn = document.getElementById('btnGroupMode');
+    if (groupSelectMode) {
+        btn.innerHTML = '<i class="fas fa-times mr-1"></i>Hủy chọn';
+        btn.className = 'text-xs bg-red-50 text-red-600 font-bold px-3 py-1.5 rounded-full border border-red-200 whitespace-nowrap';
+        // Hiện checkbox trên tất cả card đang visible
+        document.querySelectorAll('.student-card').forEach(card=>{
+            if (card.style.display !== 'none') {
+                card.querySelector('.card-checkbox')?.classList.remove('hidden');
+            }
+        });
+    } else {
+        exitGroupSelectMode();
+    }
+}
+
+function toggleSelectStudent(id) {
+    const card  = document.getElementById(`student-card-${id}`);
+    const check = document.getElementById(`check-${id}`);
+    if (groupSelected.has(id)) {
+        groupSelected.delete(id);
+        check?.classList.add('hidden');
+        card?.classList.remove('ring-2','ring-dojo-blue','scale-[0.97]');
+    } else {
+        groupSelected.add(id);
+        check?.classList.remove('hidden');
+        card?.classList.add('ring-2','ring-dojo-blue','scale-[0.97]');
+    }
+    updateGroupFloatBtn();
+}
+
+function updateGroupFloatBtn() {
+    const btn = document.getElementById('floatingGroupBtn');
+    if (groupSelectMode && groupSelected.size > 0) {
+        btn.classList.remove('hidden');
+        document.getElementById('floatingGroupCount').innerText = `Cho điểm (${groupSelected.size} học sinh)`;
+    } else {
+        btn.classList.add('hidden');
+    }
+}
+
+function exitGroupSelectMode() {
+    groupSelectMode = false;
+    groupSelected.clear();
+    document.getElementById('floatingGroupBtn')?.classList.add('hidden');
+    const btn = document.getElementById('btnGroupMode');
+    if (btn) {
+        btn.innerHTML = '<i class="fas fa-check-square mr-1"></i>Chọn riêng';
+        btn.className = 'text-xs bg-white text-dojo-blue font-bold px-3 py-1.5 rounded-full border border-dojo-blue whitespace-nowrap';
+    }
+    document.querySelectorAll('.card-checkbox').forEach(cb=>cb.classList.add('hidden'));
+    document.querySelectorAll('.student-card').forEach(card=>card.classList.remove('ring-2','ring-dojo-blue','scale-[0.97]'));
+}
+
+function awardAllFiltered() {
+    // Lấy tất cả card đang visible
+    const ids = [];
+    document.querySelectorAll('.student-card').forEach(card=>{
+        if (card.style.display !== 'none') ids.push(parseInt(card.dataset.id));
+    });
+    if (!ids.length) return;
+    openGroupModal(ids, `${ids.length} học sinh đã lọc`);
+}
+
+function openGroupPointsModal() {
+    const ids = [...groupSelected];
+    if (!ids.length) return;
+    openGroupModal(ids, `${ids.length} học sinh đã chọn`);
+}
+
+function openGroupModal(ids, label) {
+    _isGroupAward   = true;
+    _groupTargetIds = ids;
+    isAwardAll      = false;
+    selectedStudentId = null;
+
+    document.getElementById('modalStudentName').innerText = label;
+    document.getElementById('modalStudentInfo').style.display = 'none';
+    document.getElementById('modalStudentPoints').innerText = ids.length + ' học sinh';
+    document.getElementById('modalAvatar').style.display = 'none';
+    document.getElementById('btnEditStudent').classList.add('hidden');
+    document.getElementById('btnStudentProfile').classList.add('hidden');
+    document.getElementById('btnDeleteStudent').classList.add('hidden');
+    document.getElementById('backdrop').classList.remove('hidden');
+    document.getElementById('pointsModal').classList.remove('translate-y-full');
+    switchTab('positive');
 }
 
 function openAddStudentModal() { document.getElementById('addStudentBackdrop').classList.remove('hidden'); document.getElementById('addStudentModal').classList.remove('hidden'); document.getElementById('newStudentName').focus(); }
@@ -586,6 +996,9 @@ function openPointsModal(id) {
     document.getElementById('modalStudentInfo').style.display='block';
     document.getElementById('modalAvatar').src=s.avatar;
     document.getElementById('modalAvatar').style.display='block';
+    document.getElementById('btnStudentProfile').classList.remove('hidden');
+    const mc=document.getElementById('modalComment');
+    mc.innerText=generateComment(s); mc.classList.remove('hidden');
     document.getElementById('btnEditStudent').classList.remove('hidden');
     document.getElementById('btnDeleteStudent').classList.remove('hidden');
     document.getElementById('backdrop').classList.remove('hidden');
@@ -599,7 +1012,9 @@ function awardAll() {
     document.getElementById('modalStudentInfo').style.display='none';
     document.getElementById('modalStudentPoints').innerText=students.filter(s=>s.classId===currentClassId).length+' học sinh';
     document.getElementById('modalAvatar').style.display='none';
+    document.getElementById('modalComment').classList.add('hidden');
     document.getElementById('btnEditStudent').classList.add('hidden');
+    document.getElementById('btnStudentProfile').classList.add('hidden');
     document.getElementById('btnDeleteStudent').classList.add('hidden');
     document.getElementById('backdrop').classList.remove('hidden');
     document.getElementById('pointsModal').classList.remove('translate-y-full');
@@ -630,7 +1045,20 @@ function addPoints(skillId, points, skillName) {
     document.getElementById(isPos?'soundPositive':'soundNegative').play().catch(()=>{});
     const now=new Date().toISOString();
 
-    if(isAwardAll) {
+    if(_isGroupAward && _groupTargetIds.length) {
+        // Chấm điểm cho nhóm học sinh đã lọc/chọn
+        _groupTargetIds.forEach(id=>{
+            const s=students.find(st=>st.id===id); if(!s) return;
+            const old=s.points;
+            s.points+=points;
+            if(isPos) s.positivePoints+=points; else s.negativePoints+=Math.abs(points);
+            history.push({id:Date.now()+Math.random(),classId:currentClassId,studentId:s.id,studentName:s.name,skillName,points,timestamp:now});
+            checkMilestone(s,old);
+        });
+        showToast(`${_groupTargetIds.length} học sinh ${isPos?'+':''}${points} (${skillName})`,isPos);
+        _isGroupAward=false; _groupTargetIds=[];
+        exitGroupSelectMode();
+    } else if(isAwardAll) {
         students.filter(s=>s.classId===currentClassId).forEach(s=>{
             const old=s.points;
             s.points+=points;
@@ -806,6 +1234,7 @@ function renderReport() {
                         <span class="inline-flex items-center gap-1 text-[11px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full"><i class="fas fa-plus"></i>${student.positivePoints}</span>
                         <span class="inline-flex items-center gap-1 text-[11px] font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded-full"><i class="fas fa-minus"></i>${student.negativePoints}</span>
                     </div>
+                    <p class="text-[11px] text-gray-400 italic mt-1 leading-snug">${generateComment(student)}</p>
                 </div>
                 <div class="w-10 h-10 rounded-full flex items-center justify-center font-black text-lg ${pColor} flex-shrink-0">${student.points}</div>
             </div>`);
@@ -842,6 +1271,11 @@ function endPeriod() {
     currentPeriodId=null; renderReport();
 }
 
+// Công thức tính điểm thi đua xuất Excel
+function calcExcelScore(s) {
+    return Math.round((s.positivePoints * 0.2 - s.negativePoints * 0.5) * 100) / 100;
+}
+
 function exportToExcel() {
     const cls=classes.find(c=>c.id===currentClassId); if(!cls) return alert('Không tìm thấy lớp!');
     let exportStudents, sheetLabel='Bao_Cao';
@@ -853,25 +1287,44 @@ function exportToExcel() {
     }
     if(!exportStudents.length) return alert('Không có dữ liệu để xuất!');
     const sortBy=document.getElementById('sortOrder').value;
-    const sorted=[...exportStudents].sort((a,b)=>sortBy==='points'?b.points-a.points:a.name.localeCompare(b.name));
+    // Sắp xếp theo điểm thi đua (công thức mới)
+    const sorted=[...exportStudents].sort((a,b)=>sortBy==='points'
+        ? calcExcelScore(b)-calcExcelScore(a)
+        : a.name.localeCompare(b.name));
     const wsData=[
         [`BẢNG TỔNG KẾT ĐIỂM THI ĐUA - LỚP ${cls.name.toUpperCase()}`,"","","","",""],
         [`Ngày xuất báo cáo: ${new Date().toLocaleDateString('vi-VN')}`,"","","","",""],
-        ["","","","","",""],
-        ['STT','Họ và tên','Điểm cộng (+)','Điểm trừ (-)','Tổng điểm','Xếp hạng']
+        [`Công thức: Điểm thi đua = Điểm cộng × 0,2  −  Điểm trừ × 0,5`,"","","","","",""],
+        ["","","","","","",""],
+        ['STT','Họ và tên','Điểm cộng (+)','Điểm trừ (-)','Điểm thi đua','Xếp hạng','Nhận xét']
     ];
     sorted.forEach((s,i)=>{
+        const score = calcExcelScore(s);
         let rank=i+1;
-        if(sortBy==='points'){if(i===0&&s.points>0)rank='1 (Vương miện vàng)';else if(i===1&&s.points>0)rank='2 (Huy chương bạc)';else if(i===2&&s.points>0)rank='3 (Huy chương đồng)';}
-        wsData.push([i+1,s.name,s.positivePoints,s.negativePoints,s.points,rank]);
+        if(sortBy==='points'){if(i===0&&score>0)rank='1 (Vương miện vàng)';else if(i===1&&score>0)rank='2 (Huy chương bạc)';else if(i===2&&score>0)rank='3 (Huy chương đồng)';}
+        // Bỏ emoji khỏi nhận xét trong Excel
+        const comment = generateComment(s).replace(/[\u{1F300}-\u{1FFFF}]/gu,'').trim();
+        wsData.push([i+1,s.name,s.positivePoints,s.negativePoints,score,rank,comment]);
     });
     const ws=XLSX.utils.aoa_to_sheet(wsData);
+    // Row 1: tiêu đề lớp
     ws['A1'].s={font:{bold:true,color:{rgb:"FFFFFF"},sz:14,name:"Arial"},fill:{fgColor:{rgb:"33A3DC"}},alignment:{horizontal:"center",vertical:"center"}};
+    // Row 2: ngày xuất
     ws['A2'].s={font:{italic:true,color:{rgb:"555555"},sz:11,name:"Arial"},alignment:{horizontal:"center",vertical:"center"}};
-    ['A','B','C','D','E','F'].forEach(col=>{const cr=col+'4';if(ws[cr])ws[cr].s={font:{bold:true,color:{rgb:"FFFFFF"},name:"Arial"},fill:{fgColor:{rgb:"8BC34A"}},alignment:{horizontal:"center",vertical:"center"},border:{top:{style:'thin',color:{rgb:"AAAAAA"}},bottom:{style:'medium',color:{rgb:"666666"}},left:{style:'thin',color:{rgb:"AAAAAA"}},right:{style:'thin',color:{rgb:"AAAAAA"}}}};});
-    for(let r=4;r<wsData.length;r++){['A','B','C','D','E','F'].forEach((col,ci)=>{const cr=col+(r+1);if(!ws[cr])return;let cs2={font:{name:"Arial",sz:11},border:{top:{style:'thin',color:{rgb:"DDDDDD"}},bottom:{style:'thin',color:{rgb:"DDDDDD"}},left:{style:'thin',color:{rgb:"DDDDDD"}},right:{style:'thin',color:{rgb:"DDDDDD"}}},alignment:{vertical:"center"}};if(r%2===1)cs2.fill={fgColor:{rgb:"F9F9F9"}};if(ci!==1)cs2.alignment.horizontal="center";if(ci===4)cs2.font.bold=true;if(ci===2&&ws[cr].v>0){cs2.font.color={rgb:"2E7D32"};cs2.font.bold=true;}if(ci===3&&ws[cr].v>0){cs2.font.color={rgb:"C62828"};cs2.font.bold=true;}if(ci===5&&typeof ws[cr].v==='string'){if(ws[cr].v.includes('Vương miện')){cs2.font.color={rgb:"E65100"};cs2.font.bold=true;}else if(ws[cr].v.includes('Huy chương'))cs2.font.bold=true;}ws[cr].s=cs2;});}
-    ws['!cols']=[{wch:8},{wch:25},{wch:15},{wch:15},{wch:12},{wch:22}];
-    ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:5}},{s:{r:1,c:0},e:{r:1,c:5}}];
+    // Row 3: dòng công thức
+    ws['A3'].s={font:{italic:true,bold:true,color:{rgb:"E65100"},sz:11,name:"Arial"},fill:{fgColor:{rgb:"FFF3E0"}},alignment:{horizontal:"center",vertical:"center"}};
+    // Row 5: header cột (wsData index 4 → Excel row 5)
+    ['A','B','C','D','E','F','G'].forEach(col=>{const cr=col+'5';if(ws[cr])ws[cr].s={font:{bold:true,color:{rgb:"FFFFFF"},name:"Arial"},fill:{fgColor:{rgb:"8BC34A"}},alignment:{horizontal:"center",vertical:"center"},border:{top:{style:'thin',color:{rgb:"AAAAAA"}},bottom:{style:'medium',color:{rgb:"666666"}},left:{style:'thin',color:{rgb:"AAAAAA"}},right:{style:'thin',color:{rgb:"AAAAAA"}}}};});
+    // Data rows (from wsData index 5 onwards → Excel rows 6+)
+    for(let r=5;r<wsData.length;r++){['A','B','C','D','E','F'].forEach((col,ci)=>{const cr=col+(r+1);if(!ws[cr])return;let cs2={font:{name:"Arial",sz:11},border:{top:{style:'thin',color:{rgb:"DDDDDD"}},bottom:{style:'thin',color:{rgb:"DDDDDD"}},left:{style:'thin',color:{rgb:"DDDDDD"}},right:{style:'thin',color:{rgb:"DDDDDD"}}},alignment:{vertical:"center"}};if(r%2===0)cs2.fill={fgColor:{rgb:"F9F9F9"}};if(ci!==1)cs2.alignment.horizontal="center";if(ci===4){cs2.font.bold=true;const v=ws[cr].v;if(typeof v==='number'){if(v>0)cs2.font.color={rgb:"2E7D32"};else if(v<0)cs2.font.color={rgb:"C62828"};}}if(ci===2&&ws[cr].v>0){cs2.font.color={rgb:"2E7D32"};cs2.font.bold=true;}if(ci===3&&ws[cr].v>0){cs2.font.color={rgb:"C62828"};cs2.font.bold=true;}if(ci===5&&typeof ws[cr].v==='string'){if(ws[cr].v.includes('Vương miện')){cs2.font.color={rgb:"E65100"};cs2.font.bold=true;}else if(ws[cr].v.includes('Huy chương'))cs2.font.bold=true;}ws[cr].s=cs2;});}
+    // Style cột Nhận xét (cột G - index 6)
+    for(let r=5;r<wsData.length;r++){
+        const cr='G'+(r+1); if(!ws[cr]) continue;
+        ws[cr].s={font:{name:"Arial",sz:10,italic:true,color:{rgb:"555577"}},alignment:{vertical:"center",wrapText:true},border:{top:{style:'thin',color:{rgb:"DDDDDD"}},bottom:{style:'thin',color:{rgb:"DDDDDD"}},left:{style:'thin',color:{rgb:"DDDDDD"}},right:{style:'thin',color:{rgb:"DDDDDD"}}}};
+        if(r%2===0) ws[cr].s.fill={fgColor:{rgb:"F9F9F9"}};
+    }
+    ws['!cols']=[{wch:8},{wch:25},{wch:15},{wch:15},{wch:14},{wch:22},{wch:40}];
+    ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:6}},{s:{r:1,c:0},e:{r:1,c:6}},{s:{r:2,c:0},e:{r:2,c:6}}];
     const wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb,ws,sheetLabel);
     XLSX.writeFile(wb,`Bao_Cao_${cls.name.replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.xlsx`);
@@ -1024,6 +1477,759 @@ function resetSkillsToDefault() {
         saveData(); renderSkills(); renderSettings();
         showToast('Đã khôi phục kỹ năng mặc định!');
     }
+}
+
+// ============================================================
+// STT PANEL
+// ============================================================
+let sttSelected = new Set();
+let sttPanelOpen = false;
+
+function toggleSttPanel() {
+    sttPanelOpen = !sttPanelOpen;
+    const panel = document.getElementById('sttPanel');
+    const btn   = document.getElementById('btnSttPanel');
+    panel.classList.toggle('hidden', !sttPanelOpen);
+    btn.className = sttPanelOpen
+        ? 'text-white text-xs font-bold bg-purple-600 px-3 py-1.5 rounded-full transition shadow-sm flex items-center'
+        : 'text-purple-600 text-xs font-bold bg-purple-50 px-3 py-1.5 rounded-full hover:bg-purple-100 transition border border-purple-100 shadow-sm flex items-center';
+    btn.innerHTML = sttPanelOpen
+        ? '<i class="fas fa-times mr-1"></i>Đóng'
+        : '<i class="fas fa-hashtag mr-1"></i>Theo STT';
+    if (sttPanelOpen) renderSttChips();
+    else { sttSelected.clear(); updateSttAwardBtn(); }
+}
+
+function renderSttChips() {
+    const container = document.getElementById('sttChips');
+    container.innerHTML = '';
+    const classStudents = students.filter(s=>s.classId===currentClassId)
+                                  .sort((a,b)=>(a.stt||0)-(b.stt||0));
+    if (!classStudents.length) {
+        container.innerHTML = '<p class="text-xs text-gray-400 italic">Lớp chưa có học sinh.</p>';
+        return;
+    }
+    classStudents.forEach(s => {
+        const stt = s.stt || 0;
+        const sel = sttSelected.has(s.id);
+        const chip = document.createElement('button');
+        chip.id = `stt-chip-${s.id}`;
+        chip.className = `w-10 h-10 rounded-full text-sm font-black flex items-center justify-center transition-all shadow-sm ${
+            sel ? 'bg-purple-600 text-white scale-110 shadow-purple-200' : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-purple-400'
+        }`;
+        chip.title = s.name;
+        chip.innerText = stt;
+        chip.onclick = () => toggleSttChip(s.id);
+        container.appendChild(chip);
+    });
+}
+
+function toggleSttChip(id) {
+    if (sttSelected.has(id)) sttSelected.delete(id);
+    else sttSelected.add(id);
+    // Update chip appearance
+    const s = students.find(st=>st.id===id);
+    const chip = document.getElementById(`stt-chip-${id}`);
+    if (chip) {
+        const sel = sttSelected.has(id);
+        chip.className = `w-10 h-10 rounded-full text-sm font-black flex items-center justify-center transition-all shadow-sm ${
+            sel ? 'bg-purple-600 text-white scale-110 shadow-purple-200' : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-purple-400'
+        }`;
+    }
+    updateSttAwardBtn();
+    // Highlight card
+    const card = document.getElementById(`student-card-${id}`);
+    if (card) {
+        if (sttSelected.has(id)) card.classList.add('ring-2','ring-purple-500');
+        else card.classList.remove('ring-2','ring-purple-500');
+    }
+}
+
+function selectAllStt() {
+    students.filter(s=>s.classId===currentClassId).forEach(s=>{
+        sttSelected.add(s.id);
+        const card=document.getElementById(`student-card-${s.id}`);
+        if(card) card.classList.add('ring-2','ring-purple-500');
+    });
+    renderSttChips();
+    updateSttAwardBtn();
+}
+
+function clearSttSelection() {
+    sttSelected.forEach(id => {
+        const card = document.getElementById(`student-card-${id}`);
+        if (card) card.classList.remove('ring-2','ring-purple-500');
+    });
+    sttSelected.clear();
+    renderSttChips();
+    updateSttAwardBtn();
+}
+
+function updateSttAwardBtn() {
+    const btn = document.getElementById('btnAwardByStt');
+    if (sttSelected.size > 0) {
+        btn.classList.remove('hidden');
+        btn.classList.add('flex');
+        document.getElementById('sttAwardLabel').innerText = `Cho/trừ điểm (${sttSelected.size} học sinh)`;
+    } else {
+        btn.classList.add('hidden');
+        btn.classList.remove('flex');
+    }
+}
+
+function awardByStt() {
+    const ids = [...sttSelected];
+    if (!ids.length) return;
+    const names = ids.map(id => {
+        const s = students.find(st=>st.id===id);
+        return s ? `#${s.stt} ${s.name}` : '';
+    }).filter(Boolean);
+    openGroupModal(ids, `${ids.length} học sinh (${names.slice(0,3).join(', ')}${ids.length>3?'…':''})`);
+}
+
+// ============================================================
+// STUDENT PROFILE / STATISTICS
+// ============================================================
+function openStudentProfile(id) {
+    if (!id) return;
+    const s = students.find(st=>st.id===id);
+    if (!s) return;
+    closePointsModal();
+    setTimeout(() => {
+        renderStudentProfile(s);
+        document.getElementById('profileModal').classList.remove('hidden');
+    }, 320);
+}
+
+function closeStudentProfile() {
+    document.getElementById('profileModal').classList.add('hidden');
+}
+
+function renderStudentProfile(s) {
+    // Header
+    document.getElementById('profileAvatar').src = s.avatar;
+    document.getElementById('profileName').innerText = s.name;
+    document.getElementById('profileMeta').innerText = `STT: ${s.stt||'-'} | Ngày sinh: ${s.dob||'Chưa có'}`;
+    document.getElementById('profilePosVal').innerText = s.positivePoints;
+    document.getElementById('profileNegVal').innerText = s.negativePoints;
+    document.getElementById('profileTotal').innerText = s.points;
+
+    // Milestone badge
+    const ms = getMilestone(s.points);
+    const badge = document.getElementById('profileBadge');
+    if (ms) { badge.innerText = ms.icon; badge.title = ms.label; badge.classList.remove('hidden'); }
+    else badge.classList.add('hidden');
+
+    // Nhận xét đầy đủ
+    document.getElementById('profileComment').innerText = generateComment(s);
+
+    // Thống kê kỹ năng từ history
+    const studentHistory = history.filter(h => h.studentId===s.id && h.classId===currentClassId);
+    const breakdown = document.getElementById('profileSkillBreakdown');
+    const emptyMsg  = document.getElementById('profileSkillEmpty');
+    breakdown.innerHTML = '';
+
+    if (!studentHistory.length) {
+        emptyMsg.classList.remove('hidden');
+    } else {
+        emptyMsg.classList.add('hidden');
+        // Gom nhóm theo skillName
+        const map = {};
+        studentHistory.forEach(h => {
+            if (!map[h.skillName]) map[h.skillName] = { count:0, total:0, isPos: h.points>0 };
+            map[h.skillName].count++;
+            map[h.skillName].total += h.points;
+        });
+        // Sắp xếp: tích cực trước, sau đó theo tần suất
+        const entries = Object.entries(map).sort((a,b) => {
+            if (a[1].isPos !== b[1].isPos) return a[1].isPos ? -1 : 1;
+            return b[1].count - a[1].count;
+        });
+        // Max count for bar width
+        const maxCount = Math.max(...entries.map(([,v])=>v.count));
+        entries.forEach(([name,{count,total,isPos}]) => {
+            const pct = Math.round((count/maxCount)*100);
+            const color = isPos ? 'bg-green-400' : 'bg-red-400';
+            const textColor = isPos ? 'text-green-700' : 'text-red-700';
+            const bg = isPos ? 'bg-green-50' : 'bg-red-50';
+            breakdown.insertAdjacentHTML('beforeend', `
+                <div class="${bg} rounded-xl p-2.5">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-xs font-bold text-gray-700">${name}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] text-gray-500">${count} lần</span>
+                            <span class="text-xs font-black ${textColor}">${total>0?'+':''}${total}</span>
+                        </div>
+                    </div>
+                    <div class="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                        <div class="${color} h-full rounded-full transition-all" style="width:${pct}%"></div>
+                    </div>
+                </div>`);
+        });
+    }
+
+    // Lịch sử gần đây (20 sự kiện gần nhất)
+    const histList = document.getElementById('profileHistoryList');
+    const histEmpty = document.getElementById('profileHistoryEmpty');
+    const histCount = document.getElementById('profileHistoryCount');
+    histList.innerHTML = '';
+
+    if (!studentHistory.length) {
+        histEmpty.classList.remove('hidden');
+        histCount.innerText = '';
+    } else {
+        histEmpty.classList.add('hidden');
+        const sorted = [...studentHistory].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
+        histCount.innerText = `${sorted.length} sự kiện`;
+        sorted.slice(0, 20).forEach(h => {
+            const isPos = h.points > 0;
+            const dt = new Date(h.timestamp);
+            const timeStr = dt.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
+            const dateStr = dt.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'});
+            histList.insertAdjacentHTML('beforeend', `
+                <div class="flex items-center gap-3 bg-white rounded-xl px-3 py-2.5 border border-gray-100">
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isPos?'bg-green-100':'bg-red-100'}">
+                        <i class="fas ${isPos?'fa-plus text-green-600':'fa-minus text-red-600'} text-xs"></i>
+                    </div>
+                    <div class="flex-1 overflow-hidden">
+                        <p class="text-xs font-bold text-gray-700 truncate">${h.skillName}</p>
+                        <p class="text-[10px] text-gray-400">${dateStr} · ${timeStr}</p>
+                    </div>
+                    <span class="text-sm font-black flex-shrink-0 ${isPos?'text-green-600':'text-red-600'}">${isPos?'+':''}${h.points}</span>
+                </div>`);
+        });
+    }
+}
+
+// ============================================================
+// GRADE RECORDS – ĐÁNH GIÁ HỌC TẬP
+// ============================================================
+const THPT_SUBJECTS = [
+    'Toán','Ngữ văn','Tiếng Anh','Vật lí','Hóa học','Sinh học',
+    'Lịch sử','Địa lí','GDCD','Tin học','Công nghệ','Thể dục','GDQPAN'
+];
+
+// ---- Helpers ----
+function gradeColor(v) {
+    if (v === null || v === undefined || v === '') return '';
+    const n = parseFloat(v);
+    if (isNaN(n)) return '';
+    if (n < 5)  return '#fee2e2'; // red-100
+    if (n >= 8) return '#dcfce7'; // green-100
+    return '#fef9c3';             // yellow-100
+}
+function gradeText(v) {
+    if (v === null || v === undefined || v === '') return '—';
+    const n = parseFloat(v);
+    if (isNaN(n)) return '—';
+    if (n < 5)  return `${n} ⚠️`;
+    if (n >= 8) return `${n} ⭐`;
+    return String(n);
+}
+
+// ---- Period management ----
+function openNewGradePeriodModal() {
+    document.getElementById('newGradePeriodBackdrop').classList.remove('hidden');
+    document.getElementById('newGradePeriodModal').classList.remove('hidden');
+    document.getElementById('newGradePeriodName').focus();
+}
+function closeNewGradePeriodModal() {
+    document.getElementById('newGradePeriodBackdrop').classList.add('hidden');
+    document.getElementById('newGradePeriodModal').classList.add('hidden');
+    document.getElementById('newGradePeriodName').value = '';
+}
+function createGradePeriod() {
+    const name = document.getElementById('newGradePeriodName').value.trim();
+    if (!name) return;
+    const id = Date.now();
+    gradeRecords.push({ id, classId: currentClassId, periodName: name, createdAt: new Date().toISOString(), studentGrades: [] });
+    currentGradePeriodId = id;
+    saveData(); closeNewGradePeriodModal(); renderGradeView();
+    showToast(`Đã tạo đợt: ${name}`);
+}
+function deleteCurrentGradePeriod() {
+    const rec = gradeRecords.find(r=>r.id===currentGradePeriodId); if(!rec) return;
+    if (!confirm(`Xóa đợt "${rec.periodName}"?`)) return;
+    gradeRecords = gradeRecords.filter(r=>r.id!==currentGradePeriodId);
+    const remaining = gradeRecords.filter(r=>r.classId===currentClassId);
+    currentGradePeriodId = remaining.length ? remaining[remaining.length-1].id : null;
+    saveData(); renderGradeView(); showToast('Đã xóa đợt',false);
+}
+
+// ---- Download template ----
+function downloadGradeTemplate() {
+    const cls = classes.find(c=>c.id===currentClassId); if(!cls) return;
+    const rec = gradeRecords.find(r=>r.id===currentGradePeriodId);
+    const periodName = rec ? rec.periodName : 'Mẫu điểm';
+    const classStudents = students.filter(s=>s.classId===currentClassId).sort((a,b)=>(a.stt||0)-(b.stt||0));
+
+    const header = ['STT','Họ và tên', ...THPT_SUBJECTS];
+    const wsData = [
+        [`BẢNG ĐIỂM - LỚP ${cls.name.toUpperCase()} - ${periodName.toUpperCase()}`, ...Array(header.length-1).fill('')],
+        [`Hướng dẫn: Điền điểm số (0-10) vào các ô tương ứng. Để trống nếu không có môn.`, ...Array(header.length-1).fill('')],
+        [],
+        header
+    ];
+    classStudents.forEach(s => {
+        wsData.push([s.stt||'', s.name, ...Array(THPT_SUBJECTS.length).fill('')]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    // Style title
+    ws['A1'].s = {font:{bold:true,color:{rgb:"FFFFFF"},sz:13,name:"Arial"},fill:{fgColor:{rgb:"33A3DC"}},alignment:{horizontal:"center"}};
+    ws['A2'].s = {font:{italic:true,color:{rgb:"555555"},sz:10,name:"Arial"},fill:{fgColor:{rgb:"FFF3E0"}}};
+    // Style header row (row 4)
+    header.forEach((_,ci)=>{
+        const cr=String.fromCharCode(65+ci)+'4';
+        if(ws[cr]) ws[cr].s={font:{bold:true,color:{rgb:"FFFFFF"},name:"Arial"},fill:{fgColor:{rgb:"8BC34A"}},alignment:{horizontal:"center"},border:{bottom:{style:'medium',color:{rgb:"666666"}}}};
+    });
+    ws['!cols'] = [{wch:6},{wch:25},...Array(THPT_SUBJECTS.length).fill({wch:12})];
+    ws['!merges'] = [{s:{r:0,c:0},e:{r:0,c:header.length-1}},{s:{r:1,c:0},e:{r:1,c:header.length-1}}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Bang_diem');
+    XLSX.writeFile(wb, `Mau_diem_${cls.name.replace(/\s+/g,'_')}_${periodName.replace(/\s+/g,'_')}.xlsx`);
+    showToast('Đã tải file mẫu!');
+}
+
+// ---- Upload grades ----
+function handleGradeUpload(e) {
+    const rec = gradeRecords.find(r=>r.id===currentGradePeriodId);
+    if (!rec) { alert('Chọn đợt đánh giá trước!'); e.target.value=''; return; }
+    const f = e.target.files[0]; if(!f) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        try {
+            const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array'});
+            const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1, defval:''});
+            // Find header row (has STT + Họ và tên)
+            let headerRow = -1, headerData = [];
+            for (let i=0; i<rows.length; i++) {
+                const r = rows[i].map(c=>String(c||'').trim());
+                if (r.includes('Họ và tên') || r.includes('Họ tên')) { headerRow=i; headerData=r; break; }
+            }
+            if (headerRow < 0) { alert('Không tìm thấy dòng tiêu đề "Họ và tên". Vui lòng dùng file mẫu.'); e.target.value=''; return; }
+
+            // Find subject column indices
+            const subjectCols = {};
+            THPT_SUBJECTS.forEach(sub => {
+                const idx = headerData.findIndex(h=>h.includes(sub)||sub.includes(h.replace(/[()]/g,'')));
+                if (idx >= 0) subjectCols[sub] = idx;
+            });
+            const nameCol = headerData.findIndex(h=>h.includes('tên')||h.includes('Tên'));
+            const sttCol  = headerData.findIndex(h=>h==='STT'||h==='stt');
+
+            const newGrades = [];
+            for (let i=headerRow+1; i<rows.length; i++) {
+                const row = rows[i]; if (!row || !row.length) continue;
+                const name = String(row[nameCol]||'').trim(); if(!name) continue;
+                const stt  = parseInt(row[sttCol])||0;
+                // Match student by name or STT
+                const student = students.find(s=>s.classId===currentClassId&&(s.name===name||(stt&&s.stt===stt)));
+                const gradesObj = {};
+                Object.entries(subjectCols).forEach(([sub,ci])=>{
+                    const v = row[ci];
+                    if (v!==''&&v!==null&&v!==undefined) {
+                        const n = parseFloat(String(v).replace(',','.'));
+                        if (!isNaN(n) && n>=0 && n<=10) gradesObj[sub] = Math.round(n*10)/10;
+                    }
+                });
+                newGrades.push({ studentId: student?.id||null, name, stt, grades: gradesObj });
+            }
+            rec.studentGrades = newGrades;
+            saveData(); renderGradeView();
+            showToast(`Đã nhập điểm ${newGrades.length} học sinh!`);
+        } catch(err) { console.error(err); alert('Lỗi đọc file. Vui lòng dùng file mẫu.'); }
+    };
+    reader.readAsArrayBuffer(f);
+    e.target.value = '';
+}
+
+// ---- Render grade view ----
+function renderGradeView() {
+    const classPeriods = gradeRecords.filter(r=>r.classId===currentClassId);
+
+    // Period tabs
+    const tabsEl = document.getElementById('gradePeriodTabs');
+    if (!classPeriods.length) {
+        tabsEl.innerHTML = '<p class="text-sm text-gray-400 italic py-2">Bấm "Đợt mới" để bắt đầu.</p>';
+        document.getElementById('gradesEmpty').classList.remove('hidden');
+        document.getElementById('gradesControls').classList.add('hidden');
+        document.getElementById('gradesTableWrap').classList.add('hidden');
+        currentGradePeriodId = null;
+        return;
+    }
+    if (!currentGradePeriodId || !classPeriods.find(r=>r.id===currentGradePeriodId)) {
+        currentGradePeriodId = classPeriods[classPeriods.length-1].id;
+    }
+    tabsEl.innerHTML = '';
+    classPeriods.forEach(r => {
+        const isActive = r.id === currentGradePeriodId;
+        const btn = document.createElement('button');
+        btn.className = `flex-shrink-0 px-4 py-2 font-bold rounded-full text-sm transition ${isActive?'bg-dojo-blue text-white shadow':'bg-white text-gray-600 border border-gray-200 hover:border-dojo-blue'}`;
+        btn.innerText = r.periodName;
+        btn.onclick = () => { currentGradePeriodId=r.id; renderGradeView(); };
+        tabsEl.appendChild(btn);
+    });
+
+    document.getElementById('gradesEmpty').classList.add('hidden');
+    document.getElementById('gradesControls').classList.remove('hidden');
+    renderGradeTable();
+}
+
+function renderGradeTable() {
+    const rec = gradeRecords.find(r=>r.id===currentGradePeriodId);
+    const wrap = document.getElementById('gradesTableWrap');
+    const table = document.getElementById('gradesTable');
+    if (!rec || !rec.studentGrades.length) {
+        wrap.classList.add('hidden');
+        document.getElementById('gradesEmpty').classList.remove('hidden');
+        document.getElementById('gradesEmpty').innerHTML = `<i class="fas fa-file-upload text-5xl mb-4 opacity-30"></i><p class="font-semibold">Chưa có dữ liệu điểm</p><p class="text-sm mt-1">Bấm "Nhập điểm" để upload file Excel đã điền</p>`;
+        return;
+    }
+    document.getElementById('gradesEmpty').classList.add('hidden');
+    wrap.classList.remove('hidden');
+
+    // Determine which subjects have data
+    const usedSubjects = THPT_SUBJECTS.filter(sub => rec.studentGrades.some(sg=>sg.grades[sub]!==undefined));
+
+    let html = `<thead><tr>
+        <th class="sticky left-0 bg-gray-700 text-white px-3 py-2 text-left font-bold z-10 whitespace-nowrap">#</th>
+        <th class="sticky left-8 bg-gray-700 text-white px-3 py-2 text-left font-bold z-10 whitespace-nowrap min-w-[120px]">Họ và tên</th>
+        ${usedSubjects.map(s=>`<th class="bg-gray-700 text-white px-3 py-2 text-center font-bold whitespace-nowrap">${s}</th>`).join('')}
+        <th class="bg-gray-600 text-white px-3 py-2 text-center font-bold whitespace-nowrap">TB</th>
+        <th class="bg-gray-600 text-white px-3 py-2 text-center font-bold whitespace-nowrap">Nhận xét</th>
+    </tr></thead><tbody>`;
+
+    const sorted = [...rec.studentGrades].sort((a,b)=>(a.stt||999)-(b.stt||999));
+    sorted.forEach((sg,i) => {
+        const vals = usedSubjects.map(sub=>sg.grades[sub]);
+        const nums = vals.filter(v=>v!==undefined).map(v=>parseFloat(v));
+        const avg  = nums.length ? Math.round(nums.reduce((a,b)=>a+b,0)/nums.length*10)/10 : null;
+        const below5 = usedSubjects.filter(sub=>sg.grades[sub]!==undefined && sg.grades[sub]<5);
+        const above8 = usedSubjects.filter(sub=>sg.grades[sub]!==undefined && sg.grades[sub]>=8);
+        let comment = '';
+        if (below5.length) comment += `⚠️ Cần cố gắng: ${below5.join(', ')}. `;
+        if (above8.length) comment += `⭐ Xuất sắc: ${above8.join(', ')}.`;
+        if (!comment) comment = avg >= 8 ? '✨ Học lực tốt' : avg >= 5 ? '👍 Đạt yêu cầu' : '💪 Cần nỗ lực hơn';
+        const rowBg = i%2===0?'#ffffff':'#f9fafb';
+        html += `<tr style="background:${rowBg}">
+            <td class="sticky left-0 px-3 py-2 text-gray-500 font-bold z-10 border-b border-gray-100 text-center" style="background:${rowBg}">${sg.stt||i+1}</td>
+            <td class="sticky left-8 px-3 py-2 font-bold text-gray-800 z-10 border-b border-gray-100 whitespace-nowrap" style="background:${rowBg}">
+                ${sg.name}
+                <button onclick="showParentMessage(${JSON.stringify(sg.name).replace(/"/g,"'")})" class="ml-1 text-dojo-blue hover:text-blue-700" title="Tin nhắn PH"><i class="fas fa-paper-plane text-xs"></i></button>
+            </td>
+            ${usedSubjects.map(sub=>{
+                const v=sg.grades[sub];
+                const bg=gradeColor(v);
+                return `<td class="px-3 py-2 text-center font-bold border-b border-gray-100 whitespace-nowrap" style="background:${bg}">${gradeText(v)}</td>`;
+            }).join('')}
+            <td class="px-3 py-2 text-center font-bold border-b border-gray-100 ${avg===null?'text-gray-400':avg>=8?'text-green-700':avg<5?'text-red-600':'text-yellow-700'}">${avg!==null?avg:'—'}</td>
+            <td class="px-3 py-2 text-xs text-gray-600 border-b border-gray-100 whitespace-nowrap min-w-[160px]">${comment}</td>
+        </tr>`;
+    });
+    html += '</tbody>';
+    table.innerHTML = html;
+}
+
+// ---- Parent message ----
+function showParentMessage(studentName) {
+    const rec = gradeRecords.find(r=>r.id===currentGradePeriodId); if(!rec) return;
+    const sg  = rec.studentGrades.find(s=>s.name===studentName); if(!sg) return;
+    const cls = classes.find(c=>c.id===currentClassId);
+    const usedSubjects = THPT_SUBJECTS.filter(sub=>sg.grades[sub]!==undefined);
+
+    const below5 = usedSubjects.filter(sub=>sg.grades[sub]<5);
+    const above8  = usedSubjects.filter(sub=>sg.grades[sub]>=8);
+    const nums    = usedSubjects.map(sub=>sg.grades[sub]);
+    const avg     = nums.length ? Math.round(nums.reduce((a,b)=>a+b,0)/nums.length*10)/10 : null;
+    const dateStr = new Date(rec.createdAt).toLocaleDateString('vi-VN');
+
+    let lines = [];
+    lines.push(`Kính gửi Phụ huynh em ${sg.name}`);
+    lines.push(`Lớp: ${cls?.name||''} | Đợt đánh giá: ${rec.periodName}`);
+    lines.push('─'.repeat(35));
+    lines.push('📚 KẾT QUẢ HỌC TẬP:');
+    usedSubjects.forEach(sub => {
+        const v = sg.grades[sub];
+        let flag = v >= 8 ? ' ⭐' : v < 5 ? ' ⚠️' : '';
+        lines.push(`  • ${sub}: ${v}${flag}`);
+    });
+    lines.push('─'.repeat(35));
+    if (avg !== null) lines.push(`📊 Điểm trung bình: ${avg}`);
+    if (above8.length)  lines.push(`⭐ Xuất sắc: ${above8.join(', ')}`);
+    if (below5.length)  lines.push(`⚠️ Cần cố gắng: ${below5.join(', ')}`);
+    lines.push('─'.repeat(35));
+    if (!below5.length && avg >= 8) lines.push('🎉 Em có kết quả học tập rất tốt! Kính đề nghị gia đình tiếp tục động viên em phát huy.');
+    else if (below5.length)          lines.push('💙 Kính đề nghị gia đình quan tâm, phối hợp cùng nhà trường để em cố gắng hơn ở các môn còn yếu.');
+    else                              lines.push('👍 Em có kết quả học tập đạt yêu cầu. Kính đề nghị gia đình tiếp tục động viên em.');
+    lines.push('');
+    lines.push('Trân trọng,');
+    lines.push('Giáo viên chủ nhiệm');
+
+    document.getElementById('parentMsgTitle').innerText = `Tin nhắn phụ huynh: ${sg.name}`;
+    document.getElementById('parentMsgText').value = lines.join('\n');
+    document.getElementById('parentMsgBackdrop').classList.remove('hidden');
+    document.getElementById('parentMsgModal').classList.remove('translate-y-full');
+}
+function closeParentMsg() {
+    document.getElementById('parentMsgModal').classList.add('translate-y-full');
+    setTimeout(()=>document.getElementById('parentMsgBackdrop').classList.add('hidden'),300);
+}
+function copyParentMsg() {
+    const txt = document.getElementById('parentMsgText').value;
+    navigator.clipboard?.writeText(txt).then(()=>showToast('Đã sao chép tin nhắn!')).catch(()=>{
+        document.getElementById('parentMsgText').select();
+        document.execCommand('copy');
+        showToast('Đã sao chép tin nhắn!');
+    });
+}
+
+// ---- Export grade summary Excel ----
+function exportGradeSummary() {
+    const rec = gradeRecords.find(r=>r.id===currentGradePeriodId); if(!rec) return;
+    if (!rec.studentGrades.length) return alert('Chưa có dữ liệu điểm!');
+    const cls = classes.find(c=>c.id===currentClassId);
+    const usedSubjects = THPT_SUBJECTS.filter(sub=>rec.studentGrades.some(sg=>sg.grades[sub]!==undefined));
+    const header = ['STT','Họ và tên',...usedSubjects,'Trung bình','Nhận xét'];
+    const wsData = [
+        [`BẢNG ĐIỂM - LỚP ${cls?.name?.toUpperCase()||''} - ${rec.periodName.toUpperCase()}`,...Array(header.length-1).fill('')],
+        [`Ngày xuất: ${new Date().toLocaleDateString('vi-VN')}`,...Array(header.length-1).fill('')],
+        [],
+        header
+    ];
+    const sorted = [...rec.studentGrades].sort((a,b)=>(a.stt||999)-(b.stt||999));
+    sorted.forEach((sg,i)=>{
+        const nums = usedSubjects.map(sub=>sg.grades[sub]).filter(v=>v!==undefined);
+        const avg  = nums.length ? Math.round(nums.reduce((a,b)=>a+b,0)/nums.length*10)/10 : '';
+        const below5 = usedSubjects.filter(sub=>sg.grades[sub]!==undefined&&sg.grades[sub]<5);
+        const above8  = usedSubjects.filter(sub=>sg.grades[sub]!==undefined&&sg.grades[sub]>=8);
+        let comment = '';
+        if (below5.length) comment += `Cần cố gắng: ${below5.join(', ')}. `;
+        if (above8.length)  comment += `Xuất sắc: ${above8.join(', ')}.`;
+        if (!comment) comment = avg>=8?'Học lực tốt':avg>=5?'Đạt yêu cầu':'Cần nỗ lực hơn';
+        wsData.push([sg.stt||i+1, sg.name, ...usedSubjects.map(sub=>sg.grades[sub]??''), avg, comment]);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['A1'].s={font:{bold:true,color:{rgb:"FFFFFF"},sz:13},fill:{fgColor:{rgb:"33A3DC"}},alignment:{horizontal:"center"}};
+    const cols = header.map((_,i)=>String.fromCharCode(65+i));
+    cols.forEach(c=>{const cr=c+'4';if(ws[cr])ws[cr].s={font:{bold:true,color:{rgb:"FFFFFF"}},fill:{fgColor:{rgb:"5b21b6"}},alignment:{horizontal:"center"}};});
+    // Color grade cells
+    for(let r=4;r<wsData.length;r++){
+        usedSubjects.forEach((_,si)=>{
+            const cr=String.fromCharCode(65+2+si)+(r+1);
+            if(!ws[cr])return;
+            const v=ws[cr].v;
+            if(typeof v==='number'){
+                if(v<5)ws[cr].s={fill:{fgColor:{rgb:"FEE2E2"}},font:{bold:true,color:{rgb:"B91C1C"}}};
+                else if(v>=8)ws[cr].s={fill:{fgColor:{rgb:"DCFCE7"}},font:{bold:true,color:{rgb:"166534"}}};
+            }
+        });
+    }
+    ws['!cols']=[{wch:6},{wch:25},...Array(usedSubjects.length).fill({wch:10}),{wch:10},{wch:45}];
+    ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:header.length-1}},{s:{r:1,c:0},e:{r:1,c:header.length-1}}];
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Bang_diem');
+    XLSX.writeFile(wb,`BangDiem_${cls?.name?.replace(/\s+/g,'_')||'Lop'}_${rec.periodName.replace(/\s+/g,'_')}.xlsx`);
+    showToast('Đã xuất báo cáo điểm!');
+}
+
+function exportAllParentMessages() {
+    const rec = gradeRecords.find(r=>r.id===currentGradePeriodId); if(!rec||!rec.studentGrades.length) return;
+    const cls = classes.find(c=>c.id===currentClassId);
+    const usedSubjects = THPT_SUBJECTS.filter(sub=>rec.studentGrades.some(sg=>sg.grades[sub]!==undefined));
+    const wsData = [['STT','Họ và tên','Nội dung tin nhắn phụ huynh']];
+    rec.studentGrades.sort((a,b)=>(a.stt||999)-(b.stt||999)).forEach((sg,i)=>{
+        const below5 = usedSubjects.filter(sub=>sg.grades[sub]!==undefined&&sg.grades[sub]<5);
+        const above8  = usedSubjects.filter(sub=>sg.grades[sub]!==undefined&&sg.grades[sub]>=8);
+        const nums    = usedSubjects.map(sub=>sg.grades[sub]).filter(v=>v!==undefined);
+        const avg     = nums.length?Math.round(nums.reduce((a,b)=>a+b,0)/nums.length*10)/10:null;
+        let msg = `Kính gửi PH em ${sg.name} - Lớp ${cls?.name||''} - ${rec.periodName}\n`;
+        usedSubjects.forEach(sub=>{if(sg.grades[sub]!==undefined)msg+=`${sub}: ${sg.grades[sub]}${sg.grades[sub]>=8?' ⭐':sg.grades[sub]<5?' ⚠️':''} | `;});
+        if(avg!==null)msg+=`\nTB: ${avg}`;
+        if(above8.length)msg+=` | Xuất sắc: ${above8.join(', ')}`;
+        if(below5.length)msg+=` | Cần cố gắng: ${below5.join(', ')}`;
+        wsData.push([sg.stt||i+1, sg.name, msg]);
+    });
+    const ws=XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols']=[{wch:6},{wch:25},{wch:80}];
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Tin_nhan_PH');
+    XLSX.writeFile(wb,`TinNhanPH_${cls?.name?.replace(/\s+/g,'_')||'Lop'}_${rec.periodName.replace(/\s+/g,'_')}.xlsx`);
+    showToast('Đã xuất tất cả tin nhắn phụ huynh!');
+    closeParentMsg();
+}
+
+// ============================================================
+// CHARTS
+// ============================================================
+let mainChartInstance = null;
+let currentChartType  = 'trend';
+let chartVisible      = false;
+
+const CHART_COLORS = ['#33a3dc','#8bc34a','#ffc107','#f44336','#9c27b0','#ff9800','#00bcd4','#e91e63'];
+
+function toggleCharts() {
+    chartVisible = !chartVisible;
+    const section = document.getElementById('chartSection');
+    const btn     = document.getElementById('btnToggleChart');
+    section.classList.toggle('hidden', !chartVisible);
+    btn.className = chartVisible
+        ? 'w-9 h-9 rounded-xl bg-dojo-blue text-white flex items-center justify-center transition shadow'
+        : 'w-9 h-9 rounded-xl bg-blue-50 text-dojo-blue flex items-center justify-center hover:bg-blue-100 transition';
+    if (chartVisible) renderCharts(currentChartType);
+}
+
+function showChartType(type) {
+    currentChartType = type;
+    document.getElementById('btnTrend').className      = type === 'trend'
+        ? 'flex-1 py-2 text-sm font-bold rounded-xl bg-dojo-blue text-white shadow transition'
+        : 'flex-1 py-2 text-sm font-bold rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 transition';
+    document.getElementById('btnComparison').className = type === 'comparison'
+        ? 'flex-1 py-2 text-sm font-bold rounded-xl bg-dojo-blue text-white shadow transition'
+        : 'flex-1 py-2 text-sm font-bold rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 transition';
+    renderCharts(type);
+}
+
+function renderCharts(type) {
+    if (type === 'trend') renderTrendChart();
+    else renderComparisonChart();
+}
+
+function renderTrendChart() {
+    document.getElementById('chartLabel').innerText = 'Điểm tích lũy theo ngày (lớp hiện tại)';
+    const classHistory = history.filter(h => h.classId === currentClassId);
+    const canvas = document.getElementById('mainChart');
+    const empty  = document.getElementById('chartEmpty');
+
+    if (classHistory.length < 2) {
+        canvas.style.display = 'none';
+        empty.textContent = 'Cần ít nhất 2 lần chấm điểm để hiển thị xu hướng.';
+        empty.classList.remove('hidden');
+        if (mainChartInstance) { mainChartInstance.destroy(); mainChartInstance = null; }
+        return;
+    }
+    canvas.style.display = 'block';
+    empty.classList.add('hidden');
+
+    // Group by date → cumulative sum
+    const sorted = [...classHistory].sort((a,b) => new Date(a.timestamp)-new Date(b.timestamp));
+    const grouped = {};
+    sorted.forEach(h => {
+        const d = new Date(h.timestamp).toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'});
+        grouped[d] = (grouped[d]||0) + h.points;
+    });
+
+    const labels  = Object.keys(grouped);
+    const daily   = Object.values(grouped);
+    const cumData = daily.map((v,i,a) => a.slice(0,i+1).reduce((s,x)=>s+x,0));
+
+    if (mainChartInstance) mainChartInstance.destroy();
+    mainChartInstance = new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Điểm tích lũy',
+                data: cumData,
+                borderColor: '#33a3dc',
+                backgroundColor: 'rgba(51,163,220,0.12)',
+                fill: true,
+                tension: 0.4,
+                pointRadius: 5,
+                pointBackgroundColor: '#33a3dc',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+            }, {
+                label: 'Điểm trong ngày',
+                data: daily,
+                borderColor: '#8bc34a',
+                backgroundColor: 'transparent',
+                borderDash: [5,4],
+                tension: 0.3,
+                pointRadius: 3,
+                pointBackgroundColor: '#8bc34a',
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position:'bottom', labels:{ boxWidth:12, font:{size:11}, padding:12 } }
+            },
+            scales: {
+                y: { beginAtZero:false, grid:{ color:'rgba(0,0,0,0.05)' }, ticks:{ font:{size:11} } },
+                x: { grid:{ display:false }, ticks:{ font:{size:11} } }
+            }
+        }
+    });
+}
+
+function renderComparisonChart() {
+    document.getElementById('chartLabel').innerText = 'So sánh điểm học sinh qua các kỳ (top 6)';
+    const classPeriods = periods.filter(p => p.classId === currentClassId)
+                                .sort((a,b) => new Date(a.endDate)-new Date(b.endDate));
+    const canvas = document.getElementById('mainChart');
+    const empty  = document.getElementById('chartEmpty');
+
+    if (!classPeriods.length) {
+        canvas.style.display = 'none';
+        empty.textContent = 'Chưa có kỳ học nào để so sánh. Hãy "Kết thúc kỳ" ít nhất 1 lần.';
+        empty.classList.remove('hidden');
+        if (mainChartInstance) { mainChartInstance.destroy(); mainChartInstance = null; }
+        return;
+    }
+    canvas.style.display = 'block';
+    empty.classList.add('hidden');
+
+    // Combine last 4 periods + "Hiện tại"
+    const recentPeriods = classPeriods.slice(-4);
+    const periodLabels  = [...recentPeriods.map(p=>p.name), 'Hiện tại'];
+
+    // Collect all student names
+    const allNames = [...new Set([
+        ...recentPeriods.flatMap(p => p.students.map(s=>s.name)),
+        ...students.filter(s=>s.classId===currentClassId).map(s=>s.name)
+    ])];
+
+    // Rank students by sum across all periods → pick top 6
+    const currentStudents = students.filter(s=>s.classId===currentClassId);
+    const ranked = allNames.map(name => {
+        const total = recentPeriods.reduce((sum,p) => {
+            const s=p.students.find(st=>st.name===name); return sum+(s?s.points:0);
+        }, 0) + (currentStudents.find(s=>s.name===name)?.points||0);
+        return { name, total };
+    }).sort((a,b)=>b.total-a.total).slice(0,6);
+
+    const datasets = ranked.map(({name},i) => ({
+        label: name,
+        data: periodLabels.map((_, pi) => {
+            if (pi < recentPeriods.length) {
+                const s = recentPeriods[pi].students.find(st=>st.name===name);
+                return s ? s.points : 0;
+            }
+            const s = currentStudents.find(st=>st.name===name);
+            return s ? s.points : 0;
+        }),
+        backgroundColor: CHART_COLORS[i%CHART_COLORS.length]+'99',
+        borderColor:     CHART_COLORS[i%CHART_COLORS.length],
+        borderWidth: 2,
+        borderRadius: 6,
+    }));
+
+    if (mainChartInstance) mainChartInstance.destroy();
+    mainChartInstance = new Chart(canvas, {
+        type: 'bar',
+        data: { labels: periodLabels, datasets },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position:'bottom', labels:{ boxWidth:12, font:{size:11}, padding:10 } }
+            },
+            scales: {
+                y: { beginAtZero:true, grid:{ color:'rgba(0,0,0,0.05)' }, ticks:{ font:{size:11} } },
+                x: { grid:{ display:false }, ticks:{ font:{size:11} } }
+            }
+        }
+    });
 }
 
 // ============================================================
