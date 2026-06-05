@@ -69,10 +69,11 @@
 <main id="classroomView" class="p-4 block">
     <div class="flex justify-between items-center mb-4">
         <h2 class="text-gray-600 font-bold text-sm uppercase tracking-wide">Học sinh (<span id="studentCount">0</span>)</h2>
-        <div class="flex gap-2">
-            <button class="text-orange-500 text-xs font-bold bg-orange-50 px-3 py-1.5 rounded-full hover:bg-orange-100 transition border border-orange-100 shadow-sm flex items-center" onclick="startRandomSelection()"><i class="fas fa-random mr-1"></i>Gọi bất kỳ</button>
-            <button id="btnSttPanel" class="text-purple-600 text-xs font-bold bg-purple-50 px-3 py-1.5 rounded-full hover:bg-purple-100 transition border border-purple-100 shadow-sm flex items-center" onclick="toggleSttPanel()"><i class="fas fa-hashtag mr-1"></i>Theo STT</button>
-            <button class="text-dojo-blue text-xs font-bold bg-blue-50 px-3 py-1.5 rounded-full hover:bg-blue-100 transition shadow-sm flex items-center" onclick="awardAll()"><i class="fas fa-users mr-1"></i>Cả lớp</button>
+        <div class="flex gap-1.5 flex-wrap justify-end">
+            <button class="text-orange-500 text-xs font-bold bg-orange-50 px-2.5 py-1.5 rounded-full hover:bg-orange-100 transition border border-orange-100 shadow-sm flex items-center" onclick="startRandomSelection()"><i class="fas fa-random mr-1"></i>Gọi</button>
+            <button id="btnSttPanel" class="text-purple-600 text-xs font-bold bg-purple-50 px-2.5 py-1.5 rounded-full hover:bg-purple-100 transition border border-purple-100 shadow-sm flex items-center" onclick="toggleSttPanel()"><i class="fas fa-hashtag mr-1"></i>STT</button>
+            <button class="text-dojo-blue text-xs font-bold bg-blue-50 px-2.5 py-1.5 rounded-full hover:bg-blue-100 transition shadow-sm flex items-center" onclick="awardAll()"><i class="fas fa-users mr-1"></i>Cả lớp</button>
+            <button class="text-emerald-600 text-xs font-bold bg-emerald-50 px-2.5 py-1.5 rounded-full hover:bg-emerald-100 transition border border-emerald-100 shadow-sm flex items-center" onclick="openCommunicationLog()"><i class="fas fa-book mr-1"></i>Sổ liên lạc</button>
         </div>
     </div>
     <div class="mb-3 relative">
@@ -129,6 +130,8 @@
     <div class="flex justify-between items-center mb-4 bg-white p-3 rounded-xl shadow-sm border border-gray-100">
         <div><h2 id="reportTitle" class="text-gray-800 font-bold text-base">Bảng Xếp Hạng</h2><span class="text-xs text-gray-500">Tổng kết điểm thi đua</span></div>
         <div class="flex items-center gap-2">
+            <button onclick="openWeeklyReports()" class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center hover:bg-amber-100 transition" title="Phiếu nhận xét tuần"><i class="fas fa-file-alt"></i></button>
+            <button onclick="shareClassView()" id="btnShareClass" class="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center hover:bg-teal-100 transition" title="Chia sẻ bảng điểm"><i class="fas fa-share-alt"></i></button>
             <button onclick="toggleCharts()" id="btnToggleChart" class="w-9 h-9 rounded-xl bg-blue-50 text-dojo-blue flex items-center justify-center hover:bg-blue-100 transition" title="Biểu đồ"><i class="fas fa-chart-line"></i></button>
             <select id="sortOrder" onchange="renderReport()" class="bg-gray-50 border border-gray-200 text-gray-700 py-1.5 px-3 rounded-lg text-sm outline-none font-semibold focus:border-dojo-blue">
                 <option value="points">Từ cao xuống thấp</option>
@@ -307,6 +310,7 @@
             </div>
         </div>
         <div class="flex items-center gap-2">
+            <button id="btnShareStudent" onclick="shareStudentView(selectedStudentId)" class="w-8 h-8 bg-teal-50 rounded-full text-teal-600 flex items-center justify-center hover:bg-teal-100 transition" title="Chia sẻ xem điểm"><i class="fas fa-share-alt text-sm"></i></button>
             <button id="btnStudentProfile" onclick="openStudentProfile(selectedStudentId)" class="w-8 h-8 bg-green-50 rounded-full text-green-600 flex items-center justify-center hover:bg-green-100 transition" title="Thống kê học sinh"><i class="fas fa-chart-bar text-sm"></i></button>
             <button id="btnEditStudent" onclick="openEditStudentModal(selectedStudentId)" class="w-8 h-8 bg-blue-50 rounded-full text-dojo-blue flex items-center justify-center hover:bg-blue-100 transition" title="Sửa học sinh"><i class="fas fa-edit text-sm"></i></button>
             <button id="btnDeleteStudent" onclick="deleteStudentFromModal()" class="w-8 h-8 bg-red-50 rounded-full text-red-500 flex items-center justify-center hover:bg-red-100 transition" title="Xóa học sinh"><i class="fas fa-trash text-sm"></i></button>
@@ -454,6 +458,16 @@
             <p id="profileSkillEmpty" class="hidden text-sm text-gray-400 italic text-center py-2">Chưa có lịch sử chấm điểm.</p>
         </div>
 
+        <!-- Sổ liên lạc -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="font-bold text-gray-700 flex items-center gap-2"><i class="fas fa-book text-emerald-500"></i> Sổ liên lạc</h3>
+                <button id="btnProfileAddNote" class="text-xs bg-emerald-50 text-emerald-600 font-bold px-3 py-1.5 rounded-full border border-emerald-100 hover:bg-emerald-100 transition"><i class="fas fa-plus mr-1"></i>Thêm</button>
+            </div>
+            <div id="profileNoteList" class="flex flex-col gap-2"></div>
+            <p id="profileNoteEmpty" class="hidden text-sm text-gray-400 italic text-center py-3">Chưa có nhận xét nào.</p>
+        </div>
+
         <!-- Lịch sử gần đây -->
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
             <div class="flex justify-between items-center mb-3">
@@ -463,6 +477,188 @@
             <div id="profileHistoryList" class="flex flex-col gap-2"></div>
             <p id="profileHistoryEmpty" class="hidden text-sm text-gray-400 italic text-center py-2">Chưa có lịch sử.</p>
         </div>
+    </div>
+</div>
+
+<!-- ====== PHIẾU NHẬN XÉT TUẦN ====== -->
+<div id="weeklyReportOverlay" class="fixed inset-0 z-[85] hidden flex flex-col bg-dojo-bg overflow-hidden">
+
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 pt-10 pb-4 relative flex-shrink-0">
+        <button onclick="closeWeeklyReports()" class="absolute top-4 left-4 w-9 h-9 bg-white bg-opacity-20 rounded-full flex items-center justify-center"><i class="fas fa-arrow-left"></i></button>
+        <div class="text-center">
+            <h2 class="text-lg font-black">📋 Phiếu nhận xét tuần</h2>
+            <p id="weeklyReportSubtitle" class="text-xs opacity-75 mt-0.5"></p>
+        </div>
+        <!-- Period selector -->
+        <div class="flex gap-2 mt-3 overflow-x-auto no-scrollbar pb-1">
+            <button onclick="setWeeklyPeriod('week0')" id="wp-week0" class="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold bg-white text-amber-600 shadow">Tuần này</button>
+            <button onclick="setWeeklyPeriod('week-1')" id="wp-week-1" class="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold bg-white bg-opacity-20 text-white">Tuần trước</button>
+            <button onclick="setWeeklyPeriod('month0')" id="wp-month0" class="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold bg-white bg-opacity-20 text-white">Tháng này</button>
+            <button onclick="setWeeklyPeriod('custom')" id="wp-custom" class="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold bg-white bg-opacity-20 text-white">Tùy chọn</button>
+        </div>
+        <!-- Custom date range (hidden by default) -->
+        <div id="wpCustomRange" class="hidden flex gap-2 mt-2">
+            <input type="date" id="wpDateFrom" onchange="renderWeeklyReports()" class="flex-1 text-xs border-0 rounded-xl px-3 py-2 bg-white bg-opacity-20 text-white placeholder-white focus:outline-none focus:bg-opacity-30">
+            <span class="text-white opacity-60 self-center text-xs">→</span>
+            <input type="date" id="wpDateTo"   onchange="renderWeeklyReports()" class="flex-1 text-xs border-0 rounded-xl px-3 py-2 bg-white bg-opacity-20 text-white placeholder-white focus:outline-none focus:bg-opacity-30">
+        </div>
+    </div>
+
+    <!-- Action bar -->
+    <div class="bg-white border-b border-gray-100 px-4 py-2 flex gap-2 flex-shrink-0">
+        <button onclick="exportAllWeeklyReports()" class="flex-1 py-2 bg-green-50 text-green-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 border border-green-100 hover:bg-green-100 transition"><i class="fas fa-file-excel"></i> Xuất tất cả Excel</button>
+        <button onclick="copyAllParentMessages()" class="flex-1 py-2 bg-blue-50 text-dojo-blue font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 border border-blue-100 hover:bg-blue-100 transition"><i class="fas fa-copy"></i> Sao chép tin nhắn</button>
+    </div>
+
+    <!-- Student report cards list -->
+    <div class="flex-1 overflow-y-auto p-4 no-scrollbar" id="weeklyReportList"></div>
+</div>
+
+<!-- INDIVIDUAL STUDENT REPORT DETAIL -->
+<div id="studentReportBackdrop" class="fixed inset-0 bg-black bg-opacity-50 z-[90] hidden" onclick="closeStudentReport()"></div>
+<div id="studentReportModal" class="fixed inset-x-0 bottom-0 bg-white rounded-t-3xl z-[95] transform translate-y-full transition-transform duration-300 ease-out shadow-2xl max-h-[95vh] flex flex-col">
+    <div class="p-4 border-b flex justify-between items-center flex-shrink-0 bg-amber-50 rounded-t-3xl">
+        <div><h3 id="studentReportName" class="font-bold text-gray-800 text-lg"></h3><p id="studentReportPeriodLabel" class="text-xs text-gray-400"></p></div>
+        <div class="flex gap-2">
+            <button id="btnShareWeeklyReport" onclick="shareWeeklyReport()" class="w-9 h-9 bg-teal-50 text-teal-600 rounded-full flex items-center justify-center hover:bg-teal-100 transition" title="Chia sẻ"><i class="fas fa-share-alt text-sm"></i></button>
+            <button onclick="copyStudentParentMsg()" class="w-9 h-9 bg-blue-50 text-dojo-blue rounded-full flex items-center justify-center hover:bg-blue-100 transition" title="Sao chép tin nhắn"><i class="fas fa-copy text-sm"></i></button>
+            <button onclick="closeStudentReport()" class="w-9 h-9 bg-gray-100 rounded-full text-gray-500 flex items-center justify-center"><i class="fas fa-times text-sm"></i></button>
+        </div>
+    </div>
+    <div class="flex-1 overflow-y-auto p-4 no-scrollbar" id="studentReportContent"></div>
+</div>
+
+<!-- ====== SỔ LIÊN LẠC ĐIỆN TỬ ====== -->
+<div id="commLogOverlay" class="fixed inset-0 z-[85] hidden flex flex-col bg-dojo-bg overflow-hidden">
+
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 pt-10 pb-4 relative flex-shrink-0">
+        <button onclick="closeCommunicationLog()" class="absolute top-4 left-4 w-9 h-9 bg-white bg-opacity-20 rounded-full flex items-center justify-center"><i class="fas fa-arrow-left"></i></button>
+        <div class="text-center">
+            <h2 class="text-lg font-black">📓 Sổ liên lạc điện tử</h2>
+            <p id="commLogSubtitle" class="text-xs opacity-75 mt-0.5"></p>
+        </div>
+        <!-- Quick stats -->
+        <div class="flex gap-2 mt-3 justify-center">
+            <div id="commStatPraise"   class="bg-white bg-opacity-20 rounded-xl px-3 py-1 text-center"><p class="text-lg font-black" id="cntPraise">0</p><p class="text-[10px] opacity-80">Khen</p></div>
+            <div id="commStatConcern"  class="bg-white bg-opacity-20 rounded-xl px-3 py-1 text-center"><p class="text-lg font-black" id="cntConcern">0</p><p class="text-[10px] opacity-80">Nhắc</p></div>
+            <div id="commStatNotice"   class="bg-white bg-opacity-20 rounded-xl px-3 py-1 text-center"><p class="text-lg font-black" id="cntNotice">0</p><p class="text-[10px] opacity-80">TB</p></div>
+            <div id="commStatReminder" class="bg-white bg-opacity-20 rounded-xl px-3 py-1 text-center"><p class="text-lg font-black" id="cntReminder">0</p><p class="text-[10px] opacity-80">Dặn</p></div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white border-b border-gray-100 px-4 py-2 flex gap-2 overflow-x-auto no-scrollbar flex-shrink-0">
+        <select id="commFilterStudent" onchange="renderCommunicationLog()" class="text-xs font-bold border border-gray-200 rounded-xl px-3 py-1.5 outline-none bg-white flex-shrink-0 focus:border-emerald-500">
+            <option value="">Tất cả học sinh</option>
+        </select>
+        <select id="commFilterType" onchange="renderCommunicationLog()" class="text-xs font-bold border border-gray-200 rounded-xl px-3 py-1.5 outline-none bg-white flex-shrink-0 focus:border-emerald-500">
+            <option value="">Tất cả loại</option>
+            <option value="praise">⭐ Khen ngợi</option>
+            <option value="concern">⚠️ Cần cố gắng</option>
+            <option value="notice">📢 Thông báo</option>
+            <option value="reminder">⏰ Dặn dò</option>
+        </select>
+        <input type="date" id="commFilterDate" onchange="renderCommunicationLog()" class="text-xs font-bold border border-gray-200 rounded-xl px-3 py-1.5 outline-none bg-white flex-shrink-0 focus:border-emerald-500">
+    </div>
+
+    <!-- Note list -->
+    <div class="flex-1 overflow-y-auto p-4 no-scrollbar" id="commLogList"></div>
+
+    <!-- FAB -->
+    <button onclick="openAddNoteModal(null)" class="absolute bottom-6 right-5 w-14 h-14 bg-emerald-600 text-white rounded-full shadow-xl flex items-center justify-center text-2xl hover:bg-emerald-700 transition active:scale-95 z-10">
+        <i class="fas fa-plus"></i>
+    </button>
+</div>
+
+<!-- ADD / EDIT NOTE MODAL -->
+<div id="addNoteBackdrop" class="fixed inset-0 bg-black bg-opacity-50 z-[90] hidden" onclick="closeAddNoteModal()"></div>
+<div id="addNoteModal" class="fixed bottom-0 left-0 w-full bg-white rounded-t-3xl z-[95] transform translate-y-full transition-transform duration-300 ease-out shadow-2xl max-h-[92vh] flex flex-col">
+    <div class="p-4 border-b flex justify-between items-center flex-shrink-0">
+        <h3 id="addNoteTitle" class="font-bold text-gray-800 text-lg">Thêm nhận xét</h3>
+        <button onclick="closeAddNoteModal()" class="w-8 h-8 bg-gray-100 rounded-full text-gray-500 flex items-center justify-center"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-4 no-scrollbar flex flex-col gap-4">
+
+        <!-- Student selector -->
+        <div>
+            <label class="text-xs font-bold text-gray-500 mb-2 block">Học sinh</label>
+            <div class="relative mb-2">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                <input type="text" id="noteStudentSearch" onkeyup="filterNoteStudents()" placeholder="Tìm tên học sinh..." class="w-full pl-8 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-emerald-500">
+            </div>
+            <div id="noteStudentList" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto no-scrollbar"></div>
+        </div>
+
+        <!-- Type -->
+        <div>
+            <label class="text-xs font-bold text-gray-500 mb-2 block">Loại nhận xét</label>
+            <div class="grid grid-cols-4 gap-2" id="noteTypeGrid">
+                <button type="button" onclick="selectNoteType('praise')" id="noteType-praise" class="note-type-btn py-2 rounded-xl border-2 border-transparent bg-green-50 text-green-700 flex flex-col items-center gap-1 text-xs font-bold transition"><i class="fas fa-star text-base"></i>Khen</button>
+                <button type="button" onclick="selectNoteType('concern')" id="noteType-concern" class="note-type-btn py-2 rounded-xl border-2 border-transparent bg-orange-50 text-orange-700 flex flex-col items-center gap-1 text-xs font-bold transition"><i class="fas fa-exclamation-triangle text-base"></i>Nhắc</button>
+                <button type="button" onclick="selectNoteType('notice')" id="noteType-notice" class="note-type-btn py-2 rounded-xl border-2 border-transparent bg-blue-50 text-blue-700 flex flex-col items-center gap-1 text-xs font-bold transition"><i class="fas fa-bullhorn text-base"></i>Thông báo</button>
+                <button type="button" onclick="selectNoteType('reminder')" id="noteType-reminder" class="note-type-btn py-2 rounded-xl border-2 border-transparent bg-purple-50 text-purple-700 flex flex-col items-center gap-1 text-xs font-bold transition"><i class="fas fa-clock text-base"></i>Dặn dò</button>
+            </div>
+        </div>
+
+        <!-- Date -->
+        <div>
+            <label class="text-xs font-bold text-gray-500 mb-2 block">Ngày</label>
+            <input type="date" id="noteDate" class="w-full border border-gray-200 rounded-xl p-2.5 text-sm focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <!-- Content -->
+        <div>
+            <label class="text-xs font-bold text-gray-500 mb-2 block">Nội dung nhận xét</label>
+            <textarea id="noteContent" rows="4" placeholder="Viết nhận xét chi tiết về học sinh/lớp..." class="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-emerald-500 resize-none leading-relaxed"></textarea>
+            <!-- Quick templates -->
+            <div class="flex gap-2 mt-2 overflow-x-auto no-scrollbar pb-1" id="noteTemplates"></div>
+        </div>
+    </div>
+    <div class="p-4 border-t flex-shrink-0">
+        <button onclick="saveNote()" class="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl shadow flex items-center justify-center gap-2 hover:bg-emerald-700 transition active:scale-95">
+            <i class="fas fa-save"></i> <span id="saveNoteLabel">Lưu nhận xét</span>
+        </button>
+    </div>
+</div>
+
+<!-- VIEWER OVERLAY – chế độ xem chỉ đọc -->
+<div id="viewerOverlay" class="fixed inset-0 z-[100] hidden bg-gray-50 overflow-y-auto">
+    <div class="max-w-lg mx-auto pb-8">
+        <div class="sticky top-0 bg-white border-b border-gray-100 px-4 py-3 flex justify-between items-center z-10 shadow-sm">
+            <button onclick="closeViewer()" class="text-gray-500 font-bold flex items-center gap-2 text-sm"><i class="fas fa-times"></i> Đóng</button>
+            <span class="text-xs text-teal-600 font-bold flex items-center gap-1"><i class="fas fa-lock text-xs"></i> Chỉ xem</span>
+            <button onclick="copyViewerLink()" id="btnCopyViewerLink" class="text-teal-600 font-bold text-sm flex items-center gap-1"><i class="fas fa-link"></i> Sao chép link</button>
+        </div>
+        <div id="viewerContent" class="p-4"></div>
+    </div>
+</div>
+
+<!-- SHARE LINK MODAL -->
+<div id="shareLinkBackdrop" class="fixed inset-0 bg-black bg-opacity-50 z-[110] hidden" onclick="closeShareLinkModal()"></div>
+<div id="shareLinkModal" class="fixed bottom-0 left-0 w-full bg-white rounded-t-3xl z-[115] transform translate-y-full transition-transform duration-300 ease-out shadow-2xl">
+    <div class="p-4 border-b flex justify-between items-center">
+        <div>
+            <h3 id="shareLinkTitle" class="font-bold text-gray-800">Chia sẻ xem điểm</h3>
+            <p class="text-xs text-gray-400 mt-0.5">Link chỉ xem – không thể chỉnh sửa</p>
+        </div>
+        <button onclick="closeShareLinkModal()" class="w-8 h-8 bg-gray-100 rounded-full text-gray-500 flex items-center justify-center"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="p-4 flex flex-col gap-3">
+        <div class="bg-gray-50 rounded-xl p-3 border border-gray-200">
+            <p class="text-xs text-gray-400 font-bold mb-1">LINK XEM ĐIỂM:</p>
+            <p id="shareLinkUrl" class="text-xs text-gray-700 break-all leading-relaxed select-all"></p>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="copyShareLink()" class="flex-1 py-3 bg-teal-600 text-white font-bold rounded-xl shadow flex items-center justify-center gap-2">
+                <i class="fas fa-copy"></i> Sao chép
+            </button>
+            <button onclick="previewShareLink()" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl flex items-center justify-center gap-2">
+                <i class="fas fa-eye"></i> Xem thử
+            </button>
+        </div>
+        <p id="shareLinkNote" class="text-[11px] text-gray-400 text-center leading-relaxed"></p>
     </div>
 </div>
 
@@ -703,8 +899,10 @@ let students = [
 let skills       = JSON.parse(JSON.stringify(DEFAULT_SKILLS));
 let history      = [];  // { id, classId, studentId, studentName, skillName, points, timestamp }
 let periods      = [];  // { id, classId, name, endDate, students:[] }
-let gradeRecords = [];  // { id, classId, periodName, createdAt, studentGrades:[{studentId,name,stt,grades:{}}] }
+let gradeRecords       = [];  // { id, classId, periodName, createdAt, studentGrades:[{studentId,name,stt,grades:{}}] }
+let communicationLog   = [];  // { id, classId, studentId|null, studentName, studentAvatar, type, content, date, createdAt }
 let currentGradePeriodId = null;
+let _editingNoteId = null;
 let currentPeriodId  = null;
 const DEFAULT_SYNC_URL = 'https://script.google.com/macros/s/AKfycbzo4f6_Nm9UFWAg-TrMN32iz77rABLKzeijSrD69Lym3plVYap3LtecV9zn5JpwQcHgIQ/exec';
 let syncSettings     = { url: DEFAULT_SYNC_URL, lastSync:null };
@@ -723,8 +921,9 @@ function saveData() {
         localStorage.setItem('dojo_skills',   JSON.stringify(skills));
         localStorage.setItem('dojo_history',       JSON.stringify(history));
         localStorage.setItem('dojo_periods',       JSON.stringify(periods));
-        localStorage.setItem('dojo_gradeRecords',  JSON.stringify(gradeRecords));
-        localStorage.setItem('dojo_sync',          JSON.stringify(syncSettings));
+        localStorage.setItem('dojo_gradeRecords',    JSON.stringify(gradeRecords));
+        localStorage.setItem('dojo_commLog',         JSON.stringify(communicationLog));
+        localStorage.setItem('dojo_sync',            JSON.stringify(syncSettings));
     } catch(e) { console.warn('Lưu thất bại:', e); }
 }
 
@@ -742,6 +941,8 @@ function loadData() {
         if(p)  periods      = JSON.parse(p);
         const gr=localStorage.getItem('dojo_gradeRecords');
         if(gr) gradeRecords = JSON.parse(gr);
+        const cl=localStorage.getItem('dojo_commLog');
+        if(cl) communicationLog = JSON.parse(cl);
         const sy=localStorage.getItem('dojo_sync');
         if(sy) { syncSettings = JSON.parse(sy); if(!syncSettings.url) syncSettings.url = DEFAULT_SYNC_URL; }
         if(classes.length > 0) currentClassId = classes[0].id;
@@ -1044,6 +1245,7 @@ function openGroupModal(ids, label) {
     document.getElementById('modalStudentPoints').innerText = ids.length + ' học sinh';
     document.getElementById('modalAvatar').style.display = 'none';
     document.getElementById('btnEditStudent').classList.add('hidden');
+    document.getElementById('btnShareStudent').classList.add('hidden');
     document.getElementById('btnStudentProfile').classList.add('hidden');
     document.getElementById('btnDeleteStudent').classList.add('hidden');
     document.getElementById('backdrop').classList.remove('hidden');
@@ -1120,6 +1322,7 @@ function openPointsModal(id) {
     document.getElementById('modalStudentInfo').style.display='block';
     document.getElementById('modalAvatar').src=s.avatar;
     document.getElementById('modalAvatar').style.display='block';
+    document.getElementById('btnShareStudent').classList.remove('hidden');
     document.getElementById('btnStudentProfile').classList.remove('hidden');
     const mc=document.getElementById('modalComment');
     mc.innerText=generateComment(s); mc.classList.remove('hidden');
@@ -1138,6 +1341,7 @@ function awardAll() {
     document.getElementById('modalAvatar').style.display='none';
     document.getElementById('modalComment').classList.add('hidden');
     document.getElementById('btnEditStudent').classList.add('hidden');
+    document.getElementById('btnShareStudent').classList.add('hidden');
     document.getElementById('btnStudentProfile').classList.add('hidden');
     document.getElementById('btnDeleteStudent').classList.add('hidden');
     document.getElementById('backdrop').classList.remove('hidden');
@@ -1792,6 +1996,32 @@ function renderStudentProfile(s) {
         });
     }
 
+    // Sổ liên lạc của học sinh này
+    const noteList  = document.getElementById('profileNoteList');
+    const noteEmpty = document.getElementById('profileNoteEmpty');
+    noteList.innerHTML = '';
+    const studentNotes = communicationLog
+        .filter(n=>n.classId===s.classId && n.studentId===s.id)
+        .sort((a,b)=>b.createdAt.localeCompare(a.createdAt))
+        .slice(0,10);
+    if (!studentNotes.length) {
+        noteEmpty.classList.remove('hidden');
+    } else {
+        noteEmpty.classList.add('hidden');
+        studentNotes.forEach(note=>{
+            const nt = NOTE_TYPES[note.type]||NOTE_TYPES.notice;
+            noteList.insertAdjacentHTML('beforeend',`
+                <div class="flex items-start gap-2 p-2 rounded-xl ${nt.bg} border ${nt.border}">
+                    <i class="fas ${nt.icon} ${nt.text} mt-0.5 text-sm flex-shrink-0"></i>
+                    <div class="flex-1 overflow-hidden">
+                        <p class="text-xs font-bold ${nt.text}">${nt.label} · ${note.date||note.createdAt.slice(0,10)}</p>
+                        <p class="text-xs text-gray-700 mt-0.5 leading-snug">${note.content}</p>
+                    </div>
+                </div>`);
+        });
+    }
+    document.getElementById('btnProfileAddNote').onclick = () => addNoteFromProfile(s.id);
+
     // Lịch sử gần đây (20 sự kiện gần nhất)
     const histList = document.getElementById('profileHistoryList');
     const histEmpty = document.getElementById('profileHistoryEmpty');
@@ -2184,6 +2414,837 @@ function exportAllParentMessages() {
 }
 
 // ============================================================
+// PHIẾU NHẬN XÉT TUẦN TỰ ĐỘNG
+// ============================================================
+let _weeklyPeriodType = 'week0';
+let _weeklyStart = null, _weeklyEnd = null;
+let _currentReportData = null;  // report data for open student detail
+
+// ----- Period helpers -----
+function getWeekRange(offset = 0) {
+    const now = new Date();
+    const day = now.getDay();
+    const mon = new Date(now);
+    mon.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + offset * 7);
+    mon.setHours(0,0,0,0);
+    const sun = new Date(mon); sun.setDate(mon.getDate() + 6); sun.setHours(23,59,59,999);
+    return { start: mon, end: sun };
+}
+function getMonthRange(offset = 0) {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    const end   = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0, 23, 59, 59);
+    return { start, end };
+}
+function dateToStr(d) { return d.toISOString().slice(0,10); }
+function periodLabel(start, end) {
+    return `${start.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'})} – ${end.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'})}`;
+}
+
+function setWeeklyPeriod(type) {
+    _weeklyPeriodType = type;
+    // Style buttons
+    ['week0','week-1','month0','custom'].forEach(id=>{
+        const btn = document.getElementById('wp-'+id);
+        if (!btn) return;
+        btn.className = `flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition ${id===type ? 'bg-white text-amber-600 shadow' : 'bg-white bg-opacity-20 text-white'}`;
+    });
+    const customRange = document.getElementById('wpCustomRange');
+    if (type === 'custom') { customRange.classList.remove('hidden'); return; }
+    customRange.classList.add('hidden');
+
+    if (type === 'week0')  { const r=getWeekRange(0);  _weeklyStart=r.start; _weeklyEnd=r.end; }
+    if (type === 'week-1') { const r=getWeekRange(-1); _weeklyStart=r.start; _weeklyEnd=r.end; }
+    if (type === 'month0') { const r=getMonthRange(0); _weeklyStart=r.start; _weeklyEnd=r.end; }
+    renderWeeklyReports();
+}
+
+// ----- Open / Close -----
+function openWeeklyReports() {
+    const cls = classes.find(c=>c.id===currentClassId);
+    document.getElementById('weeklyReportSubtitle').innerText = cls?.name||'';
+    document.getElementById('weeklyReportOverlay').classList.remove('hidden');
+    // Init default period
+    setWeeklyPeriod('week0');
+}
+function closeWeeklyReports() { document.getElementById('weeklyReportOverlay').classList.add('hidden'); }
+
+// ----- Generate report for one student -----
+function generateStudentReport(s, startDate, endDate) {
+    const startStr = dateToStr(startDate), endStr = dateToStr(endDate);
+    // Points this period
+    const ph = history.filter(h=>h.studentId===s.id && h.classId===s.classId &&
+        new Date(h.timestamp)>=startDate && new Date(h.timestamp)<=endDate);
+    const periodPos = ph.filter(h=>h.points>0).reduce((sum,h)=>sum+h.points,0);
+    const periodNeg = ph.filter(h=>h.points<0).reduce((sum,h)=>sum+Math.abs(h.points),0);
+    const periodNet = periodPos - periodNeg;
+    // Group positive/negative behaviors this period
+    const behaviors = {};
+    ph.forEach(h=>{ behaviors[h.skillName]=(behaviors[h.skillName]||0)+1; });
+    // Notes this period
+    const periodNotes = communicationLog.filter(n=>
+        (n.studentId===s.id||(n.studentId===null&&n.classId===s.classId)) &&
+        n.date >= startStr && n.date <= endStr
+    );
+    // Latest grade period
+    const latestGradePeriod = gradeRecords.filter(r=>r.classId===s.classId)
+        .sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt))[0];
+    const sGrades = latestGradePeriod?.studentGrades.find(sg=>sg.studentId===s.id||sg.name===s.name);
+    // Assessment
+    const assessment = calcWeeklyAssessment(periodNet, periodNotes);
+    // Auto comment
+    const autoComment = generateWeeklyAutoComment(s, periodNet, periodPos, periodNeg, periodNotes, sGrades?.grades);
+    return { student:s, periodPos, periodNeg, periodNet, behaviors, totalPoints:s.points, milestone:getMilestone(s.points), notes:periodNotes, grades:sGrades?.grades, gradesPeriodName:latestGradePeriod?.periodName, assessment, autoComment };
+}
+
+function calcWeeklyAssessment(periodNet, notes) {
+    const praises   = notes.filter(n=>n.type==='praise').length;
+    const concerns  = notes.filter(n=>n.type==='concern').length;
+    if (periodNet >= 5 && concerns === 0) return { label:'Xuất sắc',   color:'text-yellow-600', bg:'bg-yellow-50',  border:'border-yellow-200', icon:'👑' };
+    if (periodNet >= 3 || (praises >= 2 && concerns <= 1))
+                                          return { label:'Tốt',        color:'text-green-700',  bg:'bg-green-50',   border:'border-green-200',  icon:'⭐' };
+    if (periodNet >= 1 || praises >= 1)   return { label:'Khá',        color:'text-blue-700',   bg:'bg-blue-50',    border:'border-blue-200',   icon:'👍' };
+    if (periodNet >= -1 && concerns <= 2) return { label:'Trung bình', color:'text-orange-700', bg:'bg-orange-50',  border:'border-orange-200', icon:'📘' };
+    return                                       { label:'Cần cố gắng',color:'text-red-700',    bg:'bg-red-50',     border:'border-red-200',    icon:'💪' };
+}
+
+function generateWeeklyAutoComment(s, net, pos, neg, notes, grades) {
+    const praises  = notes.filter(n=>n.type==='praise');
+    const concerns = notes.filter(n=>n.type==='concern');
+    let parts = [];
+    if (net > 0)       parts.push(`Đạt +${net} điểm thi đua trong kỳ`);
+    else if (net < 0)  parts.push(`Điểm thi đua kỳ này là ${net}, cần cố gắng hơn`);
+    else               parts.push('Điểm thi đua kỳ này ổn định');
+    if (praises.length) parts.push(`được khen ngợi ${praises.length} lần`);
+    if (concerns.length) parts.push(`có ${concerns.length} điểm cần cải thiện`);
+    if (grades) {
+        const nums = Object.values(grades).filter(v=>typeof v==='number');
+        if (nums.length) {
+            const a = Math.round(nums.reduce((s,v)=>s+v,0)/nums.length*10)/10;
+            if (a >= 8)   parts.push(`kết quả học tập xuất sắc (TB: ${a})`);
+            else if (a >= 6.5) parts.push(`kết quả học tập khá tốt (TB: ${a})`);
+            else          parts.push(`cần chú ý hơn đến học tập (TB: ${a})`);
+        }
+    }
+    return parts.join(', ') + '. ' + generateComment({positivePoints:s.positivePoints,negativePoints:s.negativePoints,id:s.id,name:s.name});
+}
+
+// ----- Render list of all student reports -----
+function renderWeeklyReports() {
+    // Handle custom date range
+    if (_weeklyPeriodType === 'custom') {
+        const f = document.getElementById('wpDateFrom').value;
+        const t = document.getElementById('wpDateTo').value;
+        if (!f || !t) return;
+        _weeklyStart = new Date(f+'T00:00:00');
+        _weeklyEnd   = new Date(t+'T23:59:59');
+    }
+    if (!_weeklyStart || !_weeklyEnd) return;
+
+    const container = document.getElementById('weeklyReportList');
+    container.innerHTML = '';
+    const classStudents = students.filter(s=>s.classId===currentClassId).sort((a,b)=>(a.stt||0)-(b.stt||0));
+
+    if (!classStudents.length) {
+        container.innerHTML = '<p class="text-center text-gray-400 py-10">Lớp chưa có học sinh.</p>';
+        return;
+    }
+
+    // Period label
+    const label = periodLabel(_weeklyStart, _weeklyEnd);
+    document.getElementById('weeklyReportSubtitle').innerText = `${classes.find(c=>c.id===currentClassId)?.name||''} · ${label}`;
+
+    classStudents.forEach(s=>{
+        const r = generateStudentReport(s, _weeklyStart, _weeklyEnd);
+        const as = r.assessment;
+        const netColor = r.periodNet>0?'text-green-600':r.periodNet<0?'text-red-600':'text-gray-500';
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-2xl shadow-sm border border-gray-100 p-3 mb-3 flex items-center gap-3 active:scale-[0.98] transition-transform';
+        card.innerHTML = `
+            <img src="${s.avatar}" class="w-12 h-12 rounded-full bg-blue-50 p-0.5 object-contain flex-shrink-0">
+            <div class="flex-1 overflow-hidden">
+                <div class="flex items-center gap-2">
+                    <span class="font-bold text-gray-800 text-sm">${s.name}</span>
+                    <span class="text-xs font-bold px-2 py-0.5 rounded-full ${as.bg} ${as.color} border ${as.border}">${as.icon} ${as.label}</span>
+                </div>
+                <div class="flex gap-3 mt-1 text-xs text-gray-500">
+                    <span class="font-bold ${netColor}">${r.periodNet>0?'+':''}${r.periodNet} kỳ</span>
+                    <span>📊 Tổng: ${s.points}</span>
+                    ${r.notes.length?`<span>💬 ${r.notes.length} nhận xét</span>`:''}
+                </div>
+                <p class="text-[11px] text-gray-400 mt-0.5 truncate">${r.autoComment.slice(0,80)}…</p>
+            </div>
+            <button onclick="openStudentReport(${s.id})" class="w-8 h-8 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center hover:bg-amber-100 transition flex-shrink-0"><i class="fas fa-eye text-xs"></i></button>`;
+        container.appendChild(card);
+    });
+}
+
+// ----- Individual student report detail -----
+function openStudentReport(studentId) {
+    if (!_weeklyStart || !_weeklyEnd) return;
+    const s = students.find(st=>st.id===studentId); if(!s) return;
+    _currentReportData = generateStudentReport(s, _weeklyStart, _weeklyEnd);
+    document.getElementById('studentReportName').innerText        = s.name;
+    document.getElementById('studentReportPeriodLabel').innerText = periodLabel(_weeklyStart, _weeklyEnd);
+    renderStudentReportDetail(_currentReportData);
+    document.getElementById('studentReportBackdrop').classList.remove('hidden');
+    document.getElementById('studentReportModal').classList.remove('translate-y-full');
+}
+function closeStudentReport() {
+    document.getElementById('studentReportModal').classList.add('translate-y-full');
+    setTimeout(()=>document.getElementById('studentReportBackdrop').classList.add('hidden'),300);
+}
+
+function renderStudentReportDetail(r) {
+    const s = r.student;
+    const as = r.assessment;
+    const ms = r.milestone;
+    const pColor = r.periodNet>0?'text-green-600':r.periodNet<0?'text-red-600':'text-gray-500';
+
+    let html = `
+    <!-- Tổng quan -->
+    <div class="${as.bg} border ${as.border} rounded-2xl p-4 mb-4 flex items-center gap-4">
+        <img src="${s.avatar}" class="w-16 h-16 rounded-full bg-white p-0.5 object-contain flex-shrink-0 shadow">
+        <div>
+            <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-black text-gray-800 text-lg">${as.icon} ${as.label}</span>
+                ${ms?`<span class="text-xl">${ms.icon}</span>`:''}
+            </div>
+            <p class="text-xs text-gray-500 mt-0.5">${s.stt?`STT: ${s.stt} · `:''} Lớp ${classes.find(c=>c.id===s.classId)?.name||''}</p>
+        </div>
+    </div>
+
+    <!-- Điểm thi đua kỳ này -->
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-3">
+        <h3 class="font-bold text-gray-600 text-sm mb-3 flex items-center gap-2"><i class="fas fa-trophy text-yellow-400"></i> Điểm thi đua kỳ này</h3>
+        <div class="grid grid-cols-3 gap-3 text-center">
+            <div class="bg-green-50 rounded-xl p-2"><p class="text-xl font-black text-green-600">+${r.periodPos}</p><p class="text-[10px] text-gray-500">Điểm cộng</p></div>
+            <div class="bg-red-50 rounded-xl p-2"><p class="text-xl font-black text-red-500">-${r.periodNeg}</p><p class="text-[10px] text-gray-500">Điểm trừ</p></div>
+            <div class="bg-gray-50 rounded-xl p-2"><p class="text-xl font-black ${pColor}">${r.periodNet>0?'+':''}${r.periodNet}</p><p class="text-[10px] text-gray-500">Kỳ này</p></div>
+        </div>
+        <div class="mt-3 pt-3 border-t border-gray-50 flex justify-between items-center">
+            <span class="text-xs text-gray-500">Tổng tích lũy</span>
+            <span class="font-black text-lg ${s.points>0?'text-green-600':s.points<0?'text-red-600':'text-gray-500'}">${s.points} điểm ${ms?ms.icon:''}</span>
+        </div>
+    </div>`;
+
+    // Hành vi nổi bật
+    if (Object.keys(r.behaviors).length) {
+        const top = Object.entries(r.behaviors).sort((a,b)=>b[1]-a[1]).slice(0,4);
+        html += `<div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-3">
+            <h3 class="font-bold text-gray-600 text-sm mb-3 flex items-center gap-2"><i class="fas fa-list-check text-blue-400"></i> Hành vi nổi bật</h3>
+            <div class="flex flex-wrap gap-2">
+                ${top.map(([name,cnt])=>`<span class="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full font-semibold">${name} <span class="font-black text-gray-800">×${cnt}</span></span>`).join('')}
+            </div>
+        </div>`;
+    }
+
+    // Nhận xét giáo viên kỳ này
+    if (r.notes.length) {
+        html += `<div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-3">
+            <h3 class="font-bold text-gray-600 text-sm mb-3 flex items-center gap-2"><i class="fas fa-book text-emerald-500"></i> Nhận xét giáo viên</h3>
+            ${r.notes.map(n=>{
+                const nt=NOTE_TYPES[n.type]||NOTE_TYPES.notice;
+                return `<div class="flex gap-2 mb-2 p-2.5 rounded-xl ${nt.bg} border ${nt.border}">
+                    <i class="fas ${nt.icon} ${nt.text} mt-0.5 text-sm flex-shrink-0"></i>
+                    <div><p class="text-[11px] font-bold ${nt.text}">${nt.label}${n.studentId===null?' (Cả lớp)':''} · ${n.date}</p>
+                    <p class="text-xs text-gray-700 mt-0.5 leading-snug">${n.content}</p></div>
+                </div>`;}).join('')}
+        </div>`;
+    }
+
+    // Điểm các môn (nếu có)
+    if (r.grades && Object.keys(r.grades).length) {
+        const subjects = Object.entries(r.grades);
+        html += `<div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-3">
+            <h3 class="font-bold text-gray-600 text-sm mb-3 flex items-center gap-2"><i class="fas fa-graduation-cap text-purple-400"></i> Điểm học tập ${r.gradesPeriodName?`(${r.gradesPeriodName})`:''}</h3>
+            <div class="grid grid-cols-2 gap-2">
+                ${subjects.map(([sub,val])=>`<div class="flex justify-between items-center p-2 rounded-xl ${val>=8?'bg-green-50':val<5?'bg-red-50':'bg-gray-50'}">
+                    <span class="text-xs text-gray-600">${sub}</span>
+                    <span class="text-sm font-black ${val>=8?'text-green-700':val<5?'text-red-600':'text-gray-700'}">${val}${val>=8?' ⭐':val<5?' ⚠️':''}</span>
+                </div>`).join('')}
+            </div>
+        </div>`;
+    }
+
+    // Đánh giá chung
+    html += `<div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4">
+        <h3 class="font-bold text-gray-600 text-sm mb-2 flex items-center gap-2"><i class="fas fa-comment-dots text-dojo-blue"></i> Đánh giá tổng quan</h3>
+        <p class="text-sm text-gray-700 italic leading-relaxed">"${r.autoComment}"</p>
+    </div>
+
+    <!-- Ký nhận (để in) -->
+    <div class="grid grid-cols-2 gap-4 mt-2 mb-6">
+        <div class="text-center border-t-2 border-gray-200 pt-2"><p class="text-xs text-gray-400">Giáo viên chủ nhiệm</p><div class="h-8"></div></div>
+        <div class="text-center border-t-2 border-gray-200 pt-2"><p class="text-xs text-gray-400">Phụ huynh ký xác nhận</p><div class="h-8"></div></div>
+    </div>`;
+
+    document.getElementById('studentReportContent').innerHTML = html;
+}
+
+// ----- Actions -----
+function buildParentMessageText(r) {
+    const s  = r.student;
+    const cls = classes.find(c=>c.id===s.classId);
+    const as = r.assessment;
+    const label = periodLabel(_weeklyStart, _weeklyEnd);
+    let msg  = `Kính gửi Phụ huynh em ${s.name}\n`;
+    msg += `Lớp: ${cls?.name||''} · ${label}\n`;
+    msg += '─'.repeat(30)+'\n';
+    msg += `📊 ĐIỂM THI ĐUA: ${r.periodNet>0?'+':''}${r.periodNet} (Cộng +${r.periodPos}, Trừ -${r.periodNeg})\n`;
+    msg += `🏆 Tổng tích lũy: ${s.points} điểm ${r.milestone?r.milestone.icon:''}\n`;
+    msg += `✅ Xếp loại kỳ này: ${as.icon} ${as.label}\n`;
+    if (r.notes.length) {
+        msg += '─'.repeat(30)+'\n💬 NHẬN XÉT GIÁO VIÊN:\n';
+        r.notes.forEach(n=>{ const nt=NOTE_TYPES[n.type]||NOTE_TYPES.notice; msg+=`${nt.icon||'•'} [${nt.label}] ${n.content}\n`; });
+    }
+    if (r.grades && Object.keys(r.grades).length) {
+        msg += '─'.repeat(30)+'\n📚 ĐIỂM HỌC TẬP:\n';
+        Object.entries(r.grades).forEach(([sub,val])=>{ msg+=`• ${sub}: ${val}${val>=8?' ⭐':val<5?' ⚠️':''}\n`; });
+    }
+    msg += '─'.repeat(30)+'\n';
+    msg += `"${r.autoComment}"\n\nTrân trọng,\nGiáo viên chủ nhiệm`;
+    return msg;
+}
+
+function copyStudentParentMsg() {
+    if (!_currentReportData) return;
+    const msg = buildParentMessageText(_currentReportData);
+    navigator.clipboard?.writeText(msg).catch(()=>{});
+    showToast('Đã sao chép tin nhắn phụ huynh! 📋');
+}
+
+function shareWeeklyReport() {
+    if (!_currentReportData) return;
+    const r  = _currentReportData;
+    const s  = r.student;
+    const data = buildStudentViewData(s.id);
+    if (!data) return;
+    const url  = buildShareUrl(data);
+    _currentShareUrl = url;
+    openShareLinkModal(`Phiếu tuần: ${s.name}`, url);
+}
+
+function copyAllParentMessages() {
+    if (!_weeklyStart || !_weeklyEnd) return;
+    const cls = classes.find(c=>c.id===currentClassId);
+    const classStudents = students.filter(s=>s.classId===currentClassId).sort((a,b)=>(a.stt||0)-(b.stt||0));
+    const allMessages = classStudents.map(s=>{
+        const r = generateStudentReport(s, _weeklyStart, _weeklyEnd);
+        return `===== ${s.name} =====\n${buildParentMessageText(r)}`;
+    }).join('\n\n');
+    navigator.clipboard?.writeText(allMessages).catch(()=>{});
+    showToast(`Đã sao chép ${classStudents.length} tin nhắn phụ huynh!`);
+}
+
+function exportAllWeeklyReports() {
+    if (!_weeklyStart || !_weeklyEnd) return;
+    const cls = classes.find(c=>c.id===currentClassId); if(!cls) return;
+    const classStudents = students.filter(s=>s.classId===currentClassId).sort((a,b)=>(a.stt||0)-(b.stt||0));
+    const label = periodLabel(_weeklyStart, _weeklyEnd);
+    const wsData = [
+        [`PHIẾU NHẬN XÉT TUẦN - LỚP ${cls.name.toUpperCase()} - ${label}`,'','','','',''],
+        ['STT','Họ và tên','Điểm kỳ (Net)','Tổng điểm','Xếp loại','Nhận xét tự động']
+    ];
+    classStudents.forEach((s,i)=>{
+        const r = generateStudentReport(s, _weeklyStart, _weeklyEnd);
+        wsData.push([s.stt||i+1, s.name, (r.periodNet>0?'+':'')+r.periodNet, s.points, r.assessment.label, r.autoComment]);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['A1'].s={font:{bold:true,color:{rgb:"FFFFFF"},sz:13},fill:{fgColor:{rgb:"D97706"}},alignment:{horizontal:"center"}};
+    ws['!cols']=[{wch:6},{wch:25},{wch:12},{wch:12},{wch:14},{wch:60}];
+    ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:5}}];
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Phieu_Nhan_Xet');
+    XLSX.writeFile(wb,`PhieuNhanXet_${cls.name.replace(/\s+/g,'_')}_${dateToStr(_weeklyStart)}.xlsx`);
+    showToast('Đã xuất phiếu nhận xét toàn lớp!');
+}
+
+// ============================================================
+// SỔ LIÊN LẠC ĐIỆN TỬ
+// ============================================================
+const NOTE_TYPES = {
+    praise:   { label:'Khen ngợi',    icon:'fa-star',               bg:'bg-green-100',  text:'text-green-700',  border:'border-green-300',  hex:'#16a34a' },
+    concern:  { label:'Cần cố gắng',  icon:'fa-exclamation-triangle',bg:'bg-orange-100', text:'text-orange-700', border:'border-orange-300', hex:'#c2410c' },
+    notice:   { label:'Thông báo',    icon:'fa-bullhorn',            bg:'bg-blue-100',   text:'text-blue-700',   border:'border-blue-300',   hex:'#1d4ed8' },
+    reminder: { label:'Dặn dò',       icon:'fa-clock',               bg:'bg-purple-100', text:'text-purple-700', border:'border-purple-300', hex:'#7e22ce' },
+};
+
+const NOTE_TEMPLATES = {
+    praise:   ['Phát biểu tích cực, đóng góp xây dựng bài.','Hoàn thành bài tập đầy đủ, chất lượng tốt.','Tinh thần giúp đỡ bạn bè đáng khen.','Có tiến bộ rõ rệt so với tuần trước.'],
+    concern:  ['Cần chú ý hơn khi làm bài tập về nhà.','Hay nói chuyện riêng trong giờ học, cần nhắc nhở.','Điểm kiểm tra còn thấp, cần ôn tập thêm.','Thái độ học tập cần cải thiện.'],
+    notice:   ['Thứ 2 tuần tới có kiểm tra 15 phút môn Toán.','Nhà trường tổ chức họp phụ huynh vào thứ 6.','Tuần tới nghỉ lễ, lớp học online.','Nộp học phí trước ngày 15 tháng này.'],
+    reminder: ['Nhắc mang đủ dụng cụ học tập.','Mặc đồng phục đúng quy định vào thứ 2.','Ký xác nhận bài kiểm tra phụ huynh.','Nộp đơn đăng ký tham quan học tập.'],
+};
+
+let _selectedNoteStudentId = null;
+let _selectedNoteType      = 'praise';
+
+// ----- Open / Close -----
+function openCommunicationLog(prefillStudentId = null) {
+    const cls = classes.find(c=>c.id===currentClassId);
+    document.getElementById('commLogSubtitle').innerText = cls?.name || '';
+    // Populate student filter
+    const sel = document.getElementById('commFilterStudent');
+    sel.innerHTML = '<option value="">Tất cả học sinh</option><option value="class">📢 Cả lớp</option>';
+    students.filter(s=>s.classId===currentClassId).sort((a,b)=>a.stt-b.stt).forEach(s=>{
+        const opt=document.createElement('option'); opt.value=s.id; opt.innerText=`#${s.stt} ${s.name}`; sel.appendChild(opt);
+    });
+    if (prefillStudentId) sel.value = prefillStudentId;
+    document.getElementById('commFilterType').value  = '';
+    document.getElementById('commFilterDate').value  = '';
+    document.getElementById('commLogOverlay').classList.remove('hidden');
+    renderCommunicationLog();
+}
+
+function closeCommunicationLog() {
+    document.getElementById('commLogOverlay').classList.add('hidden');
+}
+
+// ----- Render list -----
+function renderCommunicationLog() {
+    const filterStudent = document.getElementById('commFilterStudent').value;
+    const filterType    = document.getElementById('commFilterType').value;
+    const filterDate    = document.getElementById('commFilterDate').value;
+
+    let notes = communicationLog.filter(n=>n.classId===currentClassId);
+    if (filterStudent === 'class') notes = notes.filter(n=>n.studentId===null);
+    else if (filterStudent)        notes = notes.filter(n=>String(n.studentId)===filterStudent);
+    if (filterType)                notes = notes.filter(n=>n.type===filterType);
+    if (filterDate)                notes = notes.filter(n=>n.date===filterDate);
+
+    // Update stats
+    const allClass = communicationLog.filter(n=>n.classId===currentClassId);
+    document.getElementById('cntPraise').innerText   = allClass.filter(n=>n.type==='praise').length;
+    document.getElementById('cntConcern').innerText  = allClass.filter(n=>n.type==='concern').length;
+    document.getElementById('cntNotice').innerText   = allClass.filter(n=>n.type==='notice').length;
+    document.getElementById('cntReminder').innerText = allClass.filter(n=>n.type==='reminder').length;
+
+    const container = document.getElementById('commLogList');
+    if (!notes.length) {
+        container.innerHTML = `<div class="text-center py-16 text-gray-400"><i class="fas fa-book-open text-5xl opacity-20 mb-4 block"></i><p class="font-semibold">Chưa có nhận xét nào</p><p class="text-sm mt-1">Bấm + để thêm nhận xét đầu tiên</p></div>`;
+        return;
+    }
+
+    // Sort newest first, group by date
+    const sorted = [...notes].sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+    const groups = {};
+    sorted.forEach(n=>{
+        const d = n.date || n.createdAt.slice(0,10);
+        const label = formatDateLabel(d);
+        if (!groups[label]) groups[label]=[];
+        groups[label].push(n);
+    });
+
+    container.innerHTML = '';
+    Object.entries(groups).forEach(([label,items])=>{
+        const dayDiv = document.createElement('div');
+        dayDiv.innerHTML = `<p class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2 mt-3 px-1">${label}</p>`;
+        items.forEach(note=>{
+            const nt = NOTE_TYPES[note.type]||NOTE_TYPES.notice;
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-2xl p-3 shadow-sm border border-gray-100 mb-2 flex gap-3';
+            card.innerHTML = `
+                <div class="flex-shrink-0 mt-0.5">
+                    ${note.studentId
+                        ? `<img src="${note.studentAvatar||''}" class="w-10 h-10 rounded-full bg-blue-50 p-0.5 object-contain">`
+                        : `<div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center"><i class="fas fa-users text-emerald-600 text-sm"></i></div>`}
+                </div>
+                <div class="flex-1 overflow-hidden">
+                    <div class="flex items-center gap-2 mb-1 flex-wrap">
+                        <span class="font-bold text-gray-800 text-sm">${note.studentName}</span>
+                        <span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${nt.bg} ${nt.text}">
+                            <i class="fas ${nt.icon} mr-1"></i>${nt.label}
+                        </span>
+                    </div>
+                    <p class="text-sm text-gray-600 leading-snug">${note.content}</p>
+                    <p class="text-[10px] text-gray-400 mt-1">${new Date(note.createdAt).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}</p>
+                </div>
+                <div class="flex flex-col gap-1 flex-shrink-0">
+                    <button onclick="openEditNote('${note.id}')" class="w-7 h-7 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center hover:bg-blue-100 transition"><i class="fas fa-edit text-xs"></i></button>
+                    <button onclick="deleteNote('${note.id}')" class="w-7 h-7 rounded-full bg-red-50 text-red-400 flex items-center justify-center hover:bg-red-100 transition"><i class="fas fa-trash text-xs"></i></button>
+                </div>`;
+            dayDiv.appendChild(card);
+        });
+        container.appendChild(dayDiv);
+    });
+}
+
+function formatDateLabel(dateStr) {
+    const d = new Date(dateStr+'T00:00:00');
+    const today = new Date(); today.setHours(0,0,0,0);
+    const diff  = Math.round((today - d) / 86400000);
+    if (diff === 0) return 'Hôm nay';
+    if (diff === 1) return 'Hôm qua';
+    if (diff <= 7)  return `${diff} ngày trước`;
+    return d.toLocaleDateString('vi-VN',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
+}
+
+// ----- Add / Edit Note -----
+function openAddNoteModal(prefillStudentId = null) {
+    _editingNoteId        = null;
+    _selectedNoteStudentId = prefillStudentId;
+    _selectedNoteType     = 'praise';
+    document.getElementById('addNoteTitle').innerText    = 'Thêm nhận xét';
+    document.getElementById('saveNoteLabel').innerText   = 'Lưu nhận xét';
+    document.getElementById('noteContent').value         = '';
+    document.getElementById('noteDate').value            = new Date().toISOString().slice(0,10);
+    document.getElementById('noteStudentSearch').value   = '';
+    buildNoteStudentList(prefillStudentId);
+    selectNoteType('praise');
+    renderNoteTemplates('praise');
+    document.getElementById('addNoteBackdrop').classList.remove('hidden');
+    document.getElementById('addNoteModal').classList.remove('translate-y-full');
+}
+
+function openEditNote(noteId) {
+    const note = communicationLog.find(n=>n.id===noteId); if(!note) return;
+    _editingNoteId         = noteId;
+    _selectedNoteStudentId = note.studentId;
+    _selectedNoteType      = note.type;
+    document.getElementById('addNoteTitle').innerText   = 'Sửa nhận xét';
+    document.getElementById('saveNoteLabel').innerText  = 'Cập nhật';
+    document.getElementById('noteContent').value        = note.content;
+    document.getElementById('noteDate').value           = note.date || note.createdAt.slice(0,10);
+    document.getElementById('noteStudentSearch').value  = '';
+    buildNoteStudentList(note.studentId);
+    selectNoteType(note.type);
+    renderNoteTemplates(note.type);
+    document.getElementById('addNoteBackdrop').classList.remove('hidden');
+    document.getElementById('addNoteModal').classList.remove('translate-y-full');
+}
+
+function closeAddNoteModal() {
+    document.getElementById('addNoteModal').classList.add('translate-y-full');
+    setTimeout(()=>document.getElementById('addNoteBackdrop').classList.add('hidden'),300);
+}
+
+function buildNoteStudentList(selectedId = null) {
+    const container = document.getElementById('noteStudentList');
+    container.innerHTML = '';
+    // "Cả lớp" option
+    const allBtn = document.createElement('button');
+    allBtn.type = 'button';
+    allBtn.id   = 'ns-null';
+    allBtn.className = `px-3 py-1.5 rounded-full text-xs font-bold border transition ${selectedId===null ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-emerald-400'}`;
+    allBtn.innerText = '📢 Cả lớp';
+    allBtn.onclick = () => selectNoteStudent(null);
+    container.appendChild(allBtn);
+    // Individual students
+    students.filter(s=>s.classId===currentClassId).sort((a,b)=>(a.stt||0)-(b.stt||0)).forEach(s=>{
+        const btn = document.createElement('button');
+        btn.type = 'button'; btn.id = `ns-${s.id}`;
+        btn.className = `px-3 py-1.5 rounded-full text-xs font-bold border transition ${selectedId===s.id ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-emerald-400'}`;
+        btn.innerText = `#${s.stt} ${s.name}`;
+        btn.onclick = () => selectNoteStudent(s.id);
+        container.appendChild(btn);
+    });
+}
+
+function filterNoteStudents() {
+    const q = document.getElementById('noteStudentSearch').value.toLowerCase().trim();
+    document.querySelectorAll('#noteStudentList button').forEach(btn=>{
+        btn.style.display = (!q || btn.innerText.toLowerCase().includes(q)) ? '' : 'none';
+    });
+}
+
+function selectNoteStudent(id) {
+    _selectedNoteStudentId = id;
+    document.querySelectorAll('#noteStudentList button').forEach(btn=>{
+        const active = (id===null && btn.id==='ns-null') || (id!==null && btn.id===`ns-${id}`);
+        btn.className = `px-3 py-1.5 rounded-full text-xs font-bold border transition ${active ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-emerald-400'}`;
+    });
+}
+
+function selectNoteType(type) {
+    _selectedNoteType = type;
+    document.querySelectorAll('.note-type-btn').forEach(btn=>{
+        const isActive = btn.id === `noteType-${type}`;
+        const nt = NOTE_TYPES[btn.id.replace('noteType-','')];
+        btn.className = `note-type-btn py-2 rounded-xl border-2 flex flex-col items-center gap-1 text-xs font-bold transition ${nt?.bg||''} ${nt?.text||''} ${isActive ? 'border-current scale-105 shadow-md' : 'border-transparent'}`;
+    });
+    renderNoteTemplates(type);
+}
+
+function renderNoteTemplates(type) {
+    const container = document.getElementById('noteTemplates');
+    const templates = NOTE_TEMPLATES[type]||[];
+    container.innerHTML = templates.map(t=>
+        `<button type="button" onclick="applyTemplate('${t.replace(/'/g,"\\'")}')" class="flex-shrink-0 text-[11px] bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full hover:bg-gray-200 transition whitespace-nowrap">${t.length>30?t.slice(0,30)+'…':t}</button>`
+    ).join('');
+}
+
+function applyTemplate(text) {
+    document.getElementById('noteContent').value = text;
+}
+
+function saveNote() {
+    const content = document.getElementById('noteContent').value.trim();
+    if (!content) { showToast('Vui lòng nhập nội dung nhận xét!', false); return; }
+    const date  = document.getElementById('noteDate').value || new Date().toISOString().slice(0,10);
+    const now   = new Date().toISOString();
+    let studentName='Cả lớp', studentAvatar='';
+    if (_selectedNoteStudentId !== null) {
+        const s = students.find(st=>st.id===_selectedNoteStudentId);
+        if (s) { studentName=s.name; studentAvatar=s.avatar; }
+    }
+    if (_editingNoteId) {
+        const note = communicationLog.find(n=>n.id===_editingNoteId);
+        if (note) { note.content=content; note.type=_selectedNoteType; note.date=date; note.studentId=_selectedNoteStudentId; note.studentName=studentName; note.studentAvatar=studentAvatar; }
+        showToast('Đã cập nhật nhận xét!');
+    } else {
+        communicationLog.push({ id:'n'+Date.now(), classId:currentClassId, studentId:_selectedNoteStudentId, studentName, studentAvatar, type:_selectedNoteType, content, date, createdAt:now });
+        showToast(`Đã lưu nhận xét cho ${studentName}!`);
+    }
+    saveData();
+    closeAddNoteModal();
+    renderCommunicationLog();
+}
+
+function deleteNote(noteId) {
+    const note = communicationLog.find(n=>n.id===noteId); if(!note) return;
+    if (!confirm(`Xóa nhận xét này?`)) return;
+    communicationLog = communicationLog.filter(n=>n.id!==noteId);
+    saveData(); renderCommunicationLog();
+    showToast('Đã xóa nhận xét', false);
+}
+
+// Shortcut: open note modal from student profile
+function addNoteFromProfile(studentId) {
+    closeStudentProfile();
+    setTimeout(()=>{ openCommunicationLog(studentId); setTimeout(()=>openAddNoteModal(studentId), 200); }, 300);
+}
+
+// ============================================================
+// VIEWER – CHIA SẺ XEM ĐIỂM CHỈ ĐỌC
+// ============================================================
+let _currentShareUrl  = '';
+let _currentViewData  = null;
+
+// ----- Encode / Decode -----
+function encodeViewData(data) {
+    return btoa(encodeURIComponent(JSON.stringify(data)));
+}
+function decodeViewData(encoded) {
+    return JSON.parse(decodeURIComponent(atob(encoded)));
+}
+
+// ----- Build data payloads -----
+function buildStudentViewData(studentId) {
+    const s   = students.find(st=>st.id===studentId); if(!s) return null;
+    const cls = classes.find(c=>c.id===s.classId);
+    const sg  = gradeRecords.filter(r=>r.classId===s.classId).map(rec=>{
+        const g = rec.studentGrades.find(sg=>sg.studentId===studentId||sg.name===s.name);
+        return g ? {periodName:rec.periodName, grades:g.grades} : null;
+    }).filter(Boolean);
+    const hist = history.filter(h=>h.studentId===studentId&&h.classId===s.classId)
+        .sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp)).slice(0,12);
+    const notes = communicationLog
+        .filter(n=>n.studentId===studentId && n.classId===s.classId)
+        .sort((a,b)=>b.createdAt.localeCompare(a.createdAt))
+        .slice(0,8)
+        .map(n=>({type:n.type, content:n.content, date:n.date||n.createdAt.slice(0,10)}));
+    return {
+        type:'student', className:cls?.name||'', generatedAt:new Date().toISOString(),
+        student:{name:s.name,stt:s.stt,dob:s.dob,points:s.points,positivePoints:s.positivePoints,negativePoints:s.negativePoints,avatar:s.avatar},
+        grades:sg, history:hist, notes
+    };
+}
+
+function buildClassViewData() {
+    const cls = classes.find(c=>c.id===currentClassId); if(!cls) return null;
+    const classStudents = students.filter(s=>s.classId===currentClassId)
+        .sort((a,b)=>b.points-a.points)
+        .map(s=>({name:s.name,stt:s.stt,points:s.points,positivePoints:s.positivePoints,negativePoints:s.negativePoints}));
+    return { type:'class', className:cls.name, generatedAt:new Date().toISOString(), students:classStudents };
+}
+
+// ----- Generate shareable URL -----
+function buildShareUrl(data) {
+    const encoded = encodeViewData(data);
+    // Prefer GAS URL (accessible anywhere), fallback to local hash
+    const base = syncSettings.url || DEFAULT_SYNC_URL;
+    return `${base}?view=${encoded}`;
+}
+
+// ----- Open share modal -----
+function shareStudentView(studentId) {
+    if(!studentId) return;
+    const data = buildStudentViewData(studentId); if(!data) return;
+    _currentViewData  = data;
+    _currentShareUrl  = buildShareUrl(data);
+    const student = students.find(s=>s.id===studentId);
+    openShareLinkModal(`Chia sẻ điểm: ${student?.name||''}`, _currentShareUrl);
+    closePointsModal();
+}
+
+function shareClassView() {
+    const data = buildClassViewData(); if(!data) return;
+    _currentViewData = data;
+    _currentShareUrl = buildShareUrl(data);
+    const cls = classes.find(c=>c.id===currentClassId);
+    openShareLinkModal(`Bảng xếp hạng: ${cls?.name||''}`, _currentShareUrl);
+}
+
+function openShareLinkModal(title, url) {
+    document.getElementById('shareLinkTitle').innerText = title;
+    document.getElementById('shareLinkUrl').innerText   = url;
+    document.getElementById('shareLinkNote').innerText  =
+        '💡 Link này mở trang xem điểm trực tiếp trong trình duyệt. ' +
+        'Phụ huynh/học sinh chỉ có thể XEM, không thể chỉnh sửa.';
+    document.getElementById('shareLinkBackdrop').classList.remove('hidden');
+    document.getElementById('shareLinkModal').classList.remove('translate-y-full');
+}
+
+function closeShareLinkModal() {
+    document.getElementById('shareLinkModal').classList.add('translate-y-full');
+    setTimeout(()=>document.getElementById('shareLinkBackdrop').classList.add('hidden'),300);
+}
+
+function copyShareLink() {
+    navigator.clipboard?.writeText(_currentShareUrl).catch(()=>{});
+    showToast('Đã sao chép link xem điểm! 🔗');
+    closeShareLinkModal();
+}
+
+function previewShareLink() {
+    if(!_currentViewData) return;
+    closeShareLinkModal();
+    setTimeout(()=>openViewer(_currentViewData, _currentShareUrl), 300);
+}
+
+// ----- Local viewer overlay -----
+function openViewer(data, shareUrl) {
+    document.getElementById('btnCopyViewerLink').dataset.url = shareUrl||'';
+    renderViewerContent(data);
+    document.getElementById('viewerOverlay').classList.remove('hidden');
+    document.getElementById('viewerOverlay').scrollTop = 0;
+}
+
+function closeViewer() {
+    document.getElementById('viewerOverlay').classList.add('hidden');
+}
+
+function copyViewerLink() {
+    const url = document.getElementById('btnCopyViewerLink').dataset.url || _currentShareUrl;
+    if(!url) return;
+    navigator.clipboard?.writeText(url).catch(()=>{});
+    showToast('Đã sao chép link! 🔗');
+}
+
+function renderViewerContent(data) {
+    const el = document.getElementById('viewerContent');
+    if (data.type === 'student') el.innerHTML = buildStudentViewHTML(data);
+    else if (data.type === 'class') el.innerHTML = buildClassViewHTML(data);
+}
+
+function buildStudentViewHTML(data) {
+    const s = data.student;
+    const ms = getMilestone(s.points||0);
+    const ptsColor = (s.points||0)>0?'text-green-700':(s.points||0)<0?'text-red-600':'text-gray-600';
+    const comment = generateComment({positivePoints:s.positivePoints||0,negativePoints:s.negativePoints||0,id:0,name:s.name});
+    return `
+    <div class="bg-gradient-to-br from-dojo-blue to-blue-700 text-white rounded-2xl p-5 text-center mb-4 shadow-lg">
+        <img src="${s.avatar||''}" class="w-20 h-20 rounded-full border-3 border-white border-opacity-50 mx-auto mb-3 bg-blue-200 object-contain p-1" onerror="this.style.display='none'">
+        <h2 class="text-2xl font-black">${s.name}</h2>
+        <p class="text-sm opacity-80 mt-1">Lớp ${data.className} &nbsp;·&nbsp; STT: ${s.stt||'—'}</p>
+        ${ms?`<p class="text-3xl mt-2">${ms.icon} <span class="text-sm align-middle">${ms.label}</span></p>`:''}
+    </div>
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-3">
+        <h3 class="font-bold text-gray-600 text-sm mb-3 flex items-center gap-2"><i class="fas fa-trophy text-yellow-400"></i> Điểm thi đua</h3>
+        <div class="flex justify-around">
+            <div class="text-center"><p class="text-2xl font-black text-green-600">+${s.positivePoints||0}</p><p class="text-xs text-gray-400">Điểm cộng</p></div>
+            <div class="text-center"><p class="text-2xl font-black text-red-500">-${s.negativePoints||0}</p><p class="text-xs text-gray-400">Điểm trừ</p></div>
+            <div class="text-center"><p class="text-3xl font-black ${ptsColor}">${s.points||0}</p><p class="text-xs text-gray-400">Tổng điểm</p></div>
+        </div>
+    </div>
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-3">
+        <h3 class="font-bold text-gray-600 text-sm mb-2 flex items-center gap-2"><i class="fas fa-comment-dots text-blue-400"></i> Nhận xét</h3>
+        <p class="text-sm text-gray-600 italic leading-relaxed">${comment}</p>
+    </div>
+    ${data.grades&&data.grades.length?`<div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-3">
+        <h3 class="font-bold text-gray-600 text-sm mb-3 flex items-center gap-2"><i class="fas fa-graduation-cap text-purple-400"></i> Kết quả học tập</h3>
+        ${data.grades.map(g=>`<p class="text-xs font-bold text-gray-400 uppercase mb-2">${g.periodName}</p>
+        ${Object.entries(g.grades).map(([sub,val])=>`<div class="flex justify-between items-center py-1.5 border-b border-gray-50 last:border-none">
+            <span class="text-sm text-gray-700">${sub}</span>
+            <span class="text-sm font-bold ${val>=8?'text-green-700':val<5?'text-red-600':'text-gray-700'}">${val}${val>=8?' ⭐':val<5?' ⚠️':''}</span>
+        </div>`).join('')}`).join('<hr class="my-3 border-gray-100">')}
+    </div>`:''}
+    ${data.notes&&data.notes.length?`<div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-3">
+        <h3 class="font-bold text-gray-600 text-sm mb-3 flex items-center gap-2"><i class="fas fa-book text-emerald-500"></i> Nhận xét từ giáo viên</h3>
+        ${data.notes.map(n=>{
+            const nt=NOTE_TYPES[n.type]||NOTE_TYPES.notice;
+            return `<div class="flex gap-2 p-2.5 rounded-xl mb-2 ${nt.bg} border ${nt.border}">
+                <i class="fas ${nt.icon} ${nt.text} mt-0.5 text-sm flex-shrink-0"></i>
+                <div><p class="text-xs font-bold ${nt.text}">${nt.label} · ${n.date}</p><p class="text-xs text-gray-700 mt-0.5 leading-snug">${n.content}</p></div>
+            </div>`;}).join('')}
+    </div>`:''}
+    ${data.history&&data.history.length?`<div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-3">
+        <h3 class="font-bold text-gray-600 text-sm mb-3 flex items-center gap-2"><i class="fas fa-history text-orange-400"></i> Lịch sử gần đây</h3>
+        ${data.history.slice(0,10).map(h=>`<div class="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-none">
+            <div><p class="text-xs font-bold text-gray-700">${h.skillName}</p>
+            <p class="text-[10px] text-gray-400">${new Date(h.timestamp).toLocaleDateString('vi-VN')}</p></div>
+            <span class="text-sm font-black ${h.points>0?'text-green-600':'text-red-600'}">${h.points>0?'+':''}${h.points}</span>
+        </div>`).join('')}
+    </div>`:''}
+    <p class="text-[11px] text-gray-400 text-center mt-2">📅 Dữ liệu tính đến ${new Date(data.generatedAt).toLocaleDateString('vi-VN')} &nbsp;·&nbsp; 🔒 Chỉ xem</p>`;
+}
+
+function buildClassViewHTML(data) {
+    return `
+    <div class="bg-gradient-to-br from-dojo-blue to-blue-700 text-white rounded-2xl p-5 text-center mb-4 shadow-lg">
+        <i class="fas fa-trophy text-4xl mb-2 opacity-80"></i>
+        <h2 class="text-xl font-black">Bảng xếp hạng</h2>
+        <p class="text-sm opacity-80 mt-1">Lớp ${data.className}</p>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-3">
+        <table class="w-full text-sm">
+            <thead><tr class="bg-gray-50">
+                <th class="p-3 text-center text-gray-500 font-bold w-10">#</th>
+                <th class="p-3 text-left text-gray-500 font-bold">Họ và tên</th>
+                <th class="p-3 text-center text-gray-500 font-bold">Điểm</th>
+            </tr></thead>
+            <tbody>
+            ${(data.students||[]).map((s,i)=>{
+                const ms = getMilestone(s.points||0);
+                const ptsColor = (s.points||0)>0?'text-green-700':(s.points||0)<0?'text-red-600':'text-gray-500';
+                let rankIcon = i===0?'🥇':i===1?'🥈':i===2?'🥉':`<span class="text-gray-400">${i+1}</span>`;
+                return `<tr class="${i%2===0?'':'bg-gray-50/50'} border-b border-gray-50 last:border-none">
+                    <td class="p-3 text-center text-lg">${rankIcon}</td>
+                    <td class="p-3 font-bold text-gray-800">${s.name}${ms?` <span class="text-base">${ms.icon}</span>`:''}</td>
+                    <td class="p-3 text-center font-black text-lg ${ptsColor}">${s.points||0}</td>
+                </tr>`;
+            }).join('')}
+            </tbody>
+        </table>
+    </div>
+    <p class="text-[11px] text-gray-400 text-center mt-2">📅 ${new Date(data.generatedAt).toLocaleDateString('vi-VN')} &nbsp;·&nbsp; 🔒 Chỉ xem</p>`;
+}
+
+// ----- Auto-detect viewer mode from URL hash -----
+function checkViewerMode() {
+    const hash = window.location.hash;
+    if (!hash.startsWith('#view=')) return false;
+    try {
+        const data = decodeViewData(hash.replace('#view=',''));
+        // Enter viewer mode: hide app, show overlay
+        document.querySelector('header').style.display='none';
+        document.querySelector('nav').style.display='none';
+        ['classroomView','reportView','gradesView','historyView','settingsView'].forEach(id=>{
+            const el=document.getElementById(id); if(el) el.style.display='none';
+        });
+        // Open viewer with no copy link (read-only URL mode)
+        _currentViewData = data;
+        renderViewerContent(data);
+        document.getElementById('viewerOverlay').classList.remove('hidden');
+        document.getElementById('btnCopyViewerLink').style.display='none';
+        document.querySelector('#viewerOverlay .sticky button:first-child').innerText='';
+        document.querySelector('#viewerOverlay .sticky button:first-child').innerHTML='<i class="fas fa-home mr-1"></i> Trang chủ';
+        return true;
+    } catch(e) { return false; }
+}
+
+// ============================================================
 // GOOGLE SHEETS SYNC
 // ============================================================
 const APPS_SCRIPT_CODE = `// ============================================
@@ -2212,7 +3273,77 @@ function doPost(e) {
 
 function doGet(e) {
   if (e.parameter.action === 'ping') return respond({ status:'ok', message:'Kết nối thành công!' });
+  // Viewer mode for students/parents
+  if (e.parameter.view) {
+    try {
+      const json = Utilities.newBlob(Utilities.base64Decode(e.parameter.view)).getDataAsString('UTF-8');
+      const data = JSON.parse(decodeURIComponent(json));
+      const html = HtmlService.createHtmlOutput(buildViewHtml(data))
+        .setTitle('Xem điểm – ' + (data.className||'Lớp học'))
+        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+      return html;
+    } catch(err) {
+      return HtmlService.createHtmlOutput('<p style="font-family:sans-serif;padding:20px;color:#c00">Link không hợp lệ hoặc đã hết hạn.<br>' + err + '</p>').setTitle('Lỗi');
+    }
+  }
   return respond({ status:'ok', message:'Ứng dụng Quản lý lớp học đang hoạt động!' });
+}
+
+function buildViewHtml(data) {
+  const safe = s => String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const gradeColor = v => v>=8?'#16a34a':v<5?'#dc2626':'#555';
+  const gradeBadge = v => v>=8?' ⭐':v<5?' ⚠️':'';
+  const dt = new Date(data.generatedAt||Date.now()).toLocaleDateString('vi-VN');
+
+  let body = '';
+  if (data.type === 'student') {
+    const s = data.student;
+    const pts = s.points||0;
+    const msIcon = pts>=50?'👑':pts>=30?'🏆':pts>=15?'🥈':pts>=5?'⭐':'';
+    const ptsColor = pts>0?'#16a34a':pts<0?'#dc2626':'#555';
+    body = \`
+<div class="header">
+  <img class="avatar" src="\${safe(s.avatar)}" onerror="this.src='data:image/svg+xml,<svg xmlns=\\"http://www.w3.org/2000/svg\\" viewBox=\\"0 0 80 80\\"><circle cx=\\"40\\" cy=\\"40\\" r=\\"40\\" fill=\\"%23dbeafe\\"/><text x=\\"50%\\" y=\\"55%\\" dominant-baseline=\\"middle\\" text-anchor=\\"middle\\" font-size=\\"32\\" fill=\\"%2333a3dc\\">\${safe(s.name||'').charAt(0)}</text></svg>'">
+  <h1>\${safe(s.name)}</h1>
+  <p>Lớp \${safe(data.className)} &nbsp;|&nbsp; STT: \${safe(s.stt)}</p>
+  \${msIcon?'<p class="ms">'+msIcon+'</p>':''}
+</div>
+<div class="card">
+  <h2>🏆 Điểm thi đua</h2>
+  <div class="row"><span>Điểm cộng</span><span class="badge g">+\${s.positivePoints||0}</span></div>
+  <div class="row"><span>Điểm trừ</span><span class="badge r">-\${s.negativePoints||0}</span></div>
+  <div class="row"><b>Tổng điểm</b><b style="font-size:26px;color:\${ptsColor}">\${pts}</b></div>
+</div>
+\${data.grades&&data.grades.length?'<div class="card"><h2>📚 Kết quả học tập</h2>'+data.grades.map(g=>'<p class="period">'+safe(g.periodName)+'</p><table>'+Object.entries(g.grades).map(([sub,val])=>'<tr><td>'+safe(sub)+'</td><td style="font-weight:700;color:'+gradeColor(val)+'">'+val+gradeBadge(val)+'</td></tr>').join('')+'</table>').join('')+'</div>':''}
+\${data.history&&data.history.length?'<div class="card"><h2>📋 Lịch sử gần đây</h2>'+data.history.slice(0,10).map(h=>'<div class="row"><span>'+safe(h.skillName)+'</span><span class="badge '+(h.points>0?'g':'r')+'">'+(h.points>0?'+':'')+h.points+'</span></div>').join('')+'</div>':''}
+\`;
+  } else if (data.type === 'class') {
+    body = \`
+<div class="header"><h1>🏅 Bảng xếp hạng</h1><p>Lớp \${safe(data.className)}</p></div>
+<div class="card">
+<table style="width:100%">
+<tr style="background:#f0f4f8"><th>#</th><th style="text-align:left">Họ và tên</th><th>Điểm</th></tr>
+\${(data.students||[]).map((s,i)=>'<tr><td style="text-align:center;color:#888">'+(i+1)+'</td><td><b>'+safe(s.name)+'</b></td><td style="text-align:center;font-weight:800;color:'+(s.points>0?'#16a34a':s.points<0?'#dc2626':'#555')+'">'+s.points+'</td></tr>').join('')}
+</table></div>\`;
+  }
+
+  return \`<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',sans-serif;background:#f0f4f8;color:#333;padding:12px}
+.header{background:linear-gradient(135deg,#33a3dc,#0284c7);color:white;border-radius:20px;padding:20px;text-align:center;margin-bottom:12px}
+.avatar{width:80px;height:80px;border-radius:50%;border:3px solid rgba(255,255,255,.5);margin:0 auto 10px;display:block}
+h1{font-size:22px;font-weight:800}h2{font-size:14px;font-weight:700;color:#555;margin-bottom:10px}
+.header p{opacity:.8;font-size:13px;margin-top:4px}.ms{font-size:28px;margin-top:8px}
+.card{background:white;border-radius:16px;padding:14px;margin-bottom:10px;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f5f5f5}
+.row:last-child{border:none}.badge{padding:3px 10px;border-radius:20px;font-size:13px;font-weight:700}
+.g{background:#dcfce7;color:#166534}.r{background:#fee2e2;color:#991b1b}
+table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:7px 8px;border-bottom:1px solid #f0f0f0}
+.period{font-weight:700;color:#555;font-size:12px;margin:8px 0 4px;padding-top:8px;border-top:1px solid #f0f0f0}
+.period:first-child{border-top:none;margin-top:0}
+footer{text-align:center;color:#bbb;font-size:11px;margin-top:14px;padding:8px}
+</style></head><body>\${body}
+<footer>📅 \${dt} &nbsp;|&nbsp; 🔒 Chỉ xem – Không thể chỉnh sửa</footer>
+</body></html>\`;
 }
 
 function respond(obj) {
@@ -2822,6 +3953,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
 
 window.onload = () => {
     loadData();
+    if (checkViewerMode()) return; // Viewer mode – skip app init
     // Migrate: ensure special bonus skills always present (for users with saved skills)
     [
         { id:'p_s3', name:'Thưởng đặc biệt',   points:3, icon:'fa-gift',  color:'bg-pink-100 text-pink-600 border-pink-200' },
