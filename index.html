@@ -38,7 +38,10 @@
             <p class="text-xs opacity-90" id="totalClassPoints">Tổng điểm: 0</p>
         </div>
     </div>
-    <button id="headerAddBtn" onclick="openAddStudentModal()" class="w-10 h-10 bg-blue-400 hover:bg-blue-500 rounded-full flex items-center justify-center shadow transition text-white"><i class="fas fa-plus"></i></button>
+    <div class="flex items-center gap-2">
+        <button onclick="openSyncModal()" id="btnSync" class="w-10 h-10 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full flex items-center justify-center transition text-white" title="Đồng bộ Google Sheets"><i class="fas fa-cloud-upload-alt text-lg"></i></button>
+        <button id="headerAddBtn" onclick="openAddStudentModal()" class="w-10 h-10 bg-blue-400 hover:bg-blue-500 rounded-full flex items-center justify-center shadow transition text-white"><i class="fas fa-plus"></i></button>
+    </div>
 </header>
 
 <!-- SIDEBAR -->
@@ -457,6 +460,87 @@
     </div>
 </div>
 
+<!-- SYNC MODAL -->
+<div id="syncModal" class="fixed inset-0 z-[95] hidden flex flex-col bg-dojo-bg overflow-hidden">
+    <div class="bg-gradient-to-r from-green-600 to-teal-600 text-white px-4 pt-10 pb-5 relative flex-shrink-0">
+        <button onclick="closeSyncModal()" class="absolute top-4 right-4 w-9 h-9 bg-white bg-opacity-20 rounded-full flex items-center justify-center"><i class="fas fa-times"></i></button>
+        <div class="flex items-center gap-3">
+            <div class="w-12 h-12 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center"><i class="fas fa-cloud text-2xl"></i></div>
+            <div>
+                <h2 class="text-lg font-black">Đồng bộ Google Sheets</h2>
+                <p id="syncLastTime" class="text-xs opacity-75 mt-0.5">Chưa đồng bộ lần nào</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-4 no-scrollbar">
+
+        <!-- Status badge -->
+        <div id="syncStatusBadge" class="hidden flex items-center gap-2 p-3 rounded-xl text-sm font-bold"></div>
+
+        <!-- Bước hướng dẫn -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <button onclick="toggleSyncGuide()" class="w-full p-4 flex justify-between items-center text-left">
+                <span class="font-bold text-gray-800 flex items-center gap-2"><i class="fas fa-info-circle text-blue-400"></i> Hướng dẫn cài đặt lần đầu</span>
+                <i id="syncGuideIcon" class="fas fa-chevron-down text-gray-400 transition-transform"></i>
+            </button>
+            <div id="syncGuide" class="hidden px-4 pb-4 border-t border-gray-50">
+                <ol class="text-sm text-gray-600 flex flex-col gap-2 mt-3">
+                    <li class="flex gap-2"><span class="w-5 h-5 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0">1</span><span>Mở <b>Google Sheets</b> → Tiện ích mở rộng → <b>Apps Script</b></span></li>
+                    <li class="flex gap-2"><span class="w-5 h-5 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0">2</span><span>Xóa code mặc định, dán đoạn code bên dưới vào rồi <b>Lưu</b></span></li>
+                    <li class="flex gap-2"><span class="w-5 h-5 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0">3</span><span>Bấm <b>Triển khai → Triển khai mới → Web app</b></span></li>
+                    <li class="flex gap-2"><span class="w-5 h-5 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0">4</span><span>Ai có quyền truy cập: chọn <b>"Tất cả mọi người"</b> → Triển khai</span></li>
+                    <li class="flex gap-2"><span class="w-5 h-5 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0">5</span><span>Sao chép <b>URL web app</b> → Dán vào ô bên dưới</span></li>
+                </ol>
+                <!-- Apps Script code -->
+                <div class="mt-3 bg-gray-900 rounded-xl p-3 relative">
+                    <button onclick="copySyncScript()" class="absolute top-2 right-2 text-[10px] bg-green-500 text-white px-2 py-1 rounded-full font-bold hover:bg-green-600">Sao chép</button>
+                    <pre id="syncScriptCode" class="text-[10px] text-green-300 overflow-x-auto whitespace-pre leading-relaxed" style="max-height:200px;overflow-y:auto"></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- URL setting -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <label class="text-xs font-bold text-gray-500 mb-2 block">URL Web App (Apps Script)</label>
+            <div class="flex gap-2">
+                <input type="url" id="syncUrl" placeholder="https://script.google.com/macros/s/..." class="flex-1 border-2 border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:border-green-500 min-w-0">
+                <button onclick="testSyncConnection()" class="px-4 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition text-sm flex-shrink-0">Kiểm tra</button>
+            </div>
+            <button onclick="saveSyncUrl()" class="mt-2 w-full py-2.5 bg-gray-800 text-white font-bold rounded-xl text-sm hover:bg-gray-700 transition">Lưu URL</button>
+        </div>
+
+        <!-- Sync actions -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <h3 class="font-bold text-gray-700 mb-3">Đồng bộ dữ liệu</h3>
+            <div class="flex flex-col gap-3">
+                <button onclick="pushToGSheet()" id="btnPush" class="w-full py-3 bg-green-600 text-white font-bold rounded-xl shadow flex items-center justify-center gap-2 hover:bg-green-700 transition">
+                    <i class="fas fa-cloud-upload-alt"></i> Đẩy lên Google Sheets
+                    <span class="text-xs opacity-75 font-normal">(ghi đè)</span>
+                </button>
+                <button onclick="pullFromGSheet()" id="btnPull" class="w-full py-3 bg-blue-600 text-white font-bold rounded-xl shadow flex items-center justify-center gap-2 hover:bg-blue-700 transition">
+                    <i class="fas fa-cloud-download-alt"></i> Tải về từ Google Sheets
+                    <span class="text-xs opacity-75 font-normal">(ghi đè local)</span>
+                </button>
+            </div>
+            <p class="text-[11px] text-gray-400 mt-3 text-center">⚠️ Đẩy lên sẽ ghi đè dữ liệu trên Sheet. Tải về sẽ ghi đè dữ liệu local.</p>
+        </div>
+
+        <!-- Sync scope -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <h3 class="font-bold text-gray-700 mb-3">Dữ liệu được đồng bộ</h3>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+                <div class="flex items-center gap-2 p-2 bg-green-50 rounded-xl"><i class="fas fa-check text-green-600"></i><span class="font-semibold text-gray-700">Danh sách lớp</span></div>
+                <div class="flex items-center gap-2 p-2 bg-green-50 rounded-xl"><i class="fas fa-check text-green-600"></i><span class="font-semibold text-gray-700">Học sinh & điểm</span></div>
+                <div class="flex items-center gap-2 p-2 bg-green-50 rounded-xl"><i class="fas fa-check text-green-600"></i><span class="font-semibold text-gray-700">Lịch sử chấm điểm</span></div>
+                <div class="flex items-center gap-2 p-2 bg-green-50 rounded-xl"><i class="fas fa-check text-green-600"></i><span class="font-semibold text-gray-700">Điểm số môn học</span></div>
+                <div class="flex items-center gap-2 p-2 bg-green-50 rounded-xl"><i class="fas fa-check text-green-600"></i><span class="font-semibold text-gray-700">Phân kỳ thi đua</span></div>
+                <div class="flex items-center gap-2 p-2 bg-green-50 rounded-xl"><i class="fas fa-check text-green-600"></i><span class="font-semibold text-gray-700">Kỹ năng tùy chỉnh</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Toast -->
 <div id="toast" class="fixed top-20 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg z-[80] transition-opacity duration-300 opacity-0 pointer-events-none flex items-center gap-2 whitespace-nowrap">
     <i class="fas fa-check-circle text-dojo-green text-xl"></i>
@@ -616,6 +700,7 @@ let periods      = [];  // { id, classId, name, endDate, students:[] }
 let gradeRecords = [];  // { id, classId, periodName, createdAt, studentGrades:[{studentId,name,stt,grades:{}}] }
 let currentGradePeriodId = null;
 let currentPeriodId  = null;
+let syncSettings     = { url:'', lastSync:null };
 let selectedStudentId = null;
 let isAwardAll = false;
 let currentView = 'classroom';
@@ -632,6 +717,7 @@ function saveData() {
         localStorage.setItem('dojo_history',       JSON.stringify(history));
         localStorage.setItem('dojo_periods',       JSON.stringify(periods));
         localStorage.setItem('dojo_gradeRecords',  JSON.stringify(gradeRecords));
+        localStorage.setItem('dojo_sync',          JSON.stringify(syncSettings));
     } catch(e) { console.warn('Lưu thất bại:', e); }
 }
 
@@ -649,6 +735,8 @@ function loadData() {
         if(p)  periods      = JSON.parse(p);
         const gr=localStorage.getItem('dojo_gradeRecords');
         if(gr) gradeRecords = JSON.parse(gr);
+        const sy=localStorage.getItem('dojo_sync');
+        if(sy) syncSettings = JSON.parse(sy);
         if(classes.length > 0) currentClassId = classes[0].id;
     } catch(e) { console.warn('Tải thất bại:', e); }
 }
@@ -2086,6 +2174,262 @@ function exportAllParentMessages() {
     XLSX.writeFile(wb,`TinNhanPH_${cls?.name?.replace(/\s+/g,'_')||'Lop'}_${rec.periodName.replace(/\s+/g,'_')}.xlsx`);
     showToast('Đã xuất tất cả tin nhắn phụ huynh!');
     closeParentMsg();
+}
+
+// ============================================================
+// GOOGLE SHEETS SYNC
+// ============================================================
+const APPS_SCRIPT_CODE = `// ============================================
+// DÁN VÀO APPS SCRIPT – LƯU – TRIỂN KHAI WEB APP
+// (Ai cũng có thể truy cập – không cần đăng nhập)
+// ============================================
+
+function doPost(e) {
+  try {
+    const payload = JSON.parse(e.postData.contents);
+    if (payload.action === 'push') {
+      writeAllData(payload.data);
+      return respond({ status:'ok', message:'Đồng bộ thành công!', time: new Date().toISOString() });
+    }
+    if (payload.action === 'pull') {
+      return respond({ status:'ok', data: readAllData() });
+    }
+    if (payload.action === 'ping') {
+      return respond({ status:'ok', message:'Kết nối thành công!' });
+    }
+    return respond({ status:'error', message:'Unknown action' });
+  } catch(err) {
+    return respond({ status:'error', message: err.toString() });
+  }
+}
+
+function doGet(e) {
+  if (e.parameter.action === 'ping') return respond({ status:'ok', message:'Kết nối thành công!' });
+  return respond({ status:'ok', message:'Ứng dụng Quản lý lớp học đang hoạt động!' });
+}
+
+function respond(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function writeAllData(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  writeSheet(ss,'Classes',['id','name'], data.classes||[]);
+  writeSheet(ss,'Students',['id','classId','stt','name','dob','points','positivePoints','negativePoints'], data.students||[]);
+  writeSheet(ss,'History',['id','classId','studentId','studentName','skillName','points','timestamp'], data.history||[]);
+  writeSheet(ss,'Periods',['id','classId','name','endDate'], (data.periods||[]).map(p=>({...p,students:undefined})));
+
+  // GradeRecords: flatten studentGrades
+  const allSubjects = ['Toán','Ngữ văn','Tiếng Anh','Vật lí','Hóa học','Sinh học',
+                       'Lịch sử','Địa lí','GDCD','Tin học','Công nghệ','Thể dục','GDQPAN'];
+  const cols = ['periodId','periodName','classId','createdAt','studentId','studentName','stt',...allSubjects];
+  const rows = [];
+  (data.gradeRecords||[]).forEach(rec => {
+    (rec.studentGrades||[]).forEach(sg => {
+      const row = { periodId:rec.id, periodName:rec.periodName, classId:rec.classId,
+                    createdAt:rec.createdAt, studentId:sg.studentId||'', studentName:sg.name, stt:sg.stt||'' };
+      allSubjects.forEach(sub => { row[sub] = sg.grades&&sg.grades[sub]!==undefined ? sg.grades[sub] : ''; });
+      rows.push(row);
+    });
+  });
+  writeSheet(ss,'GradeRecords', cols, rows);
+}
+
+function writeSheet(ss, name, cols, rows) {
+  let sheet = ss.getSheetByName(name);
+  if (!sheet) sheet = ss.insertSheet(name);
+  sheet.clearContents();
+  sheet.appendRow(cols);
+  if (rows.length) {
+    const data = rows.map(r => cols.map(c => r[c]!==undefined&&r[c]!==null ? r[c] : ''));
+    sheet.getRange(2,1,data.length,cols.length).setValues(data);
+  }
+}
+
+function readAllData() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const classes   = readSheet(ss,'Classes');
+  const students  = readSheet(ss,'Students').map(s=>({...s,id:+s.id,classId:+s.classId,stt:+s.stt,points:+s.points,positivePoints:+s.positivePoints,negativePoints:+s.negativePoints}));
+  const history   = readSheet(ss,'History').map(h=>({...h,id:+(h.id||0),classId:+h.classId,studentId:+h.studentId,points:+h.points}));
+  const periods   = readSheet(ss,'Periods').map(p=>({...p,id:+p.id,classId:+p.classId,students:[]}));
+  const gradeRows = readSheet(ss,'GradeRecords');
+  const allSubjects=['Toán','Ngữ văn','Tiếng Anh','Vật lí','Hóa học','Sinh học','Lịch sử','Địa lí','GDCD','Tin học','Công nghệ','Thể dục','GDQPAN'];
+  const recMap = {};
+  gradeRows.forEach(r => {
+    if (!recMap[r.periodId]) recMap[r.periodId]={id:+r.periodId,classId:+r.classId,periodName:r.periodName,createdAt:r.createdAt,studentGrades:[]};
+    const grades={};
+    allSubjects.forEach(sub=>{ if(r[sub]!==''&&r[sub]!==undefined) grades[sub]=+r[sub]; });
+    recMap[r.periodId].studentGrades.push({studentId:r.studentId?+r.studentId:null,name:r.studentName,stt:+r.stt||0,grades});
+  });
+  return { classes, students, history, periods, gradeRecords:Object.values(recMap) };
+}
+
+function readSheet(ss, name) {
+  const sheet=ss.getSheetByName(name); if(!sheet) return [];
+  const data=sheet.getDataRange().getValues(); if(data.length<2) return [];
+  const headers=data[0];
+  return data.slice(1).filter(r=>r.some(c=>c!=='')).map(row=>{
+    const obj={}; headers.forEach((h,i)=>{ if(h) obj[h]=row[i]===''?'':row[i]; }); return obj;
+  });
+}`;
+
+function setSyncScriptCode() {
+    const el = document.getElementById('syncScriptCode');
+    if (el) el.textContent = APPS_SCRIPT_CODE;
+}
+
+function openSyncModal() {
+    setSyncScriptCode();
+    document.getElementById('syncUrl').value = syncSettings.url || '';
+    document.getElementById('syncLastTime').innerText = syncSettings.lastSync
+        ? `Lần cuối: ${new Date(syncSettings.lastSync).toLocaleString('vi-VN')}`
+        : 'Chưa đồng bộ lần nào';
+    document.getElementById('syncModal').classList.remove('hidden');
+    setSyncStatus('', '');
+}
+
+function closeSyncModal() {
+    document.getElementById('syncModal').classList.add('hidden');
+}
+
+function toggleSyncGuide() {
+    const guide = document.getElementById('syncGuide');
+    const icon  = document.getElementById('syncGuideIcon');
+    const hidden = guide.classList.toggle('hidden');
+    icon.style.transform = hidden ? '' : 'rotate(180deg)';
+}
+
+function copySyncScript() {
+    navigator.clipboard?.writeText(APPS_SCRIPT_CODE).then(()=>showToast('Đã sao chép code Apps Script!')).catch(()=>{
+        const ta=document.createElement('textarea'); ta.value=APPS_SCRIPT_CODE;
+        document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+        document.body.removeChild(ta); showToast('Đã sao chép!');
+    });
+}
+
+function saveSyncUrl() {
+    const url = document.getElementById('syncUrl').value.trim();
+    if (!url) { setSyncStatus('error','Vui lòng nhập URL!'); return; }
+    if (!url.includes('script.google.com')) { setSyncStatus('error','URL không đúng định dạng Apps Script.'); return; }
+    syncSettings.url = url;
+    saveData();
+    setSyncStatus('ok','URL đã được lưu!');
+    showToast('Đã lưu URL đồng bộ!');
+}
+
+function setSyncStatus(type, msg) {
+    const badge = document.getElementById('syncStatusBadge');
+    if (!msg) { badge.classList.add('hidden'); return; }
+    badge.classList.remove('hidden');
+    badge.className = `flex items-center gap-2 p-3 rounded-xl text-sm font-bold ${
+        type==='ok' ? 'bg-green-50 text-green-700 border border-green-200' :
+        type==='error' ? 'bg-red-50 text-red-700 border border-red-200' :
+        'bg-blue-50 text-blue-700 border border-blue-200'
+    }`;
+    badge.innerHTML = `<i class="fas ${type==='ok'?'fa-check-circle':type==='error'?'fa-exclamation-circle':'fa-spinner fa-spin'}"></i> ${msg}`;
+}
+
+function setSyncBtnLoading(btnId, loading, originalHTML) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    if (loading) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang xử lý...';
+    } else {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+    }
+}
+
+async function syncRequest(action, data=null) {
+    const url = syncSettings.url;
+    if (!url) throw new Error('Chưa cài URL. Vui lòng nhập URL Apps Script.');
+    const body = JSON.stringify({ action, data });
+    // Use text/plain to avoid CORS preflight
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body,
+        redirect: 'follow'
+    });
+    const text = await res.text();
+    try { return JSON.parse(text); } catch { throw new Error('Phản hồi không hợp lệ: ' + text.substring(0,100)); }
+}
+
+async function testSyncConnection() {
+    if (!syncSettings.url && !document.getElementById('syncUrl').value.trim()) {
+        setSyncStatus('error','Nhập URL trước!'); return;
+    }
+    // Temporarily use input value
+    const tempUrl = syncSettings.url || document.getElementById('syncUrl').value.trim();
+    const origUrl = syncSettings.url;
+    syncSettings.url = tempUrl;
+    setSyncStatus('loading','Đang kiểm tra kết nối...');
+    try {
+        const result = await syncRequest('ping');
+        if (result.status === 'ok') setSyncStatus('ok','✅ Kết nối thành công! ' + (result.message||''));
+        else setSyncStatus('error', 'Lỗi: ' + (result.message||'unknown'));
+    } catch(e) {
+        setSyncStatus('error', 'Không kết nối được: ' + e.message);
+    }
+    syncSettings.url = origUrl;
+}
+
+async function pushToGSheet() {
+    if (!syncSettings.url) { setSyncStatus('error','Chưa lưu URL!'); return; }
+    const orig = document.getElementById('btnPush').innerHTML;
+    setSyncBtnLoading('btnPush', true, orig);
+    setSyncStatus('loading','Đang đẩy dữ liệu lên...');
+    try {
+        const result = await syncRequest('push', { classes, students, history, periods, gradeRecords });
+        if (result.status === 'ok') {
+            syncSettings.lastSync = new Date().toISOString();
+            saveData();
+            document.getElementById('syncLastTime').innerText = `Lần cuối: ${new Date(syncSettings.lastSync).toLocaleString('vi-VN')}`;
+            setSyncStatus('ok','✅ ' + (result.message||'Đẩy lên thành công!'));
+            showToast('Đồng bộ lên Google Sheets thành công! 🎉');
+        } else {
+            setSyncStatus('error', 'Lỗi: ' + (result.message||''));
+        }
+    } catch(e) {
+        setSyncStatus('error', e.message);
+    }
+    setSyncBtnLoading('btnPush', false, orig);
+}
+
+async function pullFromGSheet() {
+    if (!syncSettings.url) { setSyncStatus('error','Chưa lưu URL!'); return; }
+    if (!confirm('Tải về sẽ ghi đè toàn bộ dữ liệu local. Bạn có chắc không?')) return;
+    const orig = document.getElementById('btnPull').innerHTML;
+    setSyncBtnLoading('btnPull', true, orig);
+    setSyncStatus('loading','Đang tải dữ liệu về...');
+    try {
+        const result = await syncRequest('pull');
+        if (result.status === 'ok' && result.data) {
+            const d = result.data;
+            if (d.classes)   classes      = d.classes;
+            if (d.students)  students     = d.students;
+            if (d.history)   history      = d.history;
+            if (d.periods)   periods      = d.periods;
+            if (d.gradeRecords) gradeRecords = d.gradeRecords;
+            if (classes.length) currentClassId = classes[0].id;
+            syncSettings.lastSync = new Date().toISOString();
+            saveData();
+            document.getElementById('syncLastTime').innerText = `Lần cuối: ${new Date(syncSettings.lastSync).toLocaleString('vi-VN')}`;
+            setSyncStatus('ok','✅ Tải về thành công! Dữ liệu đã được cập nhật.');
+            showToast('Tải về từ Google Sheets thành công! 🎉');
+            // Refresh current view
+            renderClasses();
+            if (currentView==='classroom') renderStudents();
+            else if (currentView==='report') renderReport();
+        } else {
+            setSyncStatus('error','Lỗi: ' + (result.message||'Không có dữ liệu'));
+        }
+    } catch(e) {
+        setSyncStatus('error', e.message);
+    }
+    setSyncBtnLoading('btnPull', false, orig);
 }
 
 // ============================================================
