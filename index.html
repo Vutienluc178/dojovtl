@@ -38,8 +38,14 @@
             <p class="text-xs opacity-90" id="totalClassPoints">Tổng điểm: 0</p>
         </div>
     </div>
-    <div class="flex items-center gap-2">
-        <button onclick="openSyncModal()" id="btnSync" class="w-10 h-10 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full flex items-center justify-center transition text-white" title="Đồng bộ Google Sheets"><i class="fas fa-cloud-upload-alt text-lg"></i></button>
+    <div class="flex items-center gap-1.5">
+        <!-- Quick sync button -->
+        <button onclick="quickSync()" id="btnQuickSync" class="flex items-center gap-1.5 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full px-3 h-9 transition text-white text-xs font-bold" title="Lưu lên Google Sheets">
+            <i id="quickSyncIcon" class="fas fa-cloud-upload-alt text-base"></i>
+            <span id="quickSyncLabel">Lưu</span>
+        </button>
+        <!-- Settings modal -->
+        <button onclick="openSyncModal()" class="w-8 h-8 bg-white bg-opacity-15 hover:bg-opacity-25 rounded-full flex items-center justify-center transition text-white" title="Cài đặt đồng bộ"><i class="fas fa-cog text-sm"></i></button>
         <button id="headerAddBtn" onclick="openAddStudentModal()" class="w-10 h-10 bg-blue-400 hover:bg-blue-500 rounded-full flex items-center justify-center shadow transition text-white"><i class="fas fa-plus"></i></button>
     </div>
 </header>
@@ -700,7 +706,8 @@ let periods      = [];  // { id, classId, name, endDate, students:[] }
 let gradeRecords = [];  // { id, classId, periodName, createdAt, studentGrades:[{studentId,name,stt,grades:{}}] }
 let currentGradePeriodId = null;
 let currentPeriodId  = null;
-let syncSettings     = { url:'', lastSync:null };
+const DEFAULT_SYNC_URL = 'https://script.google.com/macros/s/AKfycbzo4f6_Nm9UFWAg-TrMN32iz77rABLKzeijSrD69Lym3plVYap3LtecV9zn5JpwQcHgIQ/exec';
+let syncSettings     = { url: DEFAULT_SYNC_URL, lastSync:null };
 let selectedStudentId = null;
 let isAwardAll = false;
 let currentView = 'classroom';
@@ -736,7 +743,7 @@ function loadData() {
         const gr=localStorage.getItem('dojo_gradeRecords');
         if(gr) gradeRecords = JSON.parse(gr);
         const sy=localStorage.getItem('dojo_sync');
-        if(sy) syncSettings = JSON.parse(sy);
+        if(sy) { syncSettings = JSON.parse(sy); if(!syncSettings.url) syncSettings.url = DEFAULT_SYNC_URL; }
         if(classes.length > 0) currentClassId = classes[0].id;
     } catch(e) { console.warn('Tải thất bại:', e); }
 }
@@ -2216,7 +2223,7 @@ function respond(obj) {
 function writeAllData(data) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   writeSheet(ss,'Classes',['id','name'], data.classes||[]);
-  writeSheet(ss,'Students',['id','classId','stt','name','dob','points','positivePoints','negativePoints'], data.students||[]);
+  writeSheet(ss,'Students',['id','classId','stt','name','dob','points','positivePoints','negativePoints','avatar'], data.students||[]);
   writeSheet(ss,'History',['id','classId','studentId','studentName','skillName','points','timestamp'], data.history||[]);
   writeSheet(ss,'Periods',['id','classId','name','endDate'], (data.periods||[]).map(p=>({...p,students:undefined})));
 
@@ -2273,6 +2280,42 @@ function readSheet(ss, name) {
     const obj={}; headers.forEach((h,i)=>{ if(h) obj[h]=row[i]===''?'':row[i]; }); return obj;
   });
 }`;
+
+async function quickSync() {
+    const btn   = document.getElementById('btnQuickSync');
+    const icon  = document.getElementById('quickSyncIcon');
+    const label = document.getElementById('quickSyncLabel');
+    if (btn.disabled) return;
+    btn.disabled = true;
+    icon.className  = 'fas fa-spinner fa-spin text-base';
+    label.innerText = 'Đang lưu...';
+    try {
+        const result = await syncRequest('push', { classes, students, history, periods, gradeRecords });
+        if (result.status === 'ok') {
+            syncSettings.lastSync = new Date().toISOString();
+            saveData();
+            icon.className  = 'fas fa-check text-base';
+            label.innerText = 'Đã lưu!';
+            showToast('Đồng bộ lên Google Sheets thành công! ☁️');
+            setTimeout(() => {
+                icon.className  = 'fas fa-cloud-upload-alt text-base';
+                label.innerText = 'Lưu';
+                btn.disabled = false;
+            }, 2500);
+        } else {
+            throw new Error(result.message || 'Lỗi không xác định');
+        }
+    } catch(e) {
+        icon.className  = 'fas fa-exclamation-circle text-base';
+        label.innerText = 'Lỗi';
+        showToast('Đồng bộ thất bại: ' + e.message, false);
+        setTimeout(() => {
+            icon.className  = 'fas fa-cloud-upload-alt text-base';
+            label.innerText = 'Lưu';
+            btn.disabled = false;
+        }, 3000);
+    }
+}
 
 function setSyncScriptCode() {
     const el = document.getElementById('syncScriptCode');
@@ -2408,8 +2451,12 @@ async function pullFromGSheet() {
         const result = await syncRequest('pull');
         if (result.status === 'ok' && result.data) {
             const d = result.data;
-            if (d.classes)   classes      = d.classes;
-            if (d.students)  students     = d.students;
+            if (d.classes)   classes  = d.classes;
+            if (d.students)  students = d.students.map(s => ({
+                ...s,
+                // Tạo lại avatar từ tên nếu Sheet không có cột avatar (tương thích ngược)
+                avatar: s.avatar || (avatarBaseUrl + (s.name||'student').normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s/g,""))
+            }));
             if (d.history)   history      = d.history;
             if (d.periods)   periods      = d.periods;
             if (d.gradeRecords) gradeRecords = d.gradeRecords;
