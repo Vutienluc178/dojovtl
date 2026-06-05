@@ -108,7 +108,7 @@
         </div>
     </div>
 
-    <div id="studentGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+    <div id="studentGrid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2"></div>
 </main>
 
 <!-- Floating button cho điểm nhóm đã chọn -->
@@ -913,16 +913,16 @@ function renderStudents() {
         const stt=student.stt||(i+1);
         const ms=getMilestone(student.points);
         grid.insertAdjacentHTML('beforeend',`
-            <div id="student-card-${student.id}" data-name="${student.name.toLowerCase()}" data-stt="${stt}" data-id="${student.id}" class="student-card bg-white rounded-2xl shadow-sm border border-gray-100 p-3 flex flex-col items-center cursor-pointer relative transition-all duration-300" onclick="handleCardClick(${student.id})">
-                <!-- Checkbox overlay (ẩn, chỉ hiện trong group mode) -->
-                <div id="check-${student.id}" class="card-checkbox hidden absolute inset-0 rounded-2xl bg-dojo-blue bg-opacity-15 flex items-end justify-center pb-2 pointer-events-none z-10">
-                    <div class="w-6 h-6 bg-dojo-blue rounded-full flex items-center justify-center shadow-md"><i class="fas fa-check text-white text-xs"></i></div>
+            <div id="student-card-${student.id}" data-name="${student.name.toLowerCase()}" data-stt="${stt}" data-id="${student.id}" class="student-card bg-white rounded-xl shadow-sm border border-gray-100 p-1.5 flex flex-col items-center cursor-pointer relative transition-all duration-300" onclick="handleCardClick(${student.id})">
+                <!-- Checkbox overlay -->
+                <div id="check-${student.id}" class="card-checkbox hidden absolute inset-0 rounded-xl bg-dojo-blue bg-opacity-15 flex items-end justify-center pb-1 pointer-events-none z-10">
+                    <div class="w-5 h-5 bg-dojo-blue rounded-full flex items-center justify-center shadow-md"><i class="fas fa-check text-white text-[9px]"></i></div>
                 </div>
-                <div class="absolute top-2 left-2 bg-gray-100 text-gray-500 text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm">#${stt}</div>
-                <div class="absolute top-2 right-2 ${pColor} w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" id="badge-${student.id}">${student.points}</div>
-                <img src="${student.avatar}" class="w-16 h-16 bg-blue-50 rounded-full mb-2 p-1 object-contain mt-2">
-                <h3 class="text-sm font-bold text-gray-700 text-center truncate w-full px-1">${student.name}</h3>
-                <div class="mt-1 h-5 flex items-center">${ms?`<span class="milestone-badge text-base" title="${ms.label}">${ms.icon}</span>`:'<span class="h-5 block"></span>'}</div>
+                <div class="absolute top-1 left-1 bg-gray-100 text-gray-500 text-[9px] font-bold px-1 py-0.5 rounded leading-none">#${stt}</div>
+                <div class="absolute top-1 right-1 ${pColor} w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold leading-none" id="badge-${student.id}">${student.points}</div>
+                <img src="${student.avatar}" class="w-11 h-11 bg-blue-50 rounded-full mb-1 p-0.5 object-contain mt-3">
+                <h3 class="text-[11px] font-bold text-gray-700 text-center truncate w-full px-0.5 leading-snug">${student.name}</h3>
+                <div class="h-4 flex items-center">${ms?`<span class="text-sm leading-none" title="${ms.label}">${ms.icon}</span>`:''}</div>
             </div>`);
     });
     document.getElementById('totalClassPoints').innerText=`Tổng điểm: ${total}`;
