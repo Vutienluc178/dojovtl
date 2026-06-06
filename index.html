@@ -10,6 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
         tailwind.config = {
             theme: { extend: { fontFamily: { sans: ['Nunito','sans-serif'] }, colors: { dojo: { blue:'#33a3dc', green:'#8bc34a', red:'#f44336', yellow:'#ffc107', bg:'#f0f4f8' } } } }
@@ -25,6 +26,9 @@
         .text-glow{text-shadow:0 0 15px rgba(51,163,220,.5),0 0 30px rgba(51,163,220,.3)}
         @keyframes milestoneIn{0%{transform:scale(0) rotate(-20deg);opacity:0}60%{transform:scale(1.3) rotate(5deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
         .milestone-badge{animation:milestoneIn .4s ease forwards;display:inline-block}
+        @keyframes certShine{0%{background-position:200% center}100%{background-position:-200% center}}
+        .cert-shine{background:linear-gradient(90deg,#b8860b,#ffd700,#b8860b,#ffd700,#b8860b);background-size:200% auto;animation:certShine 3s linear infinite;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        @media print{body>*:not(#certPrintOverlay){display:none!important}#certPrintOverlay{display:flex!important;position:fixed;inset:0;z-index:9999;background:#fff}}
     </style>
 </head>
 <body class="bg-dojo-bg font-sans antialiased text-gray-800 pb-20 select-none overflow-x-hidden">
@@ -74,6 +78,7 @@
             <button id="btnSttPanel" class="text-purple-600 text-xs font-bold bg-purple-50 px-2.5 py-1.5 rounded-full hover:bg-purple-100 transition border border-purple-100 shadow-sm flex items-center" onclick="toggleSttPanel()"><i class="fas fa-hashtag mr-1"></i>STT</button>
             <button class="text-dojo-blue text-xs font-bold bg-blue-50 px-2.5 py-1.5 rounded-full hover:bg-blue-100 transition shadow-sm flex items-center" onclick="awardAll()"><i class="fas fa-users mr-1"></i>Cả lớp</button>
             <button class="text-emerald-600 text-xs font-bold bg-emerald-50 px-2.5 py-1.5 rounded-full hover:bg-emerald-100 transition border border-emerald-100 shadow-sm flex items-center" onclick="openCommunicationLog()"><i class="fas fa-book mr-1"></i>Sổ liên lạc</button>
+            <button class="text-rose-600 text-xs font-bold bg-rose-50 px-2.5 py-1.5 rounded-full hover:bg-rose-100 transition border border-rose-100 shadow-sm flex items-center" onclick="openGoalsOverview()"><i class="fas fa-bullseye mr-1"></i>Mục tiêu</button>
         </div>
     </div>
     <div class="mb-3 relative">
@@ -156,8 +161,9 @@
     </div>
 
     <div class="flex gap-3 mb-4" id="reportActions">
-        <button onclick="endPeriod()" class="flex-1 py-2 bg-orange-50 text-orange-600 font-bold rounded-xl border border-orange-100 hover:bg-orange-100 transition flex items-center justify-center gap-2"><i class="fas fa-flag-checkered"></i> Kết thúc kỳ</button>
-        <button onclick="exportToExcel()" class="flex-1 py-2 bg-green-50 text-green-600 font-bold rounded-xl border border-green-100 hover:bg-green-100 transition flex items-center justify-center gap-2"><i class="fas fa-file-excel"></i> Xuất Excel</button>
+        <button onclick="endPeriod()" class="flex-1 py-2 bg-orange-50 text-orange-600 font-bold rounded-xl border border-orange-100 hover:bg-orange-100 transition flex items-center justify-center gap-2 text-sm"><i class="fas fa-flag-checkered"></i> Kết thúc kỳ</button>
+        <button onclick="exportToExcel()" class="flex-1 py-2 bg-green-50 text-green-600 font-bold rounded-xl border border-green-100 hover:bg-green-100 transition flex items-center justify-center gap-2 text-sm"><i class="fas fa-file-excel"></i> Xuất Excel</button>
+        <button onclick="openBatchCertModal()" class="flex-1 py-2 bg-amber-50 text-amber-600 font-bold rounded-xl border border-amber-100 hover:bg-amber-100 transition flex items-center justify-center gap-2 text-sm"><i class="fas fa-award"></i> Chứng nhận</button>
     </div>
     <div id="reportList" class="flex flex-col gap-3"></div>
 </main>
@@ -312,6 +318,7 @@
         <div class="flex items-center gap-2">
             <button id="btnShareStudent" onclick="shareStudentView(selectedStudentId)" class="w-8 h-8 bg-teal-50 rounded-full text-teal-600 flex items-center justify-center hover:bg-teal-100 transition" title="Chia sẻ xem điểm"><i class="fas fa-share-alt text-sm"></i></button>
             <button id="btnStudentProfile" onclick="openStudentProfile(selectedStudentId)" class="w-8 h-8 bg-green-50 rounded-full text-green-600 flex items-center justify-center hover:bg-green-100 transition" title="Thống kê học sinh"><i class="fas fa-chart-bar text-sm"></i></button>
+            <button id="btnCertStudent" onclick="openCertificateModal(selectedStudentId)" class="w-8 h-8 bg-amber-50 rounded-full text-amber-600 flex items-center justify-center hover:bg-amber-100 transition" title="Xuất chứng nhận PDF"><i class="fas fa-award text-sm"></i></button>
             <button id="btnEditStudent" onclick="openEditStudentModal(selectedStudentId)" class="w-8 h-8 bg-blue-50 rounded-full text-dojo-blue flex items-center justify-center hover:bg-blue-100 transition" title="Sửa học sinh"><i class="fas fa-edit text-sm"></i></button>
             <button id="btnDeleteStudent" onclick="deleteStudentFromModal()" class="w-8 h-8 bg-red-50 rounded-full text-red-500 flex items-center justify-center hover:bg-red-100 transition" title="Xóa học sinh"><i class="fas fa-trash text-sm"></i></button>
             <button onclick="closePointsModal()" class="w-8 h-8 bg-gray-100 rounded-full text-gray-500 flex items-center justify-center"><i class="fas fa-times"></i></button>
@@ -427,6 +434,7 @@
     <!-- Header -->
     <div class="bg-dojo-blue text-white px-4 pt-10 pb-6 relative flex-shrink-0">
         <button onclick="closeStudentProfile()" class="absolute top-4 right-4 w-9 h-9 bg-white bg-opacity-20 rounded-full flex items-center justify-center"><i class="fas fa-times"></i></button>
+        <button id="btnProfileCert" onclick="" class="absolute top-4 left-4 w-9 h-9 bg-amber-400 bg-opacity-80 hover:bg-opacity-100 rounded-full flex items-center justify-center transition shadow" title="Xuất chứng nhận PDF"><i class="fas fa-award text-white text-base"></i></button>
         <div class="flex items-center gap-4">
             <img id="profileAvatar" src="" class="w-20 h-20 rounded-full bg-white bg-opacity-20 p-1 object-contain border-2 border-white border-opacity-50 flex-shrink-0">
             <div class="flex-1 overflow-hidden">
@@ -466,6 +474,16 @@
             </div>
             <div id="profileNoteList" class="flex flex-col gap-2"></div>
             <p id="profileNoteEmpty" class="hidden text-sm text-gray-400 italic text-center py-3">Chưa có nhận xét nào.</p>
+        </div>
+
+        <!-- Mục tiêu cá nhân -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="font-bold text-gray-700 flex items-center gap-2"><i class="fas fa-bullseye text-rose-500"></i> Mục tiêu cá nhân</h3>
+                <button id="btnProfileAddGoal" class="text-xs bg-rose-50 text-rose-600 font-bold px-3 py-1.5 rounded-full border border-rose-100 hover:bg-rose-100 transition"><i class="fas fa-plus mr-1"></i>Thêm</button>
+            </div>
+            <div id="profileGoalList" class="flex flex-col gap-2"></div>
+            <p id="profileGoalEmpty" class="hidden text-sm text-gray-400 italic text-center py-3">Chưa có mục tiêu nào. Bấm "Thêm" để tạo!</p>
         </div>
 
         <!-- Lịch sử gần đây -->
@@ -619,6 +637,215 @@
     <div class="p-4 border-t flex-shrink-0">
         <button onclick="saveNote()" class="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl shadow flex items-center justify-center gap-2 hover:bg-emerald-700 transition active:scale-95">
             <i class="fas fa-save"></i> <span id="saveNoteLabel">Lưu nhận xét</span>
+        </button>
+    </div>
+</div>
+
+<!-- ====== GOALS OVERVIEW – MỤC TIÊU CÁ NHÂN LỚP ====== -->
+<div id="goalsOverlay" class="fixed inset-0 z-[85] hidden flex flex-col bg-dojo-bg overflow-hidden">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-rose-500 to-pink-600 text-white px-4 pt-10 pb-4 relative flex-shrink-0">
+        <button onclick="closeGoalsOverlay()" class="absolute top-4 left-4 w-9 h-9 bg-white bg-opacity-20 rounded-full flex items-center justify-center"><i class="fas fa-arrow-left"></i></button>
+        <div class="text-center">
+            <h2 class="text-lg font-black">🎯 Mục tiêu cá nhân</h2>
+            <p id="goalsOverlaySubtitle" class="text-xs opacity-75 mt-0.5"></p>
+        </div>
+        <!-- Quick stats -->
+        <div class="flex gap-3 mt-3 justify-center">
+            <div class="bg-white bg-opacity-20 rounded-xl px-4 py-2 text-center">
+                <p class="text-xl font-black" id="goalStatActive">0</p>
+                <p class="text-[10px] opacity-80">Đang thực hiện</p>
+            </div>
+            <div class="bg-white bg-opacity-20 rounded-xl px-4 py-2 text-center">
+                <p class="text-xl font-black" id="goalStatAchieved">0</p>
+                <p class="text-[10px] opacity-80">Đã đạt</p>
+            </div>
+            <div class="bg-white bg-opacity-20 rounded-xl px-4 py-2 text-center">
+                <p class="text-xl font-black" id="goalStatExpired">0</p>
+                <p class="text-[10px] opacity-80">Hết hạn</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white border-b border-gray-100 px-4 py-2 flex gap-2 overflow-x-auto no-scrollbar flex-shrink-0">
+        <select id="goalOverviewFilter" onchange="renderGoalsOverview()" class="text-xs font-bold border border-gray-200 rounded-xl px-3 py-1.5 outline-none bg-white flex-shrink-0 focus:border-rose-400">
+            <option value="">Tất cả học sinh</option>
+        </select>
+        <select id="goalStatusFilter" onchange="renderGoalsOverview()" class="text-xs font-bold border border-gray-200 rounded-xl px-3 py-1.5 outline-none bg-white flex-shrink-0 focus:border-rose-400">
+            <option value="">Tất cả trạng thái</option>
+            <option value="active">🎯 Đang thực hiện</option>
+            <option value="achieved">✅ Đã đạt</option>
+            <option value="expired">⌛ Hết hạn</option>
+        </select>
+        <select id="goalTypeFilter" onchange="renderGoalsOverview()" class="text-xs font-bold border border-gray-200 rounded-xl px-3 py-1.5 outline-none bg-white flex-shrink-0 focus:border-rose-400">
+            <option value="">Tất cả loại</option>
+            <option value="points">⭐ Điểm thi đua</option>
+            <option value="positive">➕ Điểm cộng</option>
+            <option value="negative_limit">🛡️ Giảm điểm trừ</option>
+            <option value="custom">🚩 Tùy chỉnh</option>
+        </select>
+    </div>
+
+    <!-- Goals list -->
+    <div class="flex-1 overflow-y-auto p-4 no-scrollbar" id="goalsOverviewList"></div>
+
+    <!-- FAB -->
+    <div id="goalsOverviewFab" class="absolute bottom-6 right-5 hidden">
+        <!-- shown only when a student is selected in filter -->
+        <button onclick="openAddGoalFromOverview()" class="w-14 h-14 bg-rose-600 text-white rounded-full shadow-xl flex items-center justify-center text-2xl hover:bg-rose-700 transition active:scale-95">
+            <i class="fas fa-plus"></i>
+        </button>
+    </div>
+</div>
+
+<!-- ADD / EDIT GOAL MODAL -->
+<div id="addGoalBackdrop" class="fixed inset-0 bg-black bg-opacity-50 z-[90] hidden" onclick="closeAddGoalModal()"></div>
+<div id="addGoalModal" class="fixed bottom-0 left-0 w-full bg-white rounded-t-3xl z-[95] transform translate-y-full transition-transform duration-300 ease-out shadow-2xl max-h-[92vh] flex flex-col">
+    <div class="p-4 border-b flex justify-between items-center flex-shrink-0">
+        <div>
+            <h3 id="addGoalTitle" class="font-bold text-gray-800 text-lg">Thêm mục tiêu</h3>
+            <p class="text-xs text-gray-400 mt-0.5">Học sinh: <span id="addGoalStudentName" class="font-bold text-rose-600"></span></p>
+        </div>
+        <button onclick="closeAddGoalModal()" class="w-8 h-8 bg-gray-100 rounded-full text-gray-500 flex items-center justify-center"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-4 no-scrollbar flex flex-col gap-4">
+        <!-- Loại mục tiêu -->
+        <div>
+            <label class="text-xs font-bold text-gray-500 mb-2 block">Loại mục tiêu</label>
+            <div class="grid grid-cols-2 gap-2" id="goalTypeGrid">
+                <button type="button" data-type="points" onclick="selectGoalType('points')" class="goal-type-btn py-2.5 rounded-xl border-2 border-transparent bg-amber-50 text-amber-700 flex items-center gap-2 px-3 text-sm font-bold transition hover:border-amber-300"><i class="fas fa-star text-amber-500"></i>Điểm thi đua</button>
+                <button type="button" data-type="positive" onclick="selectGoalType('positive')" class="goal-type-btn py-2.5 rounded-xl border-2 border-transparent bg-green-50 text-green-700 flex items-center gap-2 px-3 text-sm font-bold transition hover:border-green-300"><i class="fas fa-plus-circle text-green-500"></i>Điểm cộng</button>
+                <button type="button" data-type="negative_limit" onclick="selectGoalType('negative_limit')" class="goal-type-btn py-2.5 rounded-xl border-2 border-transparent bg-blue-50 text-blue-700 flex items-center gap-2 px-3 text-sm font-bold transition hover:border-blue-300"><i class="fas fa-shield-alt text-blue-500"></i>Giảm điểm trừ</button>
+                <button type="button" data-type="custom" onclick="selectGoalType('custom')" class="goal-type-btn py-2.5 rounded-xl border-2 border-transparent bg-purple-50 text-purple-700 flex items-center gap-2 px-3 text-sm font-bold transition hover:border-purple-300"><i class="fas fa-flag text-purple-500"></i>Tùy chỉnh</button>
+            </div>
+        </div>
+        <!-- Tên mục tiêu -->
+        <div>
+            <label class="text-xs font-bold text-gray-500 mb-2 block">Tên mục tiêu</label>
+            <input type="text" id="goalTitleInput" placeholder="VD: Đạt 50 điểm thi đua" class="w-full border-2 border-gray-200 p-3 rounded-xl focus:outline-none focus:border-rose-400 text-sm">
+        </div>
+        <!-- Giá trị mục tiêu -->
+        <div>
+            <label class="text-xs font-bold text-gray-500 mb-2 block" id="goalTargetLabel">Giá trị mục tiêu</label>
+            <input type="number" id="goalTargetInput" placeholder="VD: 50" min="1" class="w-full border-2 border-gray-200 p-3 rounded-xl focus:outline-none focus:border-rose-400 text-sm">
+            <p id="goalTargetHint" class="text-[11px] text-gray-400 mt-1"></p>
+        </div>
+        <!-- Tiến độ hiện tại (chỉ cho loại custom) -->
+        <div id="goalCustomSection" class="hidden">
+            <label class="text-xs font-bold text-gray-500 mb-2 block">Tiến độ hiện tại</label>
+            <input type="number" id="goalCurrentInput" value="0" min="0" class="w-full border-2 border-gray-200 p-3 rounded-xl focus:outline-none focus:border-rose-400 text-sm">
+        </div>
+        <!-- Hạn hoàn thành -->
+        <div>
+            <label class="text-xs font-bold text-gray-500 mb-2 block">Hạn hoàn thành <span class="text-gray-300 font-normal">(tùy chọn)</span></label>
+            <input type="date" id="goalDeadlineInput" class="w-full border-2 border-gray-200 p-3 rounded-xl focus:outline-none focus:border-rose-400 text-sm">
+        </div>
+        <!-- Thưởng khi đạt -->
+        <div class="bg-amber-50 rounded-xl p-3 border border-amber-100">
+            <label class="text-xs font-bold text-amber-700 mb-2 flex items-center gap-1.5"><i class="fas fa-gift"></i> Thưởng khi đạt mục tiêu <span class="text-amber-400 font-normal">(tùy chọn)</span></label>
+            <div class="flex items-center gap-2">
+                <input type="number" id="goalBonusPoints" value="0" min="0" max="10" class="w-20 border-2 border-amber-200 p-2 rounded-xl focus:outline-none focus:border-amber-400 text-sm text-center font-bold">
+                <span class="text-sm text-amber-700 font-semibold">điểm thưởng thi đua</span>
+            </div>
+        </div>
+    </div>
+    <div class="p-4 border-t flex gap-3 flex-shrink-0">
+        <button onclick="closeAddGoalModal()" class="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl">Hủy</button>
+        <button onclick="saveGoal()" class="flex-1 py-3 bg-rose-600 text-white font-bold rounded-xl shadow flex items-center justify-center gap-2 hover:bg-rose-700 transition active:scale-95">
+            <i class="fas fa-save"></i> <span id="saveGoalLabel">Lưu mục tiêu</span>
+        </button>
+    </div>
+</div>
+
+<!-- ====== CERTIFICATE PREVIEW OVERLAY ====== -->
+<div id="certOverlay" class="fixed inset-0 z-[120] hidden flex flex-col bg-gray-900 bg-opacity-95 overflow-hidden">
+    <!-- Top bar -->
+    <div class="flex justify-between items-center px-4 py-3 bg-gray-900 border-b border-gray-700 flex-shrink-0">
+        <button onclick="closeCertificate()" class="flex items-center gap-2 text-gray-300 hover:text-white font-bold text-sm transition"><i class="fas fa-arrow-left"></i> Đóng</button>
+        <span class="text-amber-400 font-black text-sm flex items-center gap-1.5"><i class="fas fa-award"></i> Chứng nhận thành tích</span>
+        <div class="flex gap-2">
+            <button onclick="downloadCertPDF()" class="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition active:scale-95 shadow"><i class="fas fa-download"></i> Tải PDF</button>
+            <button onclick="printCertificate()" class="flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition"><i class="fas fa-print"></i> In</button>
+        </div>
+    </div>
+    <!-- Certificate canvas area -->
+    <div class="flex-1 overflow-auto flex items-start justify-center p-4 no-scrollbar">
+        <div id="certPaperWrap" class="w-full max-w-2xl">
+            <!-- The actual certificate (rendered as HTML, exported to PDF via jsPDF) -->
+            <div id="certPaper" class="relative bg-white shadow-2xl" style="aspect-ratio:1.414/1; font-family:'Nunito',sans-serif;">
+                <!-- Rendered by JS -->
+            </div>
+        </div>
+    </div>
+    <!-- Nav arrows for batch -->
+    <div id="certNavBar" class="hidden flex-shrink-0 bg-gray-900 border-t border-gray-700 px-4 py-3 flex items-center justify-between gap-3">
+        <button onclick="certPrev()" id="btnCertPrev" class="w-10 h-10 bg-gray-700 rounded-full text-white flex items-center justify-center hover:bg-gray-600 transition disabled:opacity-30"><i class="fas fa-chevron-left"></i></button>
+        <span id="certNavLabel" class="text-gray-300 text-sm font-bold flex-1 text-center"></span>
+        <button onclick="certNext()" id="btnCertNext" class="w-10 h-10 bg-gray-700 rounded-full text-white flex items-center justify-center hover:bg-gray-600 transition"><i class="fas fa-chevron-right"></i></button>
+    </div>
+</div>
+
+<!-- BATCH CERT SETTINGS MODAL -->
+<div id="batchCertBackdrop" class="fixed inset-0 bg-black bg-opacity-50 z-[100] hidden" onclick="closeBatchCertModal()"></div>
+<div id="batchCertModal" class="fixed bottom-0 left-0 w-full bg-white rounded-t-3xl z-[105] transform translate-y-full transition-transform duration-300 ease-out shadow-2xl max-h-[90vh] flex flex-col">
+    <div class="p-4 border-b flex justify-between items-center flex-shrink-0 bg-amber-50 rounded-t-3xl">
+        <div>
+            <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2"><i class="fas fa-award text-amber-500"></i> Xuất chứng nhận hàng loạt</h3>
+            <p class="text-xs text-gray-400 mt-0.5">Chọn học sinh cần xuất chứng nhận</p>
+        </div>
+        <button onclick="closeBatchCertModal()" class="w-8 h-8 bg-gray-100 rounded-full text-gray-500 flex items-center justify-center"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-4 no-scrollbar flex flex-col gap-4">
+        <!-- Bộ lọc nhanh -->
+        <div class="flex gap-2 flex-wrap">
+            <button onclick="selectCertFilter('all')" id="certFilterAll" class="cert-filter-btn text-xs font-bold px-3 py-1.5 rounded-full border-2 border-amber-400 bg-amber-50 text-amber-700 transition">Tất cả</button>
+            <button onclick="selectCertFilter('milestone')" id="certFilterMilestone" class="cert-filter-btn text-xs font-bold px-3 py-1.5 rounded-full border-2 border-transparent bg-gray-100 text-gray-600 transition">Có huy hiệu</button>
+            <button onclick="selectCertFilter('top10')" id="certFilterTop10" class="cert-filter-btn text-xs font-bold px-3 py-1.5 rounded-full border-2 border-transparent bg-gray-100 text-gray-600 transition">Top 10</button>
+            <button onclick="selectCertFilter('positive')" id="certFilterPositive" class="cert-filter-btn text-xs font-bold px-3 py-1.5 rounded-full border-2 border-transparent bg-gray-100 text-gray-600 transition">Điểm dương</button>
+        </div>
+        <!-- Cài đặt chứng nhận -->
+        <div class="bg-amber-50 rounded-2xl p-4 border border-amber-100 flex flex-col gap-3">
+            <h4 class="font-bold text-amber-800 text-sm">Thông tin chứng nhận</h4>
+            <div>
+                <label class="text-xs font-bold text-gray-500 mb-1 block">Tên trường / đơn vị</label>
+                <input type="text" id="certSchoolName" placeholder="VD: Trường THPT Nguyễn Du" class="w-full border-2 border-amber-200 p-2.5 rounded-xl text-sm focus:outline-none focus:border-amber-400">
+            </div>
+            <div>
+                <label class="text-xs font-bold text-gray-500 mb-1 block">Tiêu đề chứng nhận</label>
+                <input type="text" id="certTitle" value="CHỨNG NHẬN THÀNH TÍCH XUẤT SẮC" class="w-full border-2 border-amber-200 p-2.5 rounded-xl text-sm focus:outline-none focus:border-amber-400 font-bold">
+            </div>
+            <div>
+                <label class="text-xs font-bold text-gray-500 mb-1 block">Lý do / thành tích</label>
+                <input type="text" id="certReason" placeholder="VD: Đã hoàn thành xuất sắc học kỳ I năm học 2024-2025" class="w-full border-2 border-amber-200 p-2.5 rounded-xl text-sm focus:outline-none focus:border-amber-400">
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="text-xs font-bold text-gray-500 mb-1 block">Người ký</label>
+                    <input type="text" id="certSigner" placeholder="VD: Giáo viên chủ nhiệm" class="w-full border-2 border-amber-200 p-2.5 rounded-xl text-sm focus:outline-none focus:border-amber-400">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 mb-1 block">Ngày ký</label>
+                    <input type="date" id="certDate" class="w-full border-2 border-amber-200 p-2.5 rounded-xl text-sm focus:outline-none focus:border-amber-400">
+                </div>
+            </div>
+        </div>
+        <!-- Danh sách học sinh -->
+        <div>
+            <div class="flex justify-between items-center mb-2">
+                <p class="text-xs font-bold text-gray-500">Chọn học sinh <span id="certSelectedCount" class="text-amber-600">(0)</span></p>
+                <div class="flex gap-2">
+                    <button onclick="certSelectAll(true)" class="text-xs text-amber-600 font-bold bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">✅ Tất cả</button>
+                    <button onclick="certSelectAll(false)" class="text-xs text-gray-400 font-bold bg-gray-50 px-2.5 py-1 rounded-full border border-gray-200">☐ Bỏ chọn</button>
+                </div>
+            </div>
+            <div id="certStudentList" class="flex flex-col gap-2 max-h-52 overflow-y-auto no-scrollbar"></div>
+        </div>
+    </div>
+    <div class="p-4 border-t flex gap-3 flex-shrink-0">
+        <button onclick="closeBatchCertModal()" class="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl">Hủy</button>
+        <button onclick="previewBatchCerts()" class="flex-1 py-3 bg-amber-500 text-white font-bold rounded-xl shadow flex items-center justify-center gap-2 hover:bg-amber-600 transition active:scale-95">
+            <i class="fas fa-eye"></i> Xem & Tải PDF
         </button>
     </div>
 </div>
@@ -901,6 +1128,7 @@ let history      = [];  // { id, classId, studentId, studentName, skillName, poi
 let periods      = [];  // { id, classId, name, endDate, students:[] }
 let gradeRecords       = [];  // { id, classId, periodName, createdAt, studentGrades:[{studentId,name,stt,grades:{}}] }
 let communicationLog   = [];  // { id, classId, studentId|null, studentName, studentAvatar, type, content, date, createdAt }
+let studentGoals       = [];  // { id, classId, studentId, title, type, targetValue, currentValue, bonusPoints, deadline, status, createdAt }
 let currentGradePeriodId = null;
 let _editingNoteId = null;
 let currentPeriodId  = null;
@@ -923,6 +1151,7 @@ function saveData() {
         localStorage.setItem('dojo_periods',       JSON.stringify(periods));
         localStorage.setItem('dojo_gradeRecords',    JSON.stringify(gradeRecords));
         localStorage.setItem('dojo_commLog',         JSON.stringify(communicationLog));
+        localStorage.setItem('dojo_goals',           JSON.stringify(studentGoals));
         localStorage.setItem('dojo_sync',            JSON.stringify(syncSettings));
     } catch(e) { console.warn('Lưu thất bại:', e); }
 }
@@ -943,6 +1172,8 @@ function loadData() {
         if(gr) gradeRecords = JSON.parse(gr);
         const cl=localStorage.getItem('dojo_commLog');
         if(cl) communicationLog = JSON.parse(cl);
+        const gl=localStorage.getItem('dojo_goals');
+        if(gl) studentGoals = JSON.parse(gl);
         const sy=localStorage.getItem('dojo_sync');
         if(sy) { syncSettings = JSON.parse(sy); if(!syncSettings.url) syncSettings.url = DEFAULT_SYNC_URL; }
         if(classes.length > 0) currentClassId = classes[0].id;
@@ -1247,6 +1478,7 @@ function openGroupModal(ids, label) {
     document.getElementById('btnEditStudent').classList.add('hidden');
     document.getElementById('btnShareStudent').classList.add('hidden');
     document.getElementById('btnStudentProfile').classList.add('hidden');
+    document.getElementById('btnCertStudent').classList.add('hidden');
     document.getElementById('btnDeleteStudent').classList.add('hidden');
     document.getElementById('backdrop').classList.remove('hidden');
     document.getElementById('pointsModal').classList.remove('translate-y-full');
@@ -1324,6 +1556,7 @@ function openPointsModal(id) {
     document.getElementById('modalAvatar').style.display='block';
     document.getElementById('btnShareStudent').classList.remove('hidden');
     document.getElementById('btnStudentProfile').classList.remove('hidden');
+    document.getElementById('btnCertStudent').classList.remove('hidden');
     const mc=document.getElementById('modalComment');
     mc.innerText=generateComment(s); mc.classList.remove('hidden');
     document.getElementById('btnEditStudent').classList.remove('hidden');
@@ -1343,6 +1576,7 @@ function awardAll() {
     document.getElementById('btnEditStudent').classList.add('hidden');
     document.getElementById('btnShareStudent').classList.add('hidden');
     document.getElementById('btnStudentProfile').classList.add('hidden');
+    document.getElementById('btnCertStudent').classList.add('hidden');
     document.getElementById('btnDeleteStudent').classList.add('hidden');
     document.getElementById('backdrop').classList.remove('hidden');
     document.getElementById('pointsModal').classList.remove('translate-y-full');
@@ -1382,6 +1616,7 @@ function addPoints(skillId, points, skillName) {
             if(isPos) s.positivePoints+=points; else s.negativePoints+=Math.abs(points);
             history.push({id:Date.now()+Math.random(),classId:currentClassId,studentId:s.id,studentName:s.name,skillName,points,timestamp:now});
             checkMilestone(s,old);
+            setTimeout(()=>checkGoalAchievements(s.id), 100);
         });
         showToast(`${_groupTargetIds.length} học sinh ${isPos?'+':''}${points} (${skillName})`,isPos);
         _isGroupAward=false; _groupTargetIds=[];
@@ -1393,6 +1628,7 @@ function addPoints(skillId, points, skillName) {
             if(isPos) s.positivePoints+=points; else s.negativePoints+=Math.abs(points);
             history.push({id:Date.now()+Math.random(),classId:currentClassId,studentId:s.id,studentName:s.name,skillName,points,timestamp:now});
             checkMilestone(s,old);
+            setTimeout(()=>checkGoalAchievements(s.id), 100);
         });
         showToast(`Cả lớp ${isPos?'+':''}${points} (${skillName})`,isPos);
     } else {
@@ -1403,6 +1639,7 @@ function addPoints(skillId, points, skillName) {
             if(isPos) s.positivePoints+=points; else s.negativePoints+=Math.abs(points);
             history.push({id:Date.now(),classId:currentClassId,studentId:s.id,studentName:s.name,skillName,points,timestamp:now});
             checkMilestone(s,old);
+            setTimeout(()=>checkGoalAchievements(s.id), 100);
             showToast(`${s.name} ${isPos?'+':''}${points} (${skillName})`,isPos);
             setTimeout(()=>{const b=document.getElementById(`badge-${s.id}`);if(b){b.style.transform='scale(1.5)';setTimeout(()=>b.style.transform='scale(1)',200);}},50);
         }
@@ -2021,6 +2258,10 @@ function renderStudentProfile(s) {
         });
     }
     document.getElementById('btnProfileAddNote').onclick = () => addNoteFromProfile(s.id);
+    document.getElementById('btnProfileCert').onclick = () => openCertificateModal(s.id);
+
+    // Mục tiêu cá nhân
+    renderProfileGoals(s);
 
     // Lịch sử gần đây (20 sự kiện gần nhất)
     const histList = document.getElementById('profileHistoryList');
@@ -2053,6 +2294,379 @@ function renderStudentProfile(s) {
                 </div>`);
         });
     }
+}
+
+// ============================================================
+// STUDENT GOALS – MỤC TIÊU CÁ NHÂN
+// ============================================================
+const GOAL_TYPES = {
+    points:         { label:'Điểm thi đua', icon:'fa-star',         color:'text-amber-600',  bg:'bg-amber-50',  border:'border-amber-200',  ring:'ring-amber-400',  hint:'Đạt tổng điểm thi đua ≥ X' },
+    positive:       { label:'Điểm cộng',    icon:'fa-plus-circle',  color:'text-green-600',  bg:'bg-green-50',  border:'border-green-200',  ring:'ring-green-400',  hint:'Tích lũy điểm cộng ≥ X' },
+    negative_limit: { label:'Giảm điểm trừ',icon:'fa-shield-alt',   color:'text-blue-600',   bg:'bg-blue-50',   border:'border-blue-200',   ring:'ring-blue-400',   hint:'Giữ điểm trừ ≤ X (thấp hơn = tốt hơn)' },
+    custom:         { label:'Tùy chỉnh',    icon:'fa-flag',         color:'text-purple-600', bg:'bg-purple-50', border:'border-purple-200', ring:'ring-purple-400', hint:'Mục tiêu tự đặt, cập nhật thủ công' },
+};
+
+let _editingGoalId = null;
+let _goalStudentId = null;
+let _selectedGoalType = 'points';
+
+function getGoalProgress(goal) {
+    const s = students.find(st=>st.id===goal.studentId);
+    if (!s) return { current:0, target:goal.targetValue, pct:0 };
+    let current = 0;
+    if (goal.type === 'points')         current = s.points;
+    else if (goal.type === 'positive')  current = s.positivePoints;
+    else if (goal.type === 'negative_limit') current = s.negativePoints;
+    else current = goal.currentValue || 0;
+    const target = goal.targetValue;
+    let pct;
+    if (goal.type === 'negative_limit') {
+        pct = target > 0 ? Math.min(100, Math.max(0, Math.round(((target - current) / target) * 100))) : (current===0?100:0);
+    } else {
+        pct = target > 0 ? Math.min(100, Math.max(0, Math.round((current / target) * 100))) : 0;
+    }
+    return { current, target, pct };
+}
+
+function isGoalAchieved(goal) {
+    const s = students.find(st=>st.id===goal.studentId);
+    if (!s) return false;
+    if (goal.type === 'points') return s.points >= goal.targetValue;
+    if (goal.type === 'positive') return s.positivePoints >= goal.targetValue;
+    if (goal.type === 'negative_limit') return s.negativePoints <= goal.targetValue;
+    return (goal.currentValue || 0) >= goal.targetValue;
+}
+
+function checkGoalAchievements(studentId) {
+    const active = studentGoals.filter(g => g.studentId===studentId && g.status==='active');
+    let anyAchieved = false;
+    active.forEach(g => {
+        if (isGoalAchieved(g)) {
+            g.status = 'achieved';
+            anyAchieved = true;
+            const s = students.find(st=>st.id===studentId);
+            showToast(`🎯 ${s?.name||'Học sinh'} đạt mục tiêu: "${g.title}"!`, true);
+            confetti({ particleCount:80, spread:75, origin:{y:0.6} });
+            // Award bonus points if set
+            if (g.bonusPoints && g.bonusPoints > 0 && s) {
+                setTimeout(() => {
+                    if (confirm(`🎉 ${s.name} đạt mục tiêu "${g.title}"!\n\nThưởng ${g.bonusPoints} điểm thi đua?`)) {
+                        const old = s.points;
+                        s.points += g.bonusPoints;
+                        s.positivePoints += g.bonusPoints;
+                        history.push({id:Date.now(),classId:s.classId,studentId:s.id,studentName:s.name,skillName:`🎯 Thưởng mục tiêu: ${g.title}`,points:g.bonusPoints,timestamp:new Date().toISOString()});
+                        checkMilestone(s, old);
+                        saveData();
+                        if(currentView==='classroom') renderStudents(); else if(currentView==='report') renderReport();
+                    }
+                }, 800);
+            }
+        }
+    });
+    if (anyAchieved) saveData();
+    // Also check expired
+    studentGoals.filter(g=>g.studentId===studentId && g.status==='active' && g.deadline && new Date(g.deadline)<new Date())
+        .forEach(g=>{ g.status='expired'; });
+    if (anyAchieved) saveData();
+}
+
+function selectGoalType(type) {
+    _selectedGoalType = type;
+    document.querySelectorAll('.goal-type-btn').forEach(btn => {
+        btn.classList.remove('border-amber-400','border-green-400','border-blue-400','border-purple-400','shadow-md');
+        if (btn.dataset.type === type) {
+            const gt = GOAL_TYPES[type];
+            const borderClass = gt.ring.replace('ring','border');
+            btn.classList.add(borderClass, 'shadow-md');
+        }
+    });
+    const gt = GOAL_TYPES[type] || GOAL_TYPES.custom;
+    document.getElementById('goalTargetHint').innerText = gt.hint;
+    const cs = document.getElementById('goalCustomSection');
+    if (type === 'custom') cs.classList.remove('hidden');
+    else cs.classList.add('hidden');
+    // Auto-fill title placeholder
+    const titleInput = document.getElementById('goalTitleInput');
+    if (!titleInput.value) {
+        const defaults = { points:'Đạt điểm thi đua cao', positive:'Tích lũy điểm cộng', negative_limit:'Hạn chế điểm trừ', custom:'Mục tiêu mới' };
+        titleInput.placeholder = defaults[type] || 'Nhập tên mục tiêu';
+    }
+}
+
+function openAddGoalModal(studentId, goalId=null) {
+    _goalStudentId = studentId;
+    _editingGoalId = goalId;
+    const s = students.find(st=>st.id===studentId);
+    document.getElementById('addGoalStudentName').innerText = s?.name||'';
+
+    if (goalId) {
+        const g = studentGoals.find(g=>g.id===goalId);
+        if (!g) return;
+        document.getElementById('addGoalTitle').innerText = 'Sửa mục tiêu';
+        document.getElementById('saveGoalLabel').innerText = 'Cập nhật';
+        document.getElementById('goalTitleInput').value = g.title;
+        document.getElementById('goalTargetInput').value = g.targetValue;
+        document.getElementById('goalDeadlineInput').value = g.deadline||'';
+        document.getElementById('goalCurrentInput').value = g.currentValue||0;
+        document.getElementById('goalBonusPoints').value = g.bonusPoints||0;
+        selectGoalType(g.type);
+    } else {
+        document.getElementById('addGoalTitle').innerText = 'Thêm mục tiêu';
+        document.getElementById('saveGoalLabel').innerText = 'Lưu mục tiêu';
+        document.getElementById('goalTitleInput').value = '';
+        document.getElementById('goalTargetInput').value = '';
+        document.getElementById('goalDeadlineInput').value = '';
+        document.getElementById('goalCurrentInput').value = '0';
+        document.getElementById('goalBonusPoints').value = '0';
+        selectGoalType('points');
+    }
+
+    document.getElementById('addGoalBackdrop').classList.remove('hidden');
+    setTimeout(()=>document.getElementById('addGoalModal').classList.remove('translate-y-full'), 10);
+}
+
+function closeAddGoalModal() {
+    document.getElementById('addGoalModal').classList.add('translate-y-full');
+    setTimeout(()=>document.getElementById('addGoalBackdrop').classList.add('hidden'), 300);
+}
+
+function saveGoal() {
+    const title = document.getElementById('goalTitleInput').value.trim() || document.getElementById('goalTitleInput').placeholder;
+    const target = parseFloat(document.getElementById('goalTargetInput').value);
+    const deadline = document.getElementById('goalDeadlineInput').value || null;
+    const bonusPoints = parseInt(document.getElementById('goalBonusPoints').value)||0;
+
+    if (!title) { showToast('Nhập tên mục tiêu!', false); return; }
+    if (isNaN(target) || target < 0) { showToast('Nhập giá trị mục tiêu hợp lệ!', false); return; }
+
+    const s = students.find(st=>st.id===_goalStudentId);
+    if (!s) return;
+
+    if (_editingGoalId) {
+        const g = studentGoals.find(g=>g.id===_editingGoalId);
+        if (g) {
+            g.title = title; g.type = _selectedGoalType; g.targetValue = target;
+            g.deadline = deadline; g.bonusPoints = bonusPoints;
+            if (_selectedGoalType==='custom') g.currentValue = parseFloat(document.getElementById('goalCurrentInput').value)||0;
+            if (g.status !== 'achieved') g.status = isGoalAchieved(g) ? 'achieved' : (g.deadline && new Date(g.deadline)<new Date() ? 'expired' : 'active');
+        }
+        showToast('Đã cập nhật mục tiêu!', true);
+    } else {
+        const newGoal = {
+            id: 'g' + Date.now(),
+            classId: s.classId,
+            studentId: s.id,
+            title, type: _selectedGoalType,
+            targetValue: target,
+            currentValue: _selectedGoalType==='custom' ? (parseFloat(document.getElementById('goalCurrentInput').value)||0) : 0,
+            bonusPoints,
+            deadline,
+            status: 'active',
+            createdAt: new Date().toISOString(),
+        };
+        if (isGoalAchieved(newGoal)) newGoal.status = 'achieved';
+        studentGoals.push(newGoal);
+        showToast('Đã thêm mục tiêu! 🎯', true);
+    }
+
+    saveData();
+    closeAddGoalModal();
+    setTimeout(()=>{
+        renderProfileGoals(s);
+        if (document.getElementById('goalsOverlay').classList.contains('hidden')===false) renderGoalsOverview();
+    }, 350);
+}
+
+function deleteGoal(goalId) {
+    const g = studentGoals.find(g=>g.id===goalId);
+    if (!g) return;
+    if (!confirm(`Xóa mục tiêu "${g.title}"?`)) return;
+    studentGoals = studentGoals.filter(g=>g.id!==goalId);
+    saveData();
+    const s = students.find(st=>st.id===g.studentId);
+    if (s && !document.getElementById('profileModal').classList.contains('hidden')) renderProfileGoals(s);
+    if (!document.getElementById('goalsOverlay').classList.contains('hidden')) renderGoalsOverview();
+    showToast('Đã xóa mục tiêu');
+}
+
+function updateCustomGoalProgress(goalId) {
+    const goal = studentGoals.find(g=>g.id===goalId);
+    if (!goal) return;
+    const newVal = prompt(`Cập nhật tiến độ "${goal.title}"\nHiện tại: ${goal.currentValue||0} / ${goal.targetValue}`, goal.currentValue||0);
+    if (newVal===null) return;
+    const n = parseFloat(newVal);
+    if (isNaN(n)) return;
+    goal.currentValue = Math.max(0, n);
+    if (goal.status==='active' && isGoalAchieved(goal)) {
+        goal.status = 'achieved';
+        const s = students.find(st=>st.id===goal.studentId);
+        showToast(`🎯 Đạt mục tiêu: "${goal.title}"!`, true);
+        confetti({particleCount:80, spread:75, origin:{y:0.6}});
+        if (goal.bonusPoints>0 && s) {
+            setTimeout(()=>{
+                if(confirm(`🎉 Thưởng ${goal.bonusPoints} điểm?`)){
+                    const old=s.points; s.points+=goal.bonusPoints; s.positivePoints+=goal.bonusPoints;
+                    history.push({id:Date.now(),classId:s.classId,studentId:s.id,studentName:s.name,skillName:`🎯 Thưởng: ${goal.title}`,points:goal.bonusPoints,timestamp:new Date().toISOString()});
+                    checkMilestone(s,old); saveData();
+                    if(currentView==='classroom') renderStudents();
+                }
+            },800);
+        }
+    }
+    saveData();
+    const s = students.find(st=>st.id===goal.studentId);
+    if (s && !document.getElementById('profileModal').classList.contains('hidden')) renderProfileGoals(s);
+    if (!document.getElementById('goalsOverlay').classList.contains('hidden')) renderGoalsOverview();
+}
+
+function buildGoalCardHTML(goal) {
+    const gt = GOAL_TYPES[goal.type]||GOAL_TYPES.custom;
+    const prog = getGoalProgress(goal);
+    const isAchieved = goal.status==='achieved';
+    const isExpired = !isAchieved && goal.deadline && new Date(goal.deadline)<new Date();
+    const statusLabel = isAchieved ? '✅ Đã đạt' : isExpired ? '⌛ Hết hạn' : '🎯 Đang thực hiện';
+    const statusColor = isAchieved ? 'text-green-600' : isExpired ? 'text-red-500' : 'text-gray-500';
+    const barColor   = isAchieved ? 'bg-green-400' : isExpired ? 'bg-red-300' : goal.type==='negative_limit'?'bg-blue-400':'bg-rose-400';
+    const cardBg     = isAchieved ? 'bg-green-50 border-green-200' : isExpired ? 'bg-red-50 border-red-100' : `${gt.bg} ${gt.border}`;
+    const currentLabel = goal.type==='negative_limit'
+        ? `Điểm trừ: ${prog.current} (mục tiêu ≤ ${goal.targetValue})`
+        : `${prog.current} / ${goal.targetValue}`;
+    const deadlineStr = goal.deadline ? `<span class="${isExpired?'text-red-500':'text-gray-400'}"><i class="fas fa-calendar-alt mr-0.5"></i>Hạn: ${new Date(goal.deadline).toLocaleDateString('vi-VN')}</span>` : '';
+
+    return `
+        <div class="rounded-xl p-3 border-2 ${cardBg}">
+            <div class="flex items-start justify-between gap-2 mb-2">
+                <div class="flex-1 overflow-hidden">
+                    <div class="flex items-center gap-1.5 mb-0.5">
+                        <i class="fas ${gt.icon} ${gt.color} text-xs flex-shrink-0"></i>
+                        <span class="text-sm font-bold text-gray-800 leading-snug">${goal.title}</span>
+                        ${goal.bonusPoints>0?`<span class="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-bold flex-shrink-0">+${goal.bonusPoints}🎁</span>`:''}
+                    </div>
+                    <p class="text-[10px] text-gray-500">${gt.label} · ${currentLabel}</p>
+                    ${deadlineStr?`<p class="text-[10px] mt-0.5">${deadlineStr}</p>`:''}
+                </div>
+                <div class="flex items-center gap-1 flex-shrink-0 ml-1">
+                    ${goal.type==='custom'&&!isAchieved?`<button onclick="updateCustomGoalProgress('${goal.id}')" class="w-6 h-6 bg-white rounded-full flex items-center justify-center border border-gray-200 text-gray-500 hover:text-purple-600 shadow-sm" title="Cập nhật tiến độ"><i class="fas fa-edit text-[9px]"></i></button>`:''}
+                    <button onclick="openAddGoalModal(${goal.studentId},'${goal.id}')" class="w-6 h-6 bg-white rounded-full flex items-center justify-center border border-gray-200 text-gray-500 hover:text-dojo-blue shadow-sm" title="Sửa"><i class="fas fa-pen text-[9px]"></i></button>
+                    <button onclick="deleteGoal('${goal.id}')" class="w-6 h-6 bg-white rounded-full flex items-center justify-center border border-gray-200 text-gray-500 hover:text-red-500 shadow-sm" title="Xóa"><i class="fas fa-trash text-[9px]"></i></button>
+                </div>
+            </div>
+            <!-- Progress bar -->
+            <div class="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden mb-1">
+                <div class="${barColor} h-full rounded-full transition-all duration-700" style="width:${prog.pct}%"></div>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-[10px] font-bold ${statusColor}">${statusLabel}</span>
+                <span class="text-[10px] text-gray-400 font-semibold">${prog.pct}%</span>
+            </div>
+        </div>`;
+}
+
+function renderProfileGoals(s) {
+    const goalList  = document.getElementById('profileGoalList');
+    const goalEmpty = document.getElementById('profileGoalEmpty');
+    if (!goalList) return;
+    goalList.innerHTML = '';
+
+    const sGoals = studentGoals.filter(g=>g.studentId===s.id && g.classId===s.classId)
+        .sort((a,b)=> {
+            const order = {active:0, achieved:1, expired:2};
+            return (order[a.status]||0)-(order[b.status]||0);
+        });
+
+    if (!sGoals.length) {
+        goalEmpty.classList.remove('hidden');
+    } else {
+        goalEmpty.classList.add('hidden');
+        sGoals.forEach(g => goalList.insertAdjacentHTML('beforeend', buildGoalCardHTML(g)));
+    }
+    document.getElementById('btnProfileAddGoal').onclick = ()=>openAddGoalModal(s.id);
+}
+
+// ---- Goals Overview (full class) ----
+function openGoalsOverview() {
+    const overlay = document.getElementById('goalsOverlay');
+    overlay.classList.remove('hidden');
+    // Populate student filter
+    const sel = document.getElementById('goalOverviewFilter');
+    sel.innerHTML = '<option value="">Tất cả học sinh</option>';
+    students.filter(s=>s.classId===currentClassId)
+        .sort((a,b)=>a.stt-b.stt)
+        .forEach(s=>{ sel.insertAdjacentHTML('beforeend',`<option value="${s.id}">${s.stt}. ${s.name}</option>`); });
+    document.getElementById('goalStatusFilter').value='';
+    document.getElementById('goalTypeFilter').value='';
+    document.getElementById('goalOverviewFilter').value='';
+    const cls = classes.find(c=>c.id===currentClassId);
+    document.getElementById('goalsOverlaySubtitle').innerText = cls?.name||'';
+    renderGoalsOverview();
+}
+
+function closeGoalsOverlay() {
+    document.getElementById('goalsOverlay').classList.add('hidden');
+}
+
+function openAddGoalFromOverview() {
+    const sid = parseInt(document.getElementById('goalOverviewFilter').value);
+    if (!sid) { showToast('Chọn học sinh trước!', false); return; }
+    openAddGoalModal(sid);
+}
+
+function renderGoalsOverview() {
+    const filterStudent = parseInt(document.getElementById('goalOverviewFilter').value)||0;
+    const filterStatus  = document.getElementById('goalStatusFilter').value;
+    const filterType    = document.getElementById('goalTypeFilter').value;
+
+    let all = studentGoals.filter(g=>g.classId===currentClassId);
+    if (filterStudent) all = all.filter(g=>g.studentId===filterStudent);
+    if (filterStatus)  all = all.filter(g=>g.status===filterStatus);
+    if (filterType)    all = all.filter(g=>g.type===filterType);
+
+    const active   = studentGoals.filter(g=>g.classId===currentClassId && g.status==='active').length;
+    const achieved = studentGoals.filter(g=>g.classId===currentClassId && g.status==='achieved').length;
+    const expired  = studentGoals.filter(g=>g.classId===currentClassId && g.status==='expired').length;
+    document.getElementById('goalStatActive').innerText   = active;
+    document.getElementById('goalStatAchieved').innerText = achieved;
+    document.getElementById('goalStatExpired').innerText  = expired;
+
+    // Show FAB only if a student is selected
+    const fab = document.getElementById('goalsOverviewFab');
+    if (filterStudent) fab.classList.remove('hidden'); else fab.classList.add('hidden');
+
+    const container = document.getElementById('goalsOverviewList');
+    container.innerHTML='';
+
+    if (!all.length) {
+        container.innerHTML=`<div class="text-center py-16 text-gray-400"><i class="fas fa-bullseye text-5xl mb-4 opacity-20"></i><p class="font-bold text-lg">Chưa có mục tiêu nào</p><p class="text-sm mt-1">Bấm vào học sinh để thêm mục tiêu!</p></div>`;
+        return;
+    }
+
+    // Group by student
+    const byStudent = {};
+    all.forEach(g=>{
+        if(!byStudent[g.studentId]) byStudent[g.studentId]=[];
+        byStudent[g.studentId].push(g);
+    });
+
+    Object.entries(byStudent).forEach(([sid,goals])=>{
+        const s=students.find(st=>st.id===parseInt(sid));
+        if(!s) return;
+        // sort goals within student: active first
+        const sorted=goals.sort((a,b)=>{const o={active:0,achieved:1,expired:2};return(o[a.status]||0)-(o[b.status]||0);});
+        container.insertAdjacentHTML('beforeend',`
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4">
+                <div class="flex items-center gap-3 p-3 border-b border-gray-100 bg-gray-50">
+                    <img src="${s.avatar}" class="w-10 h-10 rounded-full bg-blue-50 object-contain flex-shrink-0">
+                    <div class="flex-1 overflow-hidden">
+                        <p class="font-bold text-sm text-gray-800">${s.name}</p>
+                        <p class="text-[10px] text-gray-400">STT: ${s.stt||'-'} · ${goals.length} mục tiêu · 🌟${s.points} điểm</p>
+                    </div>
+                    <button onclick="openAddGoalModal(${s.id})" class="text-xs bg-rose-50 text-rose-600 font-bold px-2.5 py-1.5 rounded-full border border-rose-100 hover:bg-rose-100 transition flex items-center gap-1"><i class="fas fa-plus text-[10px]"></i>Thêm</button>
+                </div>
+                <div class="p-3 flex flex-col gap-2">
+                    ${sorted.map(g=>buildGoalCardHTML(g)).join('')}
+                </div>
+            </div>`);
+    });
 }
 
 // ============================================================
@@ -3939,6 +4553,510 @@ function renderComparisonChart() {
             }
         }
     });
+}
+
+// ============================================================
+// CERTIFICATE – CHỨNG NHẬN THÀNH TÍCH
+// ============================================================
+let _certStudents = [];      // list of students for batch
+let _certIndex    = 0;       // current index in batch
+let _certSettings = {};      // school, title, reason, signer, date
+
+/* ---- Decorative helpers for jsPDF ---- */
+function _certDashedRect(doc, x, y, w, h, dash=3, gap=2, lw=0.4) {
+    doc.setLineWidth(lw);
+    const perimeter = 2*(w+h);
+    let pos = 0, on = true;
+    // Top
+    let cx=x; while(cx<x+w){ const seg=on?dash:gap; const end=Math.min(cx+seg,x+w); if(on) doc.line(cx,y,end,y); cx=end; on=!on; }
+    cx=x+w; let cy=y; while(cy<y+h){ const seg=on?dash:gap; const end=Math.min(cy+seg,y+h); if(on) doc.line(cx,cy,cx,end); cy=end; on=!on; }
+    // Bottom
+    cx=x+w; on=true; while(cx>x){ const seg=on?dash:gap; const end=Math.max(cx-seg,x); if(on) doc.line(cx,y+h,end,y+h); cx=end; on=!on; }
+    cy=y+h; on=true; while(cy>y){ const seg=on?dash:gap; const end=Math.max(cy-seg,y); if(on) doc.line(x,cy,x,end); cy=end; on=!on; }
+}
+
+function _certCornerFlourish(doc, x, y, size, flip=[1,1]) {
+    doc.setDrawColor('#b8860b');
+    doc.setLineWidth(0.6);
+    const [fx,fy]=flip;
+    // L-shape corner
+    doc.line(x, y, x+fx*size*0.55, y);
+    doc.line(x, y, x, y+fy*size*0.55);
+    // Small diamond
+    const ds=2.5;
+    doc.setFillColor('#d4af37');
+    doc.circle(x+fx*ds*0.5, y+fy*ds*0.5, 1.2, 'F');
+}
+
+function _certStar(doc, cx, cy, r, color='#ffd700') {
+    doc.setFillColor(color);
+    const pts=[];
+    for(let i=0;i<5;i++){
+        const ang1=(i*72-90)*Math.PI/180, ang2=(i*72-90+36)*Math.PI/180;
+        pts.push([cx+r*Math.cos(ang1), cy+r*Math.sin(ang1)]);
+        pts.push([cx+r*0.45*Math.cos(ang2), cy+r*0.45*Math.sin(ang2)]);
+    }
+    doc.setLineWidth(0); doc.setDrawColor(color);
+    // Draw using lines (jsPDF lines approach)
+    for(let i=0;i<pts.length;i++){
+        const n=(i+1)%pts.length;
+        if(i===0) doc.lines([[pts[1][0]-pts[0][0],pts[1][1]-pts[0][1]]],pts[0][0],pts[0][1],[1,1],'F');
+    }
+    // Simpler: use circle with overlay
+    doc.setFillColor(color);
+    doc.circle(cx, cy, r*0.55, 'F');
+}
+
+/* ---- Build one certificate page in jsPDF doc ---- */
+function _buildCertPage(doc, s, settings, pageW, pageH) {
+    const mg=12, cW=pageW-mg*2, cH=pageH-mg*2;
+
+    // ---- Background gradient simulation (ivory) ----
+    doc.setFillColor('#fffef5');
+    doc.rect(0, 0, pageW, pageH, 'F');
+
+    // ---- Outer ornamental border (triple) ----
+    doc.setDrawColor('#b8860b'); doc.setLineWidth(1.8);
+    doc.rect(mg, mg, cW, cH);
+    doc.setDrawColor('#d4af37'); doc.setLineWidth(0.7);
+    doc.rect(mg+3.5, mg+3.5, cW-7, cH-7);
+    doc.setDrawColor('#b8860b'); doc.setLineWidth(0.3);
+    _certDashedRect(doc, mg+6, mg+6, cW-12, cH-12, 2, 1.5, 0.3);
+
+    // ---- Corner flourishes ----
+    _certCornerFlourish(doc, mg+1,   mg+1,   12, [1,1]);
+    _certCornerFlourish(doc, pageW-mg-1, mg+1,   12, [-1,1]);
+    _certCornerFlourish(doc, mg+1,   pageH-mg-1, 12, [1,-1]);
+    _certCornerFlourish(doc, pageW-mg-1, pageH-mg-1, 12, [-1,-1]);
+
+    // ---- Header band ----
+    doc.setFillColor('#8b6914');
+    doc.rect(mg+6, mg+6, cW-12, 18, 'F');
+    doc.setFillColor('#d4af37');
+    doc.rect(mg+6, mg+6, cW-12, 1.2, 'F');
+    doc.rect(mg+6, mg+22.8, cW-12, 1.2, 'F');
+
+    // ---- School name ----
+    const school = settings.school || 'TRƯỜNG THPT NGUYỄN DU';
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(9);
+    doc.setTextColor('#ffd700');
+    doc.text(school.toUpperCase(), pageW/2, mg+16.5, {align:'center'});
+
+    // ---- Title ----
+    const titleY = mg + 38;
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(20);
+    doc.setTextColor('#7a5100');
+    const titleText = settings.title || 'CHỨNG NHẬN THÀNH TÍCH XUẤT SẮC';
+    doc.text(titleText, pageW/2, titleY, {align:'center'});
+
+    // Underline
+    const tw = doc.getTextWidth(titleText);
+    doc.setDrawColor('#d4af37'); doc.setLineWidth(0.8);
+    doc.line(pageW/2-tw/2, titleY+2, pageW/2+tw/2, titleY+2);
+    doc.line(pageW/2-tw/2+3, titleY+4, pageW/2+tw/2-3, titleY+4);
+
+    // ---- Stars row ----
+    const starY = titleY + 10;
+    const starColors = ['#ffd700','#ffba00','#ffd700','#ffba00','#ffd700'];
+    [-14,-7,0,7,14].forEach((off,i)=>{
+        doc.setFillColor(starColors[i]);
+        doc.circle(pageW/2+off, starY, 1.8, 'F');
+    });
+
+    // ---- Subtitle ----
+    doc.setFont('helvetica','italic');
+    doc.setFontSize(10);
+    doc.setTextColor('#5a4000');
+    doc.text('Trân trọng trao tặng cho', pageW/2, starY+10, {align:'center'});
+
+    // ---- Student Name ----
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(28);
+    doc.setTextColor('#4a2800');
+    doc.text(s.name, pageW/2, starY+26, {align:'center'});
+
+    // Name underline (gold wave simulation)
+    const nw = doc.getTextWidth(s.name);
+    doc.setDrawColor('#d4af37'); doc.setLineWidth(1.5);
+    doc.line(pageW/2-nw/2-5, starY+29, pageW/2+nw/2+5, starY+29);
+
+    // ---- Class & Stats row ----
+    const statsY = starY + 40;
+    const cls = classes.find(c=>c.id===s.classId);
+    const ms  = getMilestone(s.points);
+
+    doc.setFillColor('#fdf3c0');
+    doc.roundedRect(mg+20, statsY-5, cW-40, 18, 3, 3, 'F');
+    doc.setDrawColor('#d4af37'); doc.setLineWidth(0.5);
+    doc.roundedRect(mg+20, statsY-5, cW-40, 18, 3, 3, 'S');
+
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(9);
+    doc.setTextColor('#6b4c00');
+    const statsLine = [
+        `Lớp: ${cls?.name||''}`,
+        `Điểm thi đua: ${s.points}`,
+        `Điểm cộng: ${s.positivePoints}`,
+        ms ? `Danh hiệu: ${ms.icon} ${ms.label}` : '',
+    ].filter(Boolean).join('    •    ');
+    doc.text(statsLine, pageW/2, statsY+5.5, {align:'center'});
+
+    // ---- Reason / Achievement ----
+    const reasonY = statsY + 24;
+    doc.setFont('helvetica','italic');
+    doc.setFontSize(10);
+    doc.setTextColor('#444');
+    const reason = settings.reason || `Đã hoàn thành xuất sắc chương trình học, đạt ${s.points} điểm thi đua và nhận được nhiều khen ngợi từ giáo viên.`;
+    const reasonLines = doc.splitTextToSize(reason, cW-50);
+    doc.text(reasonLines, pageW/2, reasonY, {align:'center'});
+
+    // ---- Divider ----
+    const divY = reasonY + reasonLines.length*5 + 6;
+    doc.setDrawColor('#d4af37'); doc.setLineWidth(0.4);
+    doc.line(mg+25, divY, pageW/2-15, divY);
+    doc.setFillColor('#d4af37'); doc.circle(pageW/2, divY, 1.5, 'F');
+    doc.line(pageW/2+15, divY, pageW-mg-25, divY);
+
+    // ---- Goals achieved ----
+    const achieved = studentGoals.filter(g=>g.studentId===s.id && g.status==='achieved');
+    if (achieved.length) {
+        const gY = divY + 8;
+        doc.setFont('helvetica','bold');
+        doc.setFontSize(8);
+        doc.setTextColor('#7a5100');
+        doc.text('Mục tiêu đã đạt:', mg+20, gY);
+        achieved.slice(0,4).forEach((g,i)=>{
+            doc.setFont('helvetica','normal');
+            doc.setFontSize(8);
+            doc.setTextColor('#333');
+            doc.text(`✓ ${g.title}`, mg+20, gY+5+i*5);
+        });
+    }
+
+    // ---- Signature block ----
+    const sigY = pageH - mg - 28;
+    const dateStr = settings.date ? new Date(settings.date).toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'}) : new Date().toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'});
+    const signer  = settings.signer || 'GIÁO VIÊN CHỦ NHIỆM';
+
+    // Left: Date
+    doc.setFont('helvetica','italic');
+    doc.setFontSize(9);
+    doc.setTextColor('#555');
+    const city = settings.school ? '' : '';
+    const cls2 = classes.find(c=>c.id===s.classId);
+    doc.text(`Ngày ${dateStr}`, mg+25, sigY, {align:'center'});
+
+    // Right: Signer
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(9);
+    doc.setTextColor('#4a2800');
+    doc.text(signer.toUpperCase(), pageW-mg-30, sigY, {align:'center'});
+    doc.setFont('helvetica','italic');
+    doc.setFontSize(8);
+    doc.setTextColor('#888');
+    doc.text('(Ký và ghi rõ họ tên)', pageW-mg-30, sigY+5, {align:'center'});
+    // Signature line
+    doc.setDrawColor('#aaa'); doc.setLineWidth(0.4);
+    doc.line(pageW-mg-55, sigY+14, pageW-mg-8, sigY+14);
+
+    // ---- Footer stamp-like circle ----
+    doc.setDrawColor('#c8a000'); doc.setLineWidth(0.5);
+    doc.circle(pageW/2, sigY+5, 14, 'S');
+    doc.circle(pageW/2, sigY+5, 11, 'S');
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(6);
+    doc.setTextColor('#8b6914');
+    doc.text('DẤU', pageW/2, sigY+7, {align:'center'});
+
+    // ---- Watermark stars ----
+    doc.setTextColor('#d4af3720');
+    doc.setFontSize(60);
+    doc.setFont('helvetica','bold');
+    doc.text('★', pageW/2, pageH/2+15, {align:'center'});
+}
+
+/* ---- Public API ---- */
+function openCertificateModal(studentId) {
+    const s = students.find(st=>st.id===studentId);
+    if (!s) return;
+    _certStudents = [s];
+    _certIndex = 0;
+    _certSettings = _loadCertSettings();
+    _showCertPreview();
+}
+
+function _loadCertSettings() {
+    const d = new Date().toISOString().slice(0,10);
+    return {
+        school: localStorage.getItem('cert_school')||'',
+        title:  'CHỨNG NHẬN THÀNH TÍCH XUẤT SẮC',
+        reason: localStorage.getItem('cert_reason')||'',
+        signer: localStorage.getItem('cert_signer')||'Giáo viên chủ nhiệm',
+        date:   d,
+    };
+}
+
+function _showCertPreview() {
+    const overlay = document.getElementById('certOverlay');
+    overlay.classList.remove('hidden');
+    const navBar = document.getElementById('certNavBar');
+    if (_certStudents.length > 1) {
+        navBar.classList.remove('hidden');
+        _updateCertNav();
+    } else {
+        navBar.classList.add('hidden');
+    }
+    _renderCertPaper(_certStudents[_certIndex]);
+}
+
+function _renderCertPaper(s) {
+    const paper = document.getElementById('certPaper');
+    const cls   = classes.find(c=>c.id===s.classId);
+    const ms    = getMilestone(s.points);
+    const achieved = studentGoals.filter(g=>g.studentId===s.id && g.status==='achieved');
+    const settings = _certSettings;
+    const dateStr = settings.date ? new Date(settings.date).toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'}) : new Date().toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'});
+
+    paper.innerHTML = `
+        <div class="absolute inset-0" style="background:#fffef5;">
+            <!-- Outer border -->
+            <div class="absolute inset-0 border-4 border-amber-700 rounded-sm pointer-events-none"></div>
+            <div class="absolute inset-2 border border-amber-500 rounded-sm pointer-events-none" style="border-style:dashed"></div>
+            <!-- Header band -->
+            <div class="absolute top-3 left-3 right-3" style="height:40px;background:linear-gradient(135deg,#7a5200,#c8960c,#7a5200);">
+                <p class="text-center font-black text-amber-200 text-xs tracking-widest" style="line-height:40px">${(settings.school||'TRƯỜNG THPT').toUpperCase()}</p>
+            </div>
+            <!-- Stars deco -->
+            <div class="absolute left-0 right-0 text-center" style="top:50px;font-size:14px;color:#d4af37;letter-spacing:8px">★ ★ ★ ★ ★</div>
+            <!-- Title -->
+            <div class="absolute left-0 right-0 text-center" style="top:72px;">
+                <p class="font-black text-amber-900 tracking-widest" style="font-size:clamp(10px,3vw,18px)">${settings.title||'CHỨNG NHẬN THÀNH TÍCH XUẤT SẮC'}</p>
+                <div style="width:60%;height:2px;background:linear-gradient(90deg,transparent,#d4af37,transparent);margin:3px auto"></div>
+            </div>
+            <!-- Subtitle -->
+            <div class="absolute left-0 right-0 text-center italic text-amber-800" style="top:105px;font-size:clamp(8px,2vw,11px)">Trân trọng trao tặng cho</div>
+            <!-- Student name -->
+            <div class="absolute left-0 right-0 text-center" style="top:118px;">
+                <p class="font-black text-amber-950" style="font-size:clamp(14px,4.5vw,28px)">${s.name}</p>
+                <div style="width:55%;height:2px;background:linear-gradient(90deg,transparent,#c8960c,transparent);margin:2px auto 0"></div>
+            </div>
+            <!-- Stats chip -->
+            <div class="absolute left-0 right-0 flex justify-center" style="top:165px">
+                <div class="flex gap-2 px-4 py-2 rounded-full text-amber-800 text-[10px] font-bold" style="background:#fdf3c0;border:1px solid #d4af37">
+                    <span>📚 Lớp: ${cls?.name||'—'}</span>
+                    <span>·</span>
+                    <span>⭐ Điểm: ${s.points}</span>
+                    <span>·</span>
+                    <span>➕ Cộng: ${s.positivePoints}</span>
+                    ${ms?`<span>·</span><span>${ms.icon} ${ms.label}</span>`:''}
+                </div>
+            </div>
+            <!-- Reason -->
+            <div class="absolute left-0 right-0 text-center italic text-gray-600 px-8" style="top:193px;font-size:clamp(7px,1.8vw,10px)">
+                ${settings.reason||`Đã hoàn thành xuất sắc chương trình học, đạt ${s.points} điểm thi đua và nhận được nhiều khen ngợi từ giáo viên.`}
+            </div>
+            <!-- Achieved goals -->
+            ${achieved.length?`<div class="absolute left-0 right-0 flex justify-center gap-2 flex-wrap px-6" style="top:213px">${achieved.slice(0,4).map(g=>`<span class="text-[9px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold border border-green-200">✓ ${g.title}</span>`).join('')}</div>`:''}
+            <!-- Divider -->
+            <div class="absolute left-0 right-0 flex items-center justify-center gap-2" style="top:232px">
+                <div style="width:28%;height:1px;background:linear-gradient(90deg,transparent,#d4af37)"></div>
+                <span style="color:#d4af37;font-size:12px">✦</span>
+                <div style="width:28%;height:1px;background:linear-gradient(90deg,#d4af37,transparent)"></div>
+            </div>
+            <!-- Signature area -->
+            <div class="absolute left-0 right-0 flex justify-between px-8" style="bottom:28px">
+                <div class="text-center">
+                    <p class="text-gray-500 italic" style="font-size:9px">Ngày ${dateStr}</p>
+                    <div style="width:100px;height:1px;background:#ccc;margin:24px auto 0"></div>
+                </div>
+                <div class="text-center">
+                    <p class="font-black text-amber-800 uppercase tracking-wide" style="font-size:8px">${settings.signer||'Giáo viên chủ nhiệm'}</p>
+                    <p class="text-gray-400 italic" style="font-size:7px">(Ký và ghi rõ họ tên)</p>
+                    <div style="width:100px;height:1px;background:#ccc;margin:16px auto 0"></div>
+                </div>
+            </div>
+            <!-- Stamp circle -->
+            <div class="absolute rounded-full flex items-center justify-center" style="bottom:20px;left:50%;transform:translateX(-50%);width:52px;height:52px;border:2px solid #c8a000;background:rgba(212,175,55,0.07)">
+                <p style="font-size:8px;color:#8b6914;font-weight:700">DẤU</p>
+            </div>
+            <!-- Watermark -->
+            <div class="absolute inset-0 flex items-center justify-center pointer-events-none" style="font-size:clamp(60px,18vw,120px);color:rgba(212,175,55,0.06);font-weight:900;user-select:none">★</div>
+        </div>`;
+}
+
+function _updateCertNav() {
+    const s = _certStudents[_certIndex];
+    document.getElementById('certNavLabel').innerText = `${_certIndex+1} / ${_certStudents.length}  –  ${s.name}`;
+    document.getElementById('btnCertPrev').disabled = _certIndex===0;
+    document.getElementById('btnCertNext').disabled = _certIndex===_certStudents.length-1;
+}
+
+function certPrev() { if(_certIndex>0){ _certIndex--; _renderCertPaper(_certStudents[_certIndex]); _updateCertNav(); } }
+function certNext() { if(_certIndex<_certStudents.length-1){ _certIndex++; _renderCertPaper(_certStudents[_certIndex]); _updateCertNav(); } }
+
+function closeCertificate() {
+    document.getElementById('certOverlay').classList.add('hidden');
+}
+
+function printCertificate() {
+    const el = document.getElementById('certPaper');
+    const orig = document.getElementById('certPrintOverlay');
+    // Create print container
+    const printDiv = document.createElement('div');
+    printDiv.id='certPrintOverlay';
+    printDiv.style.cssText='position:fixed;inset:0;background:white;z-index:99999;display:flex;align-items:center;justify-content:center;';
+    printDiv.innerHTML = `<div style="width:100%;max-width:800px;aspect-ratio:1.414/1">${el.outerHTML}</div>`;
+    document.body.appendChild(printDiv);
+    window.print();
+    document.body.removeChild(printDiv);
+}
+
+async function downloadCertPDF() {
+    if (!window.jspdf) { showToast('Đang tải thư viện PDF...', false); return; }
+    const { jsPDF } = window.jspdf;
+
+    showToast('Đang tạo PDF...', true);
+    const btn = document.querySelector('#certOverlay button[onclick="downloadCertPDF()"]');
+    if (btn) { btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin mr-1"></i>Đang tạo...'; }
+
+    try {
+        if (_certStudents.length===1) {
+            const s=_certStudents[0];
+            const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+            _buildCertPage(doc, s, _certSettings, 297, 210);
+            const fname = `chung_nhan_${s.name.replace(/\s+/g,'_')}.pdf`;
+            doc.save(fname);
+            showToast(`Đã tải: ${fname}`, true);
+        } else {
+            // Batch: one page per student
+            const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+            _certStudents.forEach((s,i)=>{
+                if(i>0) doc.addPage();
+                _buildCertPage(doc, s, _certSettings, 297, 210);
+            });
+            const cls=classes.find(c=>c.id===currentClassId);
+            doc.save(`chung_nhan_${cls?.name||'lop'}_${_certStudents.length}hs.pdf`);
+            showToast(`Đã tải ${_certStudents.length} chứng nhận!`, true);
+        }
+    } catch(e) {
+        console.error(e);
+        showToast('Lỗi tạo PDF: ' + e.message, false);
+    }
+
+    if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-download mr-1"></i>Tải PDF'; }
+}
+
+/* ---- Batch certificate modal ---- */
+let _batchCertFilter = 'all';
+let _batchCertChecked = new Set();
+
+function openBatchCertModal() {
+    const modal=document.getElementById('batchCertModal');
+    const backdrop=document.getElementById('batchCertBackdrop');
+    // Default date
+    document.getElementById('certDate').value = new Date().toISOString().slice(0,10);
+    document.getElementById('certSchoolName').value = localStorage.getItem('cert_school')||'';
+    document.getElementById('certReason').value = localStorage.getItem('cert_reason')||'';
+    document.getElementById('certSigner').value = localStorage.getItem('cert_signer')||'Giáo viên chủ nhiệm';
+    _batchCertFilter='all';
+    _populateCertStudentList();
+    selectCertFilter('all');
+    backdrop.classList.remove('hidden');
+    setTimeout(()=>modal.classList.remove('translate-y-full'),10);
+}
+
+function closeBatchCertModal() {
+    document.getElementById('batchCertModal').classList.add('translate-y-full');
+    setTimeout(()=>document.getElementById('batchCertBackdrop').classList.add('hidden'),300);
+}
+
+function _populateCertStudentList() {
+    const all=students.filter(s=>s.classId===currentClassId).sort((a,b)=>a.stt-b.stt);
+    let filtered=all;
+    if(_batchCertFilter==='milestone') filtered=all.filter(s=>!!getMilestone(s.points));
+    else if(_batchCertFilter==='top10') filtered=[...all].sort((a,b)=>b.points-a.points).slice(0,10);
+    else if(_batchCertFilter==='positive') filtered=all.filter(s=>s.points>0);
+
+    // Default check all filtered
+    _batchCertChecked = new Set(filtered.map(s=>s.id));
+
+    const container=document.getElementById('certStudentList');
+    container.innerHTML='';
+    all.forEach(s=>{
+        const inFilter=filtered.some(f=>f.id===s.id);
+        const ms=getMilestone(s.points);
+        const checked=_batchCertChecked.has(s.id);
+        container.insertAdjacentHTML('beforeend',`
+            <label class="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition ${checked?'bg-amber-50 border border-amber-200':'bg-gray-50 border border-gray-100'}" id="certRow-${s.id}">
+                <input type="checkbox" class="cert-check w-4 h-4 accent-amber-500 rounded" data-id="${s.id}" ${checked?'checked':''} onchange="toggleCertCheck(${s.id})">
+                <img src="${s.avatar}" class="w-8 h-8 rounded-full bg-blue-50 object-contain flex-shrink-0">
+                <div class="flex-1 overflow-hidden">
+                    <p class="text-sm font-bold text-gray-800 truncate">${s.stt}. ${s.name}</p>
+                    <p class="text-[10px] text-gray-400">${s.points} điểm ${ms?ms.icon:''}</p>
+                </div>
+            </label>`);
+    });
+    _updateCertSelectedCount();
+}
+
+function toggleCertCheck(id) {
+    const row=document.getElementById(`certRow-${id}`);
+    if(_batchCertChecked.has(id)){
+        _batchCertChecked.delete(id);
+        row.classList.remove('bg-amber-50','border-amber-200'); row.classList.add('bg-gray-50','border-gray-100');
+    } else {
+        _batchCertChecked.add(id);
+        row.classList.add('bg-amber-50','border-amber-200'); row.classList.remove('bg-gray-50','border-gray-100');
+    }
+    _updateCertSelectedCount();
+}
+
+function certSelectAll(val) {
+    document.querySelectorAll('.cert-check').forEach(cb=>{
+        const id=parseInt(cb.dataset.id);
+        cb.checked=val;
+        const row=document.getElementById(`certRow-${id}`);
+        if(val){ _batchCertChecked.add(id); row.classList.add('bg-amber-50','border-amber-200'); row.classList.remove('bg-gray-50','border-gray-100'); }
+        else   { _batchCertChecked.delete(id); row.classList.remove('bg-amber-50','border-amber-200'); row.classList.add('bg-gray-50','border-gray-100'); }
+    });
+    _updateCertSelectedCount();
+}
+
+function _updateCertSelectedCount() {
+    document.getElementById('certSelectedCount').innerText = `(${_batchCertChecked.size})`;
+}
+
+function selectCertFilter(filter) {
+    _batchCertFilter=filter;
+    document.querySelectorAll('.cert-filter-btn').forEach(btn=>{
+        btn.classList.remove('border-amber-400','bg-amber-50','text-amber-700');
+        btn.classList.add('border-transparent','bg-gray-100','text-gray-600');
+    });
+    const active=document.getElementById(`certFilter${filter.charAt(0).toUpperCase()+filter.slice(1)}`);
+    if(active){ active.classList.add('border-amber-400','bg-amber-50','text-amber-700'); active.classList.remove('border-transparent','bg-gray-100','text-gray-600'); }
+    _populateCertStudentList();
+}
+
+function previewBatchCerts() {
+    if(!_batchCertChecked.size){ showToast('Chọn ít nhất 1 học sinh!', false); return; }
+    // Save settings
+    localStorage.setItem('cert_school', document.getElementById('certSchoolName').value);
+    localStorage.setItem('cert_reason', document.getElementById('certReason').value);
+    localStorage.setItem('cert_signer', document.getElementById('certSigner').value);
+
+    _certSettings = {
+        school: document.getElementById('certSchoolName').value,
+        title:  document.getElementById('certTitle').value,
+        reason: document.getElementById('certReason').value,
+        signer: document.getElementById('certSigner').value,
+        date:   document.getElementById('certDate').value,
+    };
+    _certStudents = students.filter(s=>_batchCertChecked.has(s.id)).sort((a,b)=>a.stt-b.stt);
+    _certIndex=0;
+    closeBatchCertModal();
+    setTimeout(()=>_showCertPreview(), 350);
 }
 
 // ============================================================
