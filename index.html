@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Quản Lý Lớp Học Pro</title>
+    <title>Lớp học Tích Cực – Vũ Tiến Lực NHC</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Roboto:ital,wght@0,400;0,500;0,700;0,900;1,400&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -26,20 +27,44 @@
         .text-glow{text-shadow:0 0 15px rgba(51,163,220,.5),0 0 30px rgba(51,163,220,.3)}
         @keyframes milestoneIn{0%{transform:scale(0) rotate(-20deg);opacity:0}60%{transform:scale(1.3) rotate(5deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
         .milestone-badge{animation:milestoneIn .4s ease forwards;display:inline-block}
+        @keyframes groupCardIn{0%{transform:scale(0.7) translateY(30px);opacity:0}70%{transform:scale(1.04) translateY(-4px)}100%{transform:scale(1) translateY(0);opacity:1}}
+        .group-card-anim{animation:groupCardIn .45s cubic-bezier(.175,.885,.32,1.275) both}
+        @keyframes sttPop{0%{transform:scale(0) rotate(-15deg);opacity:0}70%{transform:scale(1.15) rotate(3deg)}100%{transform:scale(1) rotate(0);opacity:1}}
+        .stt-pop{animation:sttPop .5s cubic-bezier(.175,.885,.32,1.275) both}
+        .projector-mode #groupResultList{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))!important;align-content:start}
+        .projector-mode .group-member-stt{font-size:4.5rem!important;line-height:1}
+        .projector-mode .group-member-name{font-size:1.2rem!important}
+        .projector-mode .group-card-header{font-size:1.5rem!important}
+        /* Projector award overlay animations */
+        @keyframes projBgIn{0%{opacity:0}100%{opacity:1}}
+        @keyframes projAvatarIn{0%{transform:scale(0.4) translateY(40px);opacity:0}70%{transform:scale(1.08) translateY(-6px)}100%{transform:scale(1) translateY(0);opacity:1}}
+        @keyframes projNameIn{0%{transform:translateY(40px);opacity:0}100%{transform:translateY(0);opacity:1}}
+        @keyframes projSkillIn{0%{transform:translateY(30px);opacity:0}100%{transform:translateY(0);opacity:1}}
+        @keyframes projPointsPop{0%{transform:scale(0.1) rotate(-15deg);opacity:0}55%{transform:scale(1.22) rotate(3deg);opacity:1}75%{transform:scale(0.92) rotate(-1deg)}100%{transform:scale(1) rotate(0);opacity:1}}
+        @keyframes projBarShrink{0%{width:100%}100%{width:0%}}
+        #projectorAwardOverlay.show-proj{animation:projBgIn .25s ease both}
+        #projectorAwardOverlay.show-proj #projStudentAvatar{animation:projAvatarIn .55s cubic-bezier(.175,.885,.32,1.275) .05s both}
+        #projectorAwardOverlay.show-proj #projStudentName{animation:projNameIn .45s ease .2s both}
+        #projectorAwardOverlay.show-proj #projSkillName{animation:projSkillIn .4s ease .32s both}
+        #projectorAwardOverlay.show-proj #projPointsNum{animation:projPointsPop .65s cubic-bezier(.175,.885,.32,1.275) .42s both}
         @keyframes certShine{0%{background-position:200% center}100%{background-position:-200% center}}
         .cert-shine{background:linear-gradient(90deg,#b8860b,#ffd700,#b8860b,#ffd700,#b8860b);background-size:200% auto;animation:certShine 3s linear infinite;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-        @media print{body>*:not(#certPrintOverlay){display:none!important}#certPrintOverlay{display:flex!important;position:fixed;inset:0;z-index:9999;background:#fff}}
+        @media print{body>*:not(#certPrintOverlay):not(#seatingPrintArea){display:none!important}#certPrintOverlay{display:flex!important;position:fixed;inset:0;z-index:9999;background:#fff}#seatingPrintArea{display:block!important;position:fixed;inset:0;z-index:9999;background:#fff;padding:12px;font-family:sans-serif}}
+        #seatingPrintArea{display:none}
+        .seat-good{background:#fef3c7!important}
+        .seat-empty{background:#f9fafb!important;border:2px dashed #e5e7eb!important}
     </style>
 </head>
 <body class="bg-dojo-bg font-sans antialiased text-gray-800 pb-20 select-none overflow-x-hidden">
 
 <!-- HEADER -->
 <header class="bg-dojo-blue text-white p-4 sticky top-0 shadow-md z-20 flex justify-between items-center rounded-b-xl">
-    <div class="flex items-center gap-3">
-        <button onclick="toggleSidebar()" class="w-10 h-10 flex items-center justify-center hover:bg-blue-500 rounded-full transition"><i class="fas fa-bars text-xl"></i></button>
-        <div onclick="toggleSidebar()" class="cursor-pointer">
-            <h1 id="headerClassName" class="text-xl font-bold leading-tight flex items-center gap-2">Lớp Superstars <i class="fas fa-caret-down text-sm"></i></h1>
-            <p class="text-xs opacity-90" id="totalClassPoints">Tổng điểm: 0</p>
+    <div class="flex items-center gap-2">
+        <button onclick="toggleSidebar()" class="w-10 h-10 flex items-center justify-center hover:bg-blue-500 rounded-full transition flex-shrink-0"><i class="fas fa-bars text-xl"></i></button>
+        <img src="https://i.ibb.co/wZRKCnpw/10a9a7ae1ede.png" alt="Logo" class="w-9 h-9 rounded-xl object-cover shadow border-2 border-white border-opacity-30 flex-shrink-0" onclick="toggleSidebar()">
+        <div onclick="toggleSidebar()" class="cursor-pointer min-w-0">
+            <h1 id="headerClassName" class="text-lg font-black leading-tight flex items-center gap-1.5 truncate">Lớp Superstars <i class="fas fa-caret-down text-xs opacity-70"></i></h1>
+            <p class="text-[11px] opacity-75" id="totalClassPoints">Tổng điểm: 0</p>
         </div>
     </div>
     <div class="flex items-center gap-1.5">
@@ -57,15 +82,28 @@
 <!-- SIDEBAR -->
 <div id="sidebarBackdrop" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden" onclick="toggleSidebar()"></div>
 <div id="sidebar" class="fixed top-0 left-0 h-full w-3/4 max-w-sm bg-white z-40 sidebar-closed transition-transform duration-300 ease-in-out shadow-2xl flex flex-col">
-    <div class="bg-dojo-blue text-white p-6 rounded-br-3xl">
-        <h2 class="text-2xl font-bold">Danh sách lớp</h2>
-        <p class="text-sm opacity-80 mt-1">Chọn lớp để quản lý</p>
+    <!-- Sidebar header với logo nhỏ -->
+    <div class="bg-dojo-blue text-white px-5 pt-10 pb-5 rounded-br-3xl flex items-center gap-3">
+        <img src="https://i.ibb.co/wZRKCnpw/10a9a7ae1ede.png" alt="Logo" class="w-12 h-12 rounded-2xl object-cover shadow-lg border-2 border-white border-opacity-30 flex-shrink-0">
+        <div>
+            <h2 class="text-xl font-black leading-tight">Lớp học Tích Cực</h2>
+            <p class="text-xs opacity-70 mt-0.5">Chọn lớp để quản lý</p>
+        </div>
     </div>
     <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-2" id="classListContainer"></div>
     <div class="p-4 border-t border-gray-100 flex flex-col gap-3">
         <button onclick="document.getElementById('excelInput').click()" class="w-full py-3 bg-green-100 text-green-700 font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-green-200"><i class="fas fa-file-excel"></i> Nhập danh sách (Excel)</button>
         <input type="file" id="excelInput" class="hidden" accept=".xlsx,.xls,.csv" onchange="handleExcelUpload(event)">
         <button onclick="openAddClassModal()" class="w-full py-3 bg-dojo-blue text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-md"><i class="fas fa-plus-circle"></i> Tạo lớp mới</button>
+    </div>
+    <!-- Branding strip -->
+    <div class="px-4 py-3 border-t border-gray-100 flex items-center gap-3 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <img src="https://i.ibb.co/wZRKCnpw/10a9a7ae1ede.png" alt="Logo Lớp học Tích Cực" class="w-11 h-11 rounded-xl object-cover shadow border border-white">
+        <div class="flex-1 min-w-0">
+            <p class="font-black text-gray-800 text-sm leading-tight truncate">Lớp học Tích Cực</p>
+            <p class="text-[11px] text-gray-500 font-semibold mt-0.5 truncate">Tác giả: Vũ Tiến Lực NHC</p>
+        </div>
+        <i class="fas fa-award text-blue-400 text-lg flex-shrink-0"></i>
     </div>
 </div>
 
@@ -75,10 +113,13 @@
         <h2 class="text-gray-600 font-bold text-sm uppercase tracking-wide">Học sinh (<span id="studentCount">0</span>)</h2>
         <div class="flex gap-1.5 flex-wrap justify-end">
             <button class="text-orange-500 text-xs font-bold bg-orange-50 px-2.5 py-1.5 rounded-full hover:bg-orange-100 transition border border-orange-100 shadow-sm flex items-center" onclick="startRandomSelection()"><i class="fas fa-random mr-1"></i>Gọi</button>
+            <button class="text-violet-600 text-xs font-bold bg-violet-50 px-2.5 py-1.5 rounded-full hover:bg-violet-100 transition border border-violet-100 shadow-sm flex items-center" onclick="openGroupDivider()"><i class="fas fa-object-group mr-1"></i>Nhóm</button>
             <button id="btnSttPanel" class="text-purple-600 text-xs font-bold bg-purple-50 px-2.5 py-1.5 rounded-full hover:bg-purple-100 transition border border-purple-100 shadow-sm flex items-center" onclick="toggleSttPanel()"><i class="fas fa-hashtag mr-1"></i>STT</button>
             <button class="text-dojo-blue text-xs font-bold bg-blue-50 px-2.5 py-1.5 rounded-full hover:bg-blue-100 transition shadow-sm flex items-center" onclick="awardAll()"><i class="fas fa-users mr-1"></i>Cả lớp</button>
             <button class="text-emerald-600 text-xs font-bold bg-emerald-50 px-2.5 py-1.5 rounded-full hover:bg-emerald-100 transition border border-emerald-100 shadow-sm flex items-center" onclick="openCommunicationLog()"><i class="fas fa-book mr-1"></i>Sổ liên lạc</button>
             <button class="text-rose-600 text-xs font-bold bg-rose-50 px-2.5 py-1.5 rounded-full hover:bg-rose-100 transition border border-rose-100 shadow-sm flex items-center" onclick="openGoalsOverview()"><i class="fas fa-bullseye mr-1"></i>Mục tiêu</button>
+            <button class="text-indigo-600 text-xs font-bold bg-indigo-50 px-2.5 py-1.5 rounded-full hover:bg-indigo-100 transition border border-indigo-100 shadow-sm flex items-center" onclick="openSeatingConfig()"><i class="fas fa-th mr-1"></i>Sơ đồ</button>
+            <button id="btnProjectorMode" onclick="toggleProjectorMode()" class="text-cyan-600 text-xs font-bold bg-cyan-50 px-2.5 py-1.5 rounded-full hover:bg-cyan-100 transition border border-cyan-100 shadow-sm flex items-center"><i class="fas fa-broadcast-tower mr-1"></i>Chiếu</button>
         </div>
     </div>
     <div class="mb-3 relative">
@@ -183,7 +224,21 @@
 
 <!-- VIEW: KỸ NĂNG -->
 <main id="settingsView" class="p-4 hidden">
-    <h2 class="text-gray-800 font-bold text-lg mb-4">Quản lý kỹ năng</h2>
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-gray-800 font-bold text-lg">Quản lý kỹ năng</h2>
+        <span id="settingsClassLabel" class="text-xs font-bold text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full"></span>
+    </div>
+
+    <!-- BỘ KỸ NĂNG MẪU -->
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4">
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="font-bold text-gray-700 flex items-center gap-2"><i class="fas fa-layer-group text-dojo-blue"></i> Bộ kỹ năng theo vai trò</h3>
+            <span id="currentPresetBadge" class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-gray-100 text-gray-500">Tùy chỉnh</span>
+        </div>
+        <div class="grid grid-cols-1 gap-2" id="presetCardGrid">
+            <!-- Rendered by JS -->
+        </div>
+    </div>
 
     <!-- Milestones -->
     <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4">
@@ -270,6 +325,25 @@
 <div id="addClassModal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm bg-white rounded-2xl z-50 hidden shadow-2xl p-5">
     <h3 class="font-bold text-xl text-center mb-4 text-gray-800">Tạo Lớp Mới</h3>
     <input type="text" id="newClassName" placeholder="Nhập tên lớp..." class="w-full border-2 border-gray-200 p-3 rounded-xl mb-4 focus:outline-none focus:border-dojo-blue text-lg" onkeypress="if(event.key==='Enter')addClass()">
+    <!-- Chọn vai trò / bộ kỹ năng -->
+    <p class="text-xs font-bold text-gray-500 mb-2">Bộ kỹ năng áp dụng</p>
+    <div class="flex flex-col gap-2 mb-4" id="addClassPresetGrid">
+        <label class="flex items-center gap-3 p-2.5 rounded-xl border-2 border-blue-400 bg-blue-50 cursor-pointer">
+            <input type="radio" name="newClassPreset" value="homeroom" class="accent-blue-500" checked>
+            <i class="fas fa-chalkboard-teacher text-blue-600 w-5 text-center"></i>
+            <div><p class="font-bold text-sm text-blue-800">Lớp chủ nhiệm</p><p class="text-[10px] text-blue-500">20 tiêu chí nề nếp, tác phong</p></div>
+        </label>
+        <label class="flex items-center gap-3 p-2.5 rounded-xl border-2 border-transparent bg-purple-50 cursor-pointer hover:border-purple-300">
+            <input type="radio" name="newClassPreset" value="subject" class="accent-purple-500">
+            <i class="fas fa-graduation-cap text-purple-600 w-5 text-center"></i>
+            <div><p class="font-bold text-sm text-purple-800">Giáo viên bộ môn</p><p class="text-[10px] text-purple-500">Tiêu chí học tập theo môn học</p></div>
+        </label>
+        <label class="flex items-center gap-3 p-2.5 rounded-xl border-2 border-transparent bg-gray-50 cursor-pointer hover:border-gray-300">
+            <input type="radio" name="newClassPreset" value="custom" class="accent-gray-500">
+            <i class="fas fa-sliders-h text-gray-500 w-5 text-center"></i>
+            <div><p class="font-bold text-sm text-gray-700">Tùy chỉnh</p><p class="text-[10px] text-gray-400">Bộ kỹ năng mặc định</p></div>
+        </label>
+    </div>
     <div class="flex gap-3"><button onclick="closeAddClassModal()" class="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl">Hủy</button><button onclick="addClass()" class="flex-1 py-3 bg-dojo-blue text-white font-bold rounded-xl shadow-lg">Lưu lại</button></div>
 </div>
 
@@ -568,7 +642,7 @@
 
     <!-- Filters -->
     <div class="bg-white border-b border-gray-100 px-4 py-2 flex gap-2 overflow-x-auto no-scrollbar flex-shrink-0">
-        <select id="commFilterStudent" onchange="renderCommunicationLog()" class="text-xs font-bold border border-gray-200 rounded-xl px-3 py-1.5 outline-none bg-white flex-shrink-0 focus:border-emerald-500">
+        <select id="commFilterStudent" onchange="renderCommunicationLog();_toggleCommMsgBtn()" class="text-xs font-bold border border-gray-200 rounded-xl px-3 py-1.5 outline-none bg-white flex-shrink-0 focus:border-emerald-500">
             <option value="">Tất cả học sinh</option>
         </select>
         <select id="commFilterType" onchange="renderCommunicationLog()" class="text-xs font-bold border border-gray-200 rounded-xl px-3 py-1.5 outline-none bg-white flex-shrink-0 focus:border-emerald-500">
@@ -579,6 +653,13 @@
             <option value="reminder">⏰ Dặn dò</option>
         </select>
         <input type="date" id="commFilterDate" onchange="renderCommunicationLog()" class="text-xs font-bold border border-gray-200 rounded-xl px-3 py-1.5 outline-none bg-white flex-shrink-0 focus:border-emerald-500">
+        <!-- Action buttons -->
+        <button id="btnCommMsg" onclick="_openStudentMessage()" class="hidden flex-shrink-0 flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow hover:bg-emerald-700 transition active:scale-95 whitespace-nowrap">
+            <i class="fas fa-comment-dots"></i> Tin nhắn
+        </button>
+        <button onclick="exportCommLogExcel()" class="flex-shrink-0 flex items-center gap-1.5 bg-green-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow hover:bg-green-700 transition active:scale-95 whitespace-nowrap">
+            <i class="fas fa-file-excel"></i> Xuất Excel
+        </button>
     </div>
 
     <!-- Note list -->
@@ -588,6 +669,51 @@
     <button onclick="openAddNoteModal(null)" class="absolute bottom-6 right-5 w-14 h-14 bg-emerald-600 text-white rounded-full shadow-xl flex items-center justify-center text-2xl hover:bg-emerald-700 transition active:scale-95 z-10">
         <i class="fas fa-plus"></i>
     </button>
+</div>
+
+<!-- TIN NHẮN HỌC SINH MODAL -->
+<div id="studentMsgBackdrop" class="fixed inset-0 bg-black bg-opacity-60 z-[100] hidden" onclick="closeStudentMessage()"></div>
+<div id="studentMsgModal" class="fixed bottom-0 left-0 w-full bg-white rounded-t-3xl z-[105] transform translate-y-full transition-transform duration-300 ease-out shadow-2xl max-h-[92vh] flex flex-col">
+    <!-- Header -->
+    <div class="flex items-center justify-between p-4 border-b flex-shrink-0">
+        <div class="flex items-center gap-3">
+            <img id="msgStudentAvatar" src="" class="w-10 h-10 rounded-full object-contain bg-blue-50 p-0.5">
+            <div>
+                <h3 id="msgStudentName" class="font-black text-gray-800 text-base"></h3>
+                <p id="msgStudentClass" class="text-xs text-gray-400 font-semibold"></p>
+            </div>
+        </div>
+        <button onclick="closeStudentMessage()" class="w-8 h-8 bg-gray-100 rounded-full text-gray-500 flex items-center justify-center"><i class="fas fa-times"></i></button>
+    </div>
+    <!-- Template selector -->
+    <div class="px-4 pt-3 pb-2 flex gap-2 flex-shrink-0">
+        <button onclick="_setMsgTemplate('formal')" id="tplFormal" class="flex-1 py-2 text-xs font-bold rounded-xl bg-blue-600 text-white shadow transition">📋 Trang trọng</button>
+        <button onclick="_setMsgTemplate('friendly')" id="tplFriendly" class="flex-1 py-2 text-xs font-bold rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 transition">😊 Thân thiện</button>
+        <button onclick="_setMsgTemplate('brief')" id="tplBrief" class="flex-1 py-2 text-xs font-bold rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 transition">⚡ Ngắn gọn</button>
+    </div>
+    <!-- Days range -->
+    <div class="px-4 pb-2 flex gap-2 items-center flex-shrink-0">
+        <span class="text-xs text-gray-500 font-bold">Trong</span>
+        <select id="msgDaysRange" onchange="_rebuildMsg()" class="text-xs font-bold border border-gray-200 rounded-xl px-3 py-1.5 outline-none bg-white focus:border-emerald-500">
+            <option value="7">7 ngày gần nhất</option>
+            <option value="14">14 ngày</option>
+            <option value="30">30 ngày</option>
+            <option value="0">Tất cả</option>
+        </select>
+    </div>
+    <!-- Message textarea (editable) -->
+    <div class="flex-1 overflow-y-auto px-4 pb-2 no-scrollbar">
+        <textarea id="msgPreviewText" rows="14" class="w-full text-sm font-mono bg-gray-50 border border-gray-200 rounded-2xl p-3 focus:outline-none focus:border-emerald-400 resize-none leading-relaxed" style="font-family:monospace"></textarea>
+    </div>
+    <!-- Action buttons -->
+    <div class="p-4 pt-2 flex gap-3 flex-shrink-0 border-t">
+        <button onclick="_copyStudentMessage()" class="flex-1 py-3 bg-emerald-600 text-white font-bold rounded-xl shadow flex items-center justify-center gap-2 hover:bg-emerald-700 transition active:scale-95">
+            <i class="fas fa-copy"></i> Sao chép tin nhắn
+        </button>
+        <button onclick="_shareStudentMessage()" class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center hover:bg-blue-100 transition active:scale-95" title="Chia sẻ">
+            <i class="fas fa-share-alt text-lg"></i>
+        </button>
+    </div>
 </div>
 
 <!-- ADD / EDIT NOTE MODAL -->
@@ -773,7 +899,7 @@
     <div class="flex-1 overflow-auto flex items-start justify-center p-4 no-scrollbar">
         <div id="certPaperWrap" class="w-full max-w-2xl">
             <!-- The actual certificate (rendered as HTML, exported to PDF via jsPDF) -->
-            <div id="certPaper" class="relative bg-white shadow-2xl" style="aspect-ratio:1.414/1; font-family:'Nunito',sans-serif;">
+            <div id="certPaper" class="relative bg-white shadow-2xl" style="aspect-ratio:1.414/1; font-family:'Roboto',sans-serif;">
                 <!-- Rendered by JS -->
             </div>
         </div>
@@ -848,6 +974,175 @@
             <i class="fas fa-eye"></i> Xem & Tải PDF
         </button>
     </div>
+</div>
+
+<!-- ====== PROJECTOR AWARD OVERLAY ====== -->
+<div id="projectorAwardOverlay" class="fixed inset-0 z-[220] hidden flex flex-col items-center justify-center px-6 select-none" style="background:rgba(5,8,20,0.96)" onclick="_closeProjectorAward()">
+    <!-- Progress bar -->
+    <div class="absolute bottom-0 left-0 right-0 h-1.5 bg-white bg-opacity-10 overflow-hidden">
+        <div id="projProgressBar" class="h-full bg-white bg-opacity-40" style="width:100%"></div>
+    </div>
+    <!-- Hint -->
+    <p class="absolute top-5 right-5 text-white text-opacity-20 text-xs font-semibold tracking-wide">Chạm để đóng</p>
+    <!-- Class label -->
+    <p id="projClassLabel" class="text-white text-opacity-40 text-sm font-bold mb-5 tracking-widest uppercase"></p>
+    <!-- Avatar -->
+    <img id="projStudentAvatar" src="" alt="" class="rounded-full object-contain shadow-2xl mb-5" style="width:140px;height:140px;padding:6px;border:3px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.08)">
+    <!-- Student name -->
+    <div id="projStudentName" class="text-white font-black text-center leading-tight" style="font-size:clamp(2.8rem,9vw,5.5rem);letter-spacing:-1px;text-shadow:0 4px 24px rgba(0,0,0,0.6)"></div>
+    <!-- Skill name -->
+    <div id="projSkillName" class="font-bold text-center mt-4 px-4" style="font-size:clamp(1.2rem,4vw,2.2rem);color:rgba(255,255,255,0.65)"></div>
+    <!-- Points (huge) -->
+    <div id="projPointsNum" class="font-black mt-2" style="font-size:clamp(5.5rem,20vw,11rem);line-height:1;letter-spacing:-3px;text-shadow:0 8px 40px rgba(0,0,0,0.5)"></div>
+    <!-- Total -->
+    <div id="projTotalPoints" class="font-bold mt-4" style="font-size:clamp(1rem,3vw,1.8rem);color:rgba(255,255,255,0.45)"></div>
+</div>
+
+<!-- ====== SƠ ĐỒ CHỖ NGỒI PHÒNG THI ====== -->
+<div id="seatingConfigBackdrop" class="fixed inset-0 bg-black bg-opacity-50 z-[85] hidden" onclick="closeSeatingConfig()"></div>
+<div id="seatingConfigModal" class="fixed bottom-0 left-0 w-full bg-white rounded-t-3xl z-[90] transform translate-y-full transition-transform duration-300 ease-out shadow-2xl max-h-[92vh] flex flex-col">
+    <!-- Header -->
+    <div class="flex items-center justify-between p-4 border-b flex-shrink-0">
+        <div>
+            <h3 class="font-black text-gray-800 text-lg">🏫 Sơ đồ phòng thi</h3>
+            <p id="seatingConfigSubtitle" class="text-xs text-gray-400 mt-0.5"></p>
+        </div>
+        <button onclick="closeSeatingConfig()" class="w-8 h-8 bg-gray-100 rounded-full text-gray-500 flex items-center justify-center"><i class="fas fa-times"></i></button>
+    </div>
+    <!-- Room config -->
+    <div class="px-4 py-3 bg-gray-50 border-b flex-shrink-0 flex flex-wrap gap-3 items-center">
+        <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-gray-600">SBD bắt đầu:</span>
+            <input type="number" id="seatingStartNum" value="1" min="1" max="9999" class="w-20 border-2 border-gray-200 rounded-xl text-center font-black text-gray-800 py-1.5 text-sm focus:outline-none focus:border-indigo-400">
+        </div>
+        <div class="flex items-center gap-2 text-xs text-gray-500 font-semibold bg-white rounded-xl px-3 py-1.5 border border-gray-200">
+            <i class="fas fa-table text-indigo-400"></i> 4 dãy × 6 bàn × 2 chỗ = 48 SBD
+        </div>
+        <div class="ml-auto">
+            <span id="seatingGoodCount" class="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100">⭐ 0 học tốt</span>
+        </div>
+    </div>
+    <!-- Instructions -->
+    <div class="px-4 pt-2.5 pb-1 flex-shrink-0 flex items-center gap-2 text-xs text-gray-500">
+        <i class="fas fa-info-circle text-indigo-400"></i>
+        <span>Bấm <b>⭐</b> để đánh dấu học tốt — sẽ được xếp ngồi đầu phòng</span>
+    </div>
+    <!-- Student list -->
+    <div class="flex-1 overflow-y-auto no-scrollbar px-4 py-2" id="seatingStudentList"></div>
+    <!-- Generate -->
+    <div class="p-4 border-t flex-shrink-0">
+        <button onclick="generateSeating()" class="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-black rounded-2xl shadow-lg flex items-center justify-center gap-2 text-base active:scale-95 transition">
+            <i class="fas fa-table"></i> Tạo sơ đồ chỗ ngồi
+        </button>
+    </div>
+</div>
+
+<!-- SEATING RESULT OVERLAY -->
+<div id="seatingResultOverlay" class="fixed inset-0 z-[95] hidden flex flex-col overflow-hidden" style="background:linear-gradient(135deg,#1e3a5f 0%,#0f2744 100%)">
+    <!-- Top bar -->
+    <div class="flex items-center justify-between px-4 pt-10 pb-3 flex-shrink-0">
+        <button onclick="closeSeatingResult()" class="w-9 h-9 bg-white bg-opacity-15 rounded-full flex items-center justify-center text-white hover:bg-opacity-25 transition">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <div class="text-center flex-1 px-2">
+            <h2 id="seatingResultTitle" class="text-white font-black text-base leading-tight"></h2>
+            <p id="seatingResultSub" class="text-white text-opacity-60 text-xs mt-0.5"></p>
+        </div>
+        <div class="flex gap-1.5">
+            <button onclick="reshuffleSeating()" class="flex items-center gap-1 bg-white bg-opacity-15 hover:bg-opacity-25 text-white font-bold px-2.5 py-1.5 rounded-xl text-xs transition">
+                <i class="fas fa-random"></i>
+            </button>
+            <button onclick="exportSeatingExcel()" class="flex items-center gap-1 bg-green-500 hover:bg-green-400 text-white font-bold px-2.5 py-1.5 rounded-xl text-xs transition">
+                <i class="fas fa-file-excel"></i>
+            </button>
+            <button onclick="printSeating()" class="flex items-center gap-1 bg-white text-indigo-800 font-bold px-2.5 py-1.5 rounded-xl text-xs transition">
+                <i class="fas fa-print"></i>
+            </button>
+        </div>
+    </div>
+    <!-- Chart area -->
+    <div class="flex-1 overflow-auto p-3 no-scrollbar" id="seatingScrollArea">
+        <!-- BGT -->
+        <div class="bg-indigo-700 bg-opacity-80 border border-indigo-500 border-opacity-50 text-white text-center font-black py-2.5 rounded-xl mb-3 text-sm tracking-wide shadow-lg">
+            🏛️ BAN GIÁM THỊ / GIÁO VIÊN COI THI
+        </div>
+        <!-- Grid -->
+        <div id="seatingChartGrid"></div>
+        <!-- Door -->
+        <div class="border-2 border-dashed border-white border-opacity-20 text-white text-opacity-40 text-center text-xs font-bold py-2 rounded-xl mt-3 tracking-widest">
+            🚪 CỬA RA VÀO
+        </div>
+    </div>
+</div>
+
+<!-- PRINT AREA (hidden, used when printing seating chart) -->
+<div id="seatingPrintArea"></div>
+
+<!-- ====== CHIA NHÓM NGẪU NHIÊN – SETTINGS MODAL ====== -->
+<div id="groupDividerBackdrop" class="fixed inset-0 bg-black bg-opacity-50 z-[85] hidden" onclick="closeGroupDivider()"></div>
+<div id="groupDividerModal" class="fixed bottom-0 left-0 w-full bg-white rounded-t-3xl z-[90] transform translate-y-full transition-transform duration-300 ease-out shadow-2xl">
+    <div class="p-5 border-b flex justify-between items-center bg-violet-50 rounded-t-3xl">
+        <div>
+            <h3 class="font-black text-gray-800 text-lg flex items-center gap-2"><i class="fas fa-object-group text-violet-600"></i> Chia nhóm ngẫu nhiên</h3>
+            <p id="groupDividerSubtitle" class="text-xs text-gray-400 mt-0.5"></p>
+        </div>
+        <button onclick="closeGroupDivider()" class="w-9 h-9 bg-gray-100 rounded-full text-gray-500 flex items-center justify-center"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="p-5 flex flex-col gap-5">
+        <!-- Mode toggle -->
+        <div>
+            <p class="text-xs font-bold text-gray-500 mb-2">Chia theo</p>
+            <div class="flex gap-2">
+                <button id="groupModeByGroup" onclick="setGroupMode('byGroup')" class="flex-1 py-2.5 rounded-xl font-bold text-sm bg-violet-600 text-white shadow transition">Số nhóm</button>
+                <button id="groupModeBySize"  onclick="setGroupMode('bySize')"  class="flex-1 py-2.5 rounded-xl font-bold text-sm bg-gray-100 text-gray-600 hover:bg-gray-200 transition">Số HS/nhóm</button>
+            </div>
+        </div>
+        <!-- Number input -->
+        <div class="flex flex-col items-center gap-3">
+            <p id="groupInputLabel" class="text-sm font-bold text-gray-600">Số nhóm</p>
+            <div class="flex items-center gap-4">
+                <button onclick="adjustGroupNum(-1)" class="w-12 h-12 bg-violet-100 text-violet-700 rounded-full font-black text-2xl flex items-center justify-center hover:bg-violet-200 active:scale-95 transition">−</button>
+                <div class="w-20 h-20 rounded-2xl bg-violet-600 flex items-center justify-center shadow-lg">
+                    <span id="groupNumDisplay" class="text-4xl font-black text-white">4</span>
+                </div>
+                <button onclick="adjustGroupNum(1)" class="w-12 h-12 bg-violet-100 text-violet-700 rounded-full font-black text-2xl flex items-center justify-center hover:bg-violet-200 active:scale-95 transition">+</button>
+            </div>
+            <p id="groupPreviewText" class="text-xs text-gray-400 font-semibold"></p>
+        </div>
+        <!-- Options -->
+        <div class="flex gap-3">
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="groupShowAvatar" checked class="w-4 h-4 accent-violet-600 rounded">
+                <span class="text-sm font-semibold text-gray-600">Hiện ảnh đại diện</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="groupEqualSize" checked class="w-4 h-4 accent-violet-600 rounded">
+                <span class="text-sm font-semibold text-gray-600">Đều nhóm</span>
+            </label>
+        </div>
+        <button onclick="startGroupDivide()" class="w-full py-4 bg-violet-600 text-white font-black text-lg rounded-2xl shadow-lg hover:bg-violet-700 active:scale-95 transition flex items-center justify-center gap-2">
+            <i class="fas fa-random"></i> Chia nhóm ngay!
+        </button>
+    </div>
+</div>
+
+<!-- ====== CHIA NHÓM – KẾT QUẢ FULL SCREEN ====== -->
+<div id="groupResultOverlay" class="fixed inset-0 z-[95] hidden flex flex-col overflow-hidden" style="background:#1e1b4b">
+    <!-- Top bar -->
+    <div class="flex justify-between items-center px-4 py-3 flex-shrink-0" style="background:rgba(0,0,0,0.3)">
+        <button onclick="closeGroupResult()" class="flex items-center gap-2 text-white text-opacity-70 hover:text-opacity-100 font-bold text-sm"><i class="fas fa-arrow-left"></i> Đóng</button>
+        <h2 id="groupResultTitle" class="text-white font-black text-base"></h2>
+        <div class="flex gap-2">
+            <button onclick="reshuffleGroups()" class="flex items-center gap-1.5 bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition active:scale-95">
+                <i class="fas fa-random"></i> Xáo lại
+            </button>
+            <button onclick="toggleGroupProjector()" id="btnGroupProjector" class="flex items-center gap-1.5 bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold px-3 py-1.5 rounded-xl text-xs transition active:scale-95">
+                <i class="fas fa-expand"></i> Chiếu
+            </button>
+        </div>
+    </div>
+    <!-- Groups scroll area -->
+    <div id="groupResultList" class="flex-1 overflow-y-auto p-4 no-scrollbar"></div>
 </div>
 
 <!-- VIEWER OVERLAY – chế độ xem chỉ đọc -->
@@ -1089,6 +1384,84 @@ function generateComment(student) {
     return pool[seed];
 }
 
+// ============================================================
+// SKILL PRESETS – BỘ KỸ NĂNG MẪU
+// ============================================================
+const SKILL_PRESETS = {
+    homeroom: {
+        label: 'Lớp chủ nhiệm',
+        icon:  'fa-chalkboard-teacher',
+        color: 'text-blue-600',
+        bg:    'bg-blue-50',
+        border:'border-blue-200',
+        description: '20 tiêu chí đánh giá nề nếp, tác phong học sinh',
+        positive: [
+            { id:'h_p1',  name:'Đi học đúng giờ',       points:1, icon:'fa-clock',          color:'bg-blue-100 text-blue-700 border-blue-200' },
+            { id:'h_p2',  name:'Đồng phục đúng quy định',points:1, icon:'fa-tshirt',         color:'bg-indigo-100 text-indigo-700 border-indigo-200' },
+            { id:'h_p3',  name:'Chuẩn bị bài đầy đủ',   points:1, icon:'fa-book-open',      color:'bg-cyan-100 text-cyan-700 border-cyan-200' },
+            { id:'h_p4',  name:'Phát biểu xây dựng bài', points:1, icon:'fa-hand-paper',     color:'bg-green-100 text-green-700 border-green-200' },
+            { id:'h_p5',  name:'Giúp đỡ bạn bè',         points:1, icon:'fa-handshake',      color:'bg-teal-100 text-teal-700 border-teal-200' },
+            { id:'h_p6',  name:'Việc tốt mỗi ngày',      points:1, icon:'fa-heart',          color:'bg-pink-100 text-pink-700 border-pink-200' },
+            { id:'h_p7',  name:'Trực nhật tốt',           points:1, icon:'fa-broom',          color:'bg-orange-100 text-orange-700 border-orange-200' },
+            { id:'h_p8',  name:'Giữ vệ sinh',             points:1, icon:'fa-leaf',           color:'bg-green-100 text-green-700 border-green-200' },
+            { id:'h_p9',  name:'Tham gia phong trào',     points:2, icon:'fa-flag',           color:'bg-yellow-100 text-yellow-700 border-yellow-200' },
+            { id:'h_p10', name:'Tiến bộ bản thân',        points:2, icon:'fa-chart-line',     color:'bg-emerald-100 text-emerald-700 border-emerald-200' },
+            { id:'p_s3',  name:'Thưởng đặc biệt',         points:3, icon:'fa-gift',           color:'bg-pink-100 text-pink-600 border-pink-200' },
+            { id:'p_s5',  name:'Xuất sắc đặc biệt',       points:5, icon:'fa-crown',          color:'bg-amber-100 text-amber-600 border-amber-200' },
+        ],
+        negative: [
+            { id:'h_n1',  name:'Đi học muộn',                    points:-1, icon:'fa-clock',              color:'bg-red-100 text-red-600 border-red-200' },
+            { id:'h_n2',  name:'Không làm bài tập',              points:-1, icon:'fa-times-circle',       color:'bg-red-100 text-red-600 border-red-200' },
+            { id:'h_n3',  name:'Không học bài',                  points:-1, icon:'fa-book',               color:'bg-red-100 text-red-600 border-red-200' },
+            { id:'h_n4',  name:'Mất trật tự',                    points:-1, icon:'fa-volume-up',          color:'bg-red-100 text-red-600 border-red-200' },
+            { id:'h_n5',  name:'Sử dụng điện thoại sai quy định',points:-2, icon:'fa-mobile',             color:'bg-red-200 text-red-700 border-red-300' },
+            { id:'h_n6',  name:'Nói tục',                        points:-1, icon:'fa-comment-slash',      color:'bg-red-100 text-red-600 border-red-200' },
+            { id:'h_n7',  name:'Xả rác',                         points:-1, icon:'fa-trash',              color:'bg-red-100 text-red-600 border-red-200' },
+            { id:'h_n8',  name:'Thiếu lễ phép',                  points:-1, icon:'fa-user-slash',         color:'bg-red-100 text-red-600 border-red-200' },
+            { id:'h_n9',  name:'Gây gổ với bạn',                 points:-2, icon:'fa-fist-raised',        color:'bg-red-200 text-red-700 border-red-300' },
+            { id:'h_n10', name:'Vi phạm an toàn trường học',     points:-3, icon:'fa-exclamation-triangle',color:'bg-red-300 text-red-800 border-red-400' },
+        ]
+    },
+    subject: {
+        label: 'Giáo viên bộ môn',
+        icon:  'fa-graduation-cap',
+        color: 'text-purple-600',
+        bg:    'bg-purple-50',
+        border:'border-purple-200',
+        description: 'Tiêu chí đánh giá theo học tập bộ môn',
+        positive: [
+            { id:'s_p1', name:'Làm bài tốt',            points:1, icon:'fa-star',          color:'bg-yellow-100 text-yellow-600 border-yellow-200' },
+            { id:'s_p2', name:'Phát biểu xây dựng bài', points:1, icon:'fa-hand-paper',    color:'bg-blue-100 text-blue-600 border-blue-200' },
+            { id:'s_p3', name:'Đạt điểm cao (≥8)',      points:2, icon:'fa-medal',          color:'bg-amber-100 text-amber-600 border-amber-200' },
+            { id:'s_p4', name:'Hoàn thành bài tập',     points:1, icon:'fa-check-circle',  color:'bg-green-100 text-green-600 border-green-200' },
+            { id:'s_p5', name:'Giải bài khó',           points:2, icon:'fa-lightbulb',     color:'bg-orange-100 text-orange-600 border-orange-200' },
+            { id:'s_p6', name:'Giúp bạn học bài',       points:1, icon:'fa-handshake',     color:'bg-teal-100 text-teal-600 border-teal-200' },
+            { id:'s_p7', name:'Tiến bộ môn học',        points:2, icon:'fa-chart-line',    color:'bg-emerald-100 text-emerald-600 border-emerald-200' },
+            { id:'s_p8', name:'Chuẩn bị đồ dùng đầy đủ',points:1,icon:'fa-pencil-ruler',  color:'bg-cyan-100 text-cyan-600 border-cyan-200' },
+            { id:'p_s3', name:'Thưởng đặc biệt',        points:3, icon:'fa-gift',          color:'bg-pink-100 text-pink-600 border-pink-200' },
+            { id:'p_s5', name:'Xuất sắc đặc biệt',      points:5, icon:'fa-crown',         color:'bg-amber-100 text-amber-600 border-amber-200' },
+        ],
+        negative: [
+            { id:'s_n1', name:'Không làm bài tập',      points:-1, icon:'fa-times-circle',   color:'bg-red-100 text-red-600 border-red-200' },
+            { id:'s_n2', name:'Không học bài',           points:-1, icon:'fa-book',            color:'bg-red-100 text-red-600 border-red-200' },
+            { id:'s_n3', name:'Mất trật tự trong giờ',  points:-1, icon:'fa-volume-up',       color:'bg-red-100 text-red-600 border-red-200' },
+            { id:'s_n4', name:'Sử dụng điện thoại',     points:-2, icon:'fa-mobile',           color:'bg-red-200 text-red-700 border-red-300' },
+            { id:'s_n5', name:'Không mang đồ dùng',     points:-1, icon:'fa-pencil-ruler',    color:'bg-red-100 text-red-600 border-red-200' },
+            { id:'s_n6', name:'Gian lận bài kiểm tra',  points:-3, icon:'fa-ban',              color:'bg-red-300 text-red-800 border-red-400' },
+        ]
+    },
+    custom: {
+        label: 'Tùy chỉnh',
+        icon:  'fa-sliders-h',
+        color: 'text-gray-600',
+        bg:    'bg-gray-50',
+        border:'border-gray-200',
+        description: 'Bộ kỹ năng mặc định, tự do tùy chỉnh',
+        positive: [], // Will be populated from DEFAULT_SKILLS
+        negative: []
+    }
+};
+
 const DEFAULT_SKILLS = {
     positive: [
         { id:'p1', name:'Làm bài tốt',   points:1, icon:'fa-star',           color:'bg-yellow-100 text-yellow-600 border-yellow-200' },
@@ -1267,10 +1640,11 @@ function renderClasses() {
         const cnt=students.filter(s=>s.classId===cls.id).length;
         const div=document.createElement('div');
         div.className=`p-3 rounded-xl border-2 flex justify-between items-center transition ${isSel?'bg-blue-50 border-dojo-blue':'bg-white border-gray-100 hover:border-gray-300'}`;
+        const pr=SKILL_PRESETS[cls.skillPreset||'custom'];
         div.innerHTML=`
             <div class="flex-1 cursor-pointer" onclick="selectClass(${cls.id})">
                 <h4 class="font-bold ${isSel?'text-dojo-blue':'text-gray-800'}">${cls.name}</h4>
-                <p class="text-xs text-gray-500">${cnt} học sinh</p>
+                <p class="text-xs text-gray-500 flex items-center gap-1.5">${cnt} học sinh <span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold ${pr?pr.bg:''} ${pr?pr.color:''}"><i class="fas ${pr?pr.icon:'fa-sliders-h'} mr-0.5"></i>${pr?pr.label:'Tùy chỉnh'}</span></p>
             </div>
             <div class="flex items-center gap-1">
                 <button onclick="openEditClassModal(${cls.id})" class="p-2 text-gray-400 hover:text-blue-500"><i class="fas fa-edit"></i></button>
@@ -1283,9 +1657,19 @@ function renderClasses() {
 
 function selectClass(id) {
     currentClassId=id; currentPeriodId=null; toggleSidebar();
+    // Auto-load skill preset for this class
+    const cls = classes.find(c=>c.id===id);
+    if (cls && cls.skillPreset && cls.skillPreset !== 'custom') {
+        const preset = SKILL_PRESETS[cls.skillPreset];
+        if (preset) {
+            skills = JSON.parse(JSON.stringify({ positive: preset.positive, negative: preset.negative }));
+            saveData();
+        }
+    }
     if(currentView==='classroom') renderStudents();
     else if(currentView==='report') renderReport();
     else if(currentView==='history') renderHistory();
+    else if(currentView==='settings') renderSkills();
 }
 
 function openAddClassModal() { toggleSidebar(); document.getElementById('addClassBackdrop').classList.remove('hidden'); document.getElementById('addClassModal').classList.remove('hidden'); document.getElementById('newClassName').focus(); }
@@ -1293,7 +1677,17 @@ function closeAddClassModal() { document.getElementById('addClassBackdrop').clas
 function addClass() {
     const name=document.getElementById('newClassName').value.trim(); if(!name) return;
     const newId=classes.length?Math.max(...classes.map(c=>c.id))+1:1;
-    classes.push({id:newId,name}); saveData(); closeAddClassModal(); selectClass(newId); showToast(`Đã tạo lớp: ${name}`);
+    const presetRadio=document.querySelector('input[name="newClassPreset"]:checked');
+    const preset=presetRadio?presetRadio.value:'homeroom';
+    classes.push({id:newId,name,skillPreset:preset});
+    // Apply preset skills immediately
+    if(preset!=='custom'){
+        const ps=SKILL_PRESETS[preset];
+        if(ps) skills=JSON.parse(JSON.stringify({positive:ps.positive,negative:ps.negative}));
+    } else {
+        skills=JSON.parse(JSON.stringify(DEFAULT_SKILLS));
+    }
+    saveData(); closeAddClassModal(); selectClass(newId); showToast(`Đã tạo lớp: ${name} (${SKILL_PRESETS[preset]?.label||preset})`);
 }
 
 function openEditClassModal(id) { const cls=classes.find(c=>c.id===id); if(!cls) return; document.getElementById('editClassId').value=id; document.getElementById('editClassName').value=cls.name; document.getElementById('editClassBackdrop').classList.remove('hidden'); document.getElementById('editClassModal').classList.remove('hidden'); document.getElementById('editClassName').focus(); }
@@ -1543,6 +1937,68 @@ function renderSkills() {
     };
     renderTab(skills.positive,'positiveSkills');
     renderTab(skills.negative,'negativeSkills');
+    renderPresetGrid();
+}
+
+function renderPresetGrid() {
+    const grid = document.getElementById('presetCardGrid');
+    const badge = document.getElementById('currentPresetBadge');
+    if (!grid) return;
+    const cls = classes.find(c=>c.id===currentClassId);
+    const activePreset = cls?.skillPreset || 'custom';
+
+    // Update class label in header
+    const lbl = document.getElementById('settingsClassLabel');
+    if (lbl && cls) lbl.innerText = cls.name;
+
+    // Update badge
+    const ap = SKILL_PRESETS[activePreset];
+    if (badge && ap) {
+        badge.innerText = ap.label;
+        badge.className = `text-[10px] font-bold px-2.5 py-1 rounded-full ${ap.bg} ${ap.color}`;
+    }
+
+    grid.innerHTML = Object.entries(SKILL_PRESETS).map(([key,ps])=>{
+        const isActive = key === activePreset;
+        return `
+            <div class="flex items-center gap-3 p-3 rounded-xl border-2 transition cursor-pointer ${isActive ? ps.bg+' '+ps.border : 'bg-gray-50 border-transparent hover:border-gray-200'}" onclick="applySkillPreset('${key}')">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${isActive?ps.bg:'bg-white'} border ${isActive?ps.border:'border-gray-200'}">
+                    <i class="fas ${ps.icon} ${isActive?ps.color:'text-gray-400'} text-base"></i>
+                </div>
+                <div class="flex-1 overflow-hidden">
+                    <p class="font-bold text-sm ${isActive?ps.color:'text-gray-700'}">${ps.label} ${isActive?'<span class="text-[10px] font-bold bg-white bg-opacity-60 px-1.5 py-0.5 rounded-full">Đang dùng</span>':''}</p>
+                    <p class="text-[11px] text-gray-400 mt-0.5 truncate">${ps.description}</p>
+                    ${key!=='custom'?`<p class="text-[10px] text-gray-400">${SKILL_PRESETS[key].positive.length} tích cực · ${SKILL_PRESETS[key].negative.length} vi phạm</p>`:''}
+                </div>
+                ${!isActive?`<button class="text-xs font-bold px-3 py-1.5 rounded-xl bg-white border border-gray-200 text-gray-600 hover:text-dojo-blue hover:border-dojo-blue transition flex-shrink-0">Áp dụng</button>`:'<div class="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-white text-[10px]"></i></div>'}
+            </div>`;
+    }).join('');
+}
+
+function applySkillPreset(presetKey) {
+    const ps = SKILL_PRESETS[presetKey];
+    if (!ps) return;
+    const cls = classes.find(c=>c.id===currentClassId);
+    if (!cls) return;
+
+    let msg;
+    if (presetKey === 'custom') {
+        msg = `Đặt lại về bộ kỹ năng mặc định cho "${cls.name}"?`;
+    } else {
+        msg = `Áp dụng bộ kỹ năng "${ps.label}" (${ps.positive.length} tích cực, ${ps.negative.length} vi phạm) cho lớp "${cls.name}"?\n\nKỹ năng hiện tại sẽ được thay thế.`;
+    }
+
+    if (!confirm(msg)) return;
+
+    cls.skillPreset = presetKey;
+    if (presetKey === 'custom') {
+        skills = JSON.parse(JSON.stringify(DEFAULT_SKILLS));
+    } else {
+        skills = JSON.parse(JSON.stringify({ positive: ps.positive, negative: ps.negative }));
+    }
+    saveData();
+    renderSkills();
+    showToast(`Đã áp dụng: ${ps.label} 🎯`, true);
 }
 
 function openPointsModal(id) {
@@ -1642,6 +2098,8 @@ function addPoints(skillId, points, skillName) {
             setTimeout(()=>checkGoalAchievements(s.id), 100);
             showToast(`${s.name} ${isPos?'+':''}${points} (${skillName})`,isPos);
             setTimeout(()=>{const b=document.getElementById(`badge-${s.id}`);if(b){b.style.transform='scale(1.5)';setTimeout(()=>b.style.transform='scale(1)',200);}},50);
+            // Projector display
+            setTimeout(()=>_showProjectorAward(s, skillName, points), 80);
         }
     }
     saveData();
@@ -3484,6 +3942,189 @@ function renderCommunicationLog() {
     });
 }
 
+// ── Comm Log: show/hide "Tin nhắn" button ────────────────────
+function _toggleCommMsgBtn() {
+    const val = document.getElementById('commFilterStudent').value;
+    const btn = document.getElementById('btnCommMsg');
+    // show only when a specific student (not empty, not 'class') is selected
+    const show = val && val !== 'class';
+    btn.classList.toggle('hidden', !show);
+}
+
+// ── Export comm log → Excel ─────────────────────────────────
+function exportCommLogExcel() {
+    const cls = classes.find(c=>c.id===currentClassId);
+    const clsStudents = students.filter(s=>s.classId===currentClassId).sort((a,b)=>a.stt-b.stt);
+    if (!clsStudents.length) { showToast('Lớp chưa có học sinh!', false); return; }
+
+    const wsData = [
+        ['STT','Họ và tên','Tổng điểm','Điểm cộng','Điểm trừ','Khen ngợi gần nhất (7 ngày)','Vi phạm gần nhất (7 ngày)','Nhận xét trong sổ','Tin nhắn phụ huynh']
+    ];
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-7); cutoff.setHours(0,0,0,0);
+
+    clsStudents.forEach(s => {
+        const sHist = history.filter(h=>h.classId===currentClassId && h.studentId===s.id);
+        const recent = sHist.filter(h=>new Date(h.timestamp)>=cutoff);
+        const posRecent = recent.filter(h=>h.points>0).map(h=>`${h.skillName}(+${h.points})`).join('; ');
+        const negRecent = recent.filter(h=>h.points<0).map(h=>`${h.skillName}(${h.points})`).join('; ');
+        const totalPlus  = sHist.filter(h=>h.points>0).reduce((a,h)=>a+h.points,0);
+        const totalMinus = sHist.filter(h=>h.points<0).reduce((a,h)=>a+h.points,0);
+        const commNotes = communicationLog.filter(n=>n.classId===currentClassId && n.studentId===s.id)
+            .sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).slice(0,5)
+            .map(n=>`[${NOTE_TYPES[n.type]?.label||n.type}] ${n.content}`).join(' | ');
+        const msg = _buildParentMsg(s, 7, 'formal');
+        wsData.push([s.stt||'', s.name, s.points||0, totalPlus, totalMinus, posRecent||'–', negRecent||'–', commNotes||'–', msg]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols'] = [{wch:5},{wch:22},{wch:10},{wch:10},{wch:10},{wch:35},{wch:35},{wch:40},{wch:80}];
+    // Style header row
+    const hStyle = {font:{bold:true,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'059669'}},alignment:{horizontal:'center',wrapText:true}};
+    ['A1','B1','C1','D1','E1','F1','G1','H1','I1'].forEach(ref=>{
+        if(!ws[ref]) ws[ref]={v:wsData[0][['A','B','C','D','E','F','G','H','I'].indexOf(ref[0])],t:'s'};
+        ws[ref].s=hStyle;
+    });
+    ws['!rows'] = [{hpt:20}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'So_Lien_Lac');
+    XLSX.writeFile(wb, `SoLienLac_${cls?.name?.replace(/\s+/g,'_')||'Lop'}_${new Date().toLocaleDateString('vi-VN').replace(/\//g,'-')}.xlsx`);
+    showToast('Đã xuất sổ liên lạc!');
+}
+
+// ── Student message builder ──────────────────────────────────
+let _msgStudentId  = null;
+let _msgTemplate   = 'formal';
+
+function _openStudentMessage() {
+    const sid = document.getElementById('commFilterStudent').value;
+    if (!sid || sid === 'class') return;
+    _msgStudentId = parseInt(sid);
+    _msgTemplate  = 'formal';
+    const s = students.find(st=>st.id===_msgStudentId); if (!s) return;
+    const cls = classes.find(c=>c.id===currentClassId);
+
+    document.getElementById('msgStudentAvatar').src = s.avatar || '';
+    document.getElementById('msgStudentName').innerText  = s.name;
+    document.getElementById('msgStudentClass').innerText = `Lớp ${cls?.name||''} · STT: ${s.stt||'?'}`;
+    document.getElementById('msgDaysRange').value = '7';
+
+    _setMsgTemplate('formal');  // sets button styles and builds message
+    document.getElementById('studentMsgBackdrop').classList.remove('hidden');
+    setTimeout(()=>document.getElementById('studentMsgModal').classList.remove('translate-y-full'), 10);
+}
+
+function closeStudentMessage() {
+    document.getElementById('studentMsgModal').classList.add('translate-y-full');
+    setTimeout(()=>document.getElementById('studentMsgBackdrop').classList.add('hidden'), 300);
+}
+
+function _setMsgTemplate(tpl) {
+    _msgTemplate = tpl;
+    ['formal','friendly','brief'].forEach(t=>{
+        const btn = document.getElementById('tpl'+t.charAt(0).toUpperCase()+t.slice(1));
+        if (btn) btn.className = `flex-1 py-2 text-xs font-bold rounded-xl transition ${t===tpl?'bg-blue-600 text-white shadow':'bg-gray-100 text-gray-600 hover:bg-gray-200'}`;
+    });
+    _rebuildMsg();
+}
+
+function _rebuildMsg() {
+    const days = parseInt(document.getElementById('msgDaysRange').value);
+    const msg  = _buildParentMsg(students.find(s=>s.id===_msgStudentId), days, _msgTemplate);
+    document.getElementById('msgPreviewText').value = msg;
+}
+
+function _buildParentMsg(s, days, template) {
+    if (!s) return '';
+    const cls   = classes.find(c=>c.id===currentClassId);
+    const today = new Date().toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'});
+    const cutoff = days > 0 ? new Date(Date.now() - days*86400000) : new Date(0);
+
+    const sHist   = history.filter(h=>h.classId===currentClassId && h.studentId===s.id && new Date(h.timestamp)>=cutoff);
+    const posItems = sHist.filter(h=>h.points>0);
+    const negItems = sHist.filter(h=>h.points<0);
+    const notes    = communicationLog.filter(n=>n.classId===currentClassId && n.studentId===s.id)
+        .sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).slice(0,5);
+
+    // Aggregate skill counts
+    const skillCount = (arr) => {
+        const map = {};
+        arr.forEach(h=>{ map[h.skillName]=(map[h.skillName]||0)+1; });
+        return Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([name,cnt])=>cnt>1?`${name} (×${cnt})`:name);
+    };
+
+    const noteTypeIcon = { praise:'⭐', concern:'⚠️', notice:'📢', reminder:'⏰' };
+
+    if (template === 'formal') {
+        let msg = `Kính gửi Phụ huynh em ${s.name}\n`;
+        msg += `Lớp: ${cls?.name||''} | Ngày: ${today}\n`;
+        msg += `${'─'.repeat(35)}\n`;
+        msg += `📊 ĐIỂM THI ĐUA: ${s.points||0} điểm\n`;
+        if (posItems.length) {
+            msg += `\n✅ THÀNH TÍCH NỔI BẬT:\n`;
+            skillCount(posItems).forEach(sk=>{ msg += `  • ${sk}\n`; });
+        }
+        if (negItems.length) {
+            msg += `\n⚠️ CẦN NHẮC NHỞ:\n`;
+            skillCount(negItems).forEach(sk=>{ msg += `  • ${sk}\n`; });
+        }
+        if (notes.length) {
+            msg += `\n📝 NHẬN XÉT CỦA GIÁO VIÊN:\n`;
+            notes.forEach(n=>{ msg += `  ${noteTypeIcon[n.type]||'📌'} ${n.content}\n`; });
+        }
+        msg += `${'─'.repeat(35)}\n`;
+        msg += `Trân trọng,\nGiáo viên lớp ${cls?.name||''}`;
+        return msg;
+    }
+
+    if (template === 'friendly') {
+        let msg = `👋 Chào PH em ${s.name} (Lớp ${cls?.name||''}) - ${today}\n\n`;
+        msg += `🏆 Điểm thi đua: ${s.points||0} điểm\n`;
+        if (posItems.length) {
+            msg += `\n🌟 Em đã làm tốt:\n`;
+            skillCount(posItems).forEach(sk=>{ msg += `  ✅ ${sk}\n`; });
+        }
+        if (negItems.length) {
+            msg += `\n💪 Em cần cố gắng hơn:\n`;
+            skillCount(negItems).forEach(sk=>{ msg += `  🔸 ${sk}\n`; });
+        }
+        if (notes.length) {
+            msg += `\n💬 Nhận xét:\n`;
+            notes.forEach(n=>{ msg += `  ${noteTypeIcon[n.type]||'📌'} ${n.content}\n`; });
+        }
+        msg += `\n🙏 Cảm ơn sự phối hợp của PH!`;
+        return msg;
+    }
+
+    // brief
+    const posNames = skillCount(posItems).slice(0,3).join(', ') || '–';
+    const negNames = skillCount(negItems).slice(0,3).join(', ') || '–';
+    let msg = `[${today}] ${s.name} - ${cls?.name||''}\n`;
+    msg += `⭐ Điểm: ${s.points||0} | ✅ Khen: ${posNames} | ⚠️ Nhắc: ${negNames}`;
+    if (notes.length) msg += `\n📝 ${notes[0].content}`;
+    return msg;
+}
+
+function _copyStudentMessage() {
+    const txt = document.getElementById('msgPreviewText').value;
+    navigator.clipboard.writeText(txt).then(()=>{
+        showToast('Đã sao chép tin nhắn! 📋');
+    }).catch(()=>{
+        // Fallback
+        const ta = document.getElementById('msgPreviewText');
+        ta.select(); document.execCommand('copy');
+        showToast('Đã sao chép! 📋');
+    });
+}
+
+function _shareStudentMessage() {
+    const txt = document.getElementById('msgPreviewText').value;
+    if (navigator.share) {
+        navigator.share({ text: txt }).catch(()=>{});
+    } else {
+        _copyStudentMessage();
+    }
+}
+
 function formatDateLabel(dateStr) {
     const d = new Date(dateStr+'T00:00:00');
     const today = new Date(); today.setHours(0,0,0,0);
@@ -4820,7 +5461,7 @@ function _renderCertPaper(s) {
     const dateStr = settings.date ? new Date(settings.date).toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'}) : new Date().toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'});
 
     paper.innerHTML = `
-        <div class="absolute inset-0" style="background:#fffef5;">
+        <div class="absolute inset-0" style="background:#fffef5;font-family:'Roboto',sans-serif;">
             <!-- Outer border -->
             <div class="absolute inset-0 border-4 border-amber-700 rounded-sm pointer-events-none"></div>
             <div class="absolute inset-2 border border-amber-500 rounded-sm pointer-events-none" style="border-style:dashed"></div>
@@ -4914,35 +5555,54 @@ function printCertificate() {
 }
 
 async function downloadCertPDF() {
-    if (!window.jspdf) { showToast('Đang tải thư viện PDF...', false); return; }
+    if (!window.jspdf)      { showToast('Đang tải thư viện PDF...', false); return; }
+    if (!window.html2canvas) { showToast('Đang tải html2canvas...', false); return; }
     const { jsPDF } = window.jspdf;
 
-    showToast('Đang tạo PDF...', true);
     const btn = document.querySelector('#certOverlay button[onclick="downloadCertPDF()"]');
     if (btn) { btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin mr-1"></i>Đang tạo...'; }
+    showToast('Đang tạo PDF, vui lòng chờ...', true);
+
+    const paper      = document.getElementById('certPaper');
+    const savedIndex = _certIndex;  // restore after batch
 
     try {
-        if (_certStudents.length===1) {
-            const s=_certStudents[0];
-            const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
-            _buildCertPage(doc, s, _certSettings, 297, 210);
-            const fname = `chung_nhan_${s.name.replace(/\s+/g,'_')}.pdf`;
-            doc.save(fname);
-            showToast(`Đã tải: ${fname}`, true);
-        } else {
-            // Batch: one page per student
-            const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
-            _certStudents.forEach((s,i)=>{
-                if(i>0) doc.addPage();
-                _buildCertPage(doc, s, _certSettings, 297, 210);
+        const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+
+        for (let i=0; i<_certStudents.length; i++) {
+            // Render this student's cert into the visible paper element
+            _renderCertPaper(_certStudents[i]);
+            // Brief delay so Roboto glyphs are fully painted
+            await new Promise(r => setTimeout(r, 120));
+
+            const canvas = await html2canvas(paper, {
+                scale: 2.5,
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#fffef5',
+                logging: false,
             });
-            const cls=classes.find(c=>c.id===currentClassId);
-            doc.save(`chung_nhan_${cls?.name||'lop'}_${_certStudents.length}hs.pdf`);
-            showToast(`Đã tải ${_certStudents.length} chứng nhận!`, true);
+
+            const imgData = canvas.toDataURL('image/jpeg', 0.96);
+            if (i > 0) doc.addPage();
+            doc.addImage(imgData, 'JPEG', 0, 0, 297, 210);
         }
+
+        // Restore display to original student
+        _certIndex = savedIndex;
+        _renderCertPaper(_certStudents[savedIndex]);
+
+        const cls = classes.find(c=>c.id===currentClassId);
+        const fname = _certStudents.length===1
+            ? `chung_nhan_${_certStudents[0].name.replace(/\s+/g,'_')}.pdf`
+            : `chung_nhan_${cls?.name?.replace(/\s+/g,'_')||'lop'}_${_certStudents.length}hs.pdf`;
+        doc.save(fname);
+        showToast(`✅ Đã tải ${_certStudents.length>1?_certStudents.length+' chứng nhận!':fname}`);
     } catch(e) {
         console.error(e);
         showToast('Lỗi tạo PDF: ' + e.message, false);
+        _certIndex = savedIndex;
+        _renderCertPaper(_certStudents[savedIndex]);
     }
 
     if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-download mr-1"></i>Tải PDF'; }
@@ -5060,6 +5720,546 @@ function previewBatchCerts() {
 }
 
 // ============================================================
+// CHIẾU ĐIỂM (PROJECTOR AWARD DISPLAY)
+// ============================================================
+let _projectorModeOn = localStorage.getItem('dojo_projMode') === '1';
+let _projAutoClose   = null;
+let _projBarAnim     = null;
+
+function toggleProjectorMode() {
+    _projectorModeOn = !_projectorModeOn;
+    localStorage.setItem('dojo_projMode', _projectorModeOn ? '1' : '0');
+    _updateProjectorBtn();
+    showToast(_projectorModeOn ? '📡 Bật chế độ chiếu điểm lên bảng' : 'Tắt chế độ chiếu');
+}
+
+function _updateProjectorBtn() {
+    const btn = document.getElementById('btnProjectorMode');
+    if (!btn) return;
+    btn.className = _projectorModeOn
+        ? 'text-xs font-bold px-2.5 py-1.5 rounded-full transition shadow-sm flex items-center bg-cyan-500 text-white border border-cyan-600'
+        : 'text-cyan-600 text-xs font-bold bg-cyan-50 px-2.5 py-1.5 rounded-full hover:bg-cyan-100 transition border border-cyan-100 shadow-sm flex items-center';
+    btn.innerHTML = _projectorModeOn
+        ? '<i class="fas fa-broadcast-tower mr-1 animate-pulse"></i>Chiếu BẬT'
+        : '<i class="fas fa-broadcast-tower mr-1"></i>Chiếu';
+}
+
+function _showProjectorAward(s, skillName, points) {
+    if (!_projectorModeOn || !s) return;
+    const cls = classes.find(c=>c.id===currentClassId);
+    const overlay = document.getElementById('projectorAwardOverlay');
+
+    // Populate
+    document.getElementById('projClassLabel').innerText   = cls?.name ? `📍 ${cls.name}` : '';
+    document.getElementById('projStudentAvatar').src       = s.avatar || '';
+    document.getElementById('projStudentName').innerText   = s.name;
+    document.getElementById('projSkillName').innerText     = skillName;
+    document.getElementById('projTotalPoints').innerText   = `Tổng điểm: ${s.points} ⭐`;
+
+    const pEl = document.getElementById('projPointsNum');
+    pEl.innerText    = (points > 0 ? '+' : '') + points;
+    pEl.style.color  = points > 0 ? '#4ade80' : '#f87171';
+    pEl.style.textShadow = points > 0
+        ? '0 0 60px rgba(74,222,128,0.5), 0 8px 40px rgba(0,0,0,0.5)'
+        : '0 0 60px rgba(248,113,113,0.5), 0 8px 40px rgba(0,0,0,0.5)';
+
+    // Re-trigger CSS animations via class toggle
+    overlay.classList.remove('show-proj');
+    overlay.classList.remove('hidden');
+    void overlay.offsetWidth;  // force reflow
+    overlay.classList.add('show-proj');
+
+    // Progress bar animation
+    const bar = document.getElementById('projProgressBar');
+    bar.style.transition = 'none';
+    bar.style.width = '100%';
+    void bar.offsetWidth;
+    const DURATION = 2800;
+    bar.style.transition = `width ${DURATION}ms linear`;
+    bar.style.width = '0%';
+
+    if (_projAutoClose) clearTimeout(_projAutoClose);
+    _projAutoClose = setTimeout(_closeProjectorAward, DURATION);
+}
+
+function _closeProjectorAward() {
+    const overlay = document.getElementById('projectorAwardOverlay');
+    overlay.classList.add('hidden');
+    overlay.classList.remove('show-proj');
+    if (_projAutoClose) { clearTimeout(_projAutoClose); _projAutoClose = null; }
+}
+
+// ============================================================
+// SƠ ĐỒ CHỖ NGỒI PHÒNG THI
+// ============================================================
+// Layout: 4 dãy × 6 bàn × 2 chỗ = 48 chỗ
+// Đánh số theo CỘT: Dãy1=1-12, Dãy2=13-24, Dãy3=25-36, Dãy4=37-48
+// Xếp chỗ theo HÀNG từ trên xuống: hàng 1 (bàn 1, tất cả dãy), hàng 2, ...
+// → "Học tốt" ngồi trên cùng (hàng 1, 2...)
+
+let _seatingGood     = new Set();  // studentId
+let _seatingStartNum = 1;
+let _seatingMap      = {};         // seatDisplayNum → studentId
+
+// Convert physical slot index (0–47) to display seat number
+// Physical order: row by row (front→back), within each row: dãy1L,dãy1R,dãy2L,dãy2R,...
+function _physToSeat(i) {
+    const row  = Math.floor(i / 8);       // 0–5 (bàn 1–6)
+    const col  = Math.floor((i % 8) / 2); // 0–3 (dãy 1–4)
+    const side = (i % 8) % 2;             // 0=trái, 1=phải
+    return col * 12 + row * 2 + side + _seatingStartNum;
+}
+
+// ── Open config modal ──────────────────────────────────────
+function openSeatingConfig() {
+    if (!currentClassId) { showToast('Chọn lớp trước!', false); return; }
+    const cls = classes.find(c=>c.id===currentClassId);
+    const cnt = students.filter(s=>s.classId===currentClassId).length;
+    document.getElementById('seatingConfigSubtitle').innerText = `${cls?.name||''} · ${cnt} học sinh`;
+    document.getElementById('seatingStartNum').value = _seatingStartNum;
+    _renderSeatingStudentList();
+    _updateSeatingGoodCount();
+    document.getElementById('seatingConfigBackdrop').classList.remove('hidden');
+    setTimeout(()=>document.getElementById('seatingConfigModal').classList.remove('translate-y-full'), 10);
+}
+
+function closeSeatingConfig() {
+    document.getElementById('seatingConfigModal').classList.add('translate-y-full');
+    setTimeout(()=>document.getElementById('seatingConfigBackdrop').classList.add('hidden'), 300);
+}
+
+function _renderSeatingStudentList() {
+    const list = document.getElementById('seatingStudentList');
+    const clsStudents = students.filter(s=>s.classId===currentClassId).sort((a,b)=>a.stt-b.stt);
+    list.innerHTML = clsStudents.map(s => {
+        const good = _seatingGood.has(s.id);
+        return `
+        <div class="flex items-center gap-3 py-2.5 border-b border-gray-100 last:border-0">
+            <button onclick="toggleSeatingGood(${s.id})" id="seatingGoodBtn_${s.id}"
+                class="w-9 h-9 rounded-xl flex items-center justify-center font-black text-base transition active:scale-90 flex-shrink-0 ${good?'bg-amber-400 text-white shadow':'bg-gray-100 text-gray-300 hover:bg-gray-200'}">
+                ⭐
+            </button>
+            <img src="${s.avatar}" class="w-9 h-9 rounded-full object-contain bg-blue-50 p-0.5 flex-shrink-0">
+            <div class="flex-1 overflow-hidden">
+                <span class="text-xs font-black text-gray-400">#${s.stt}</span>
+                <span class="font-bold text-gray-800 ml-1">${s.name}</span>
+            </div>
+            <span class="text-xs font-bold px-2 py-0.5 rounded-full ${s.points>=0?'bg-green-50 text-green-600':'bg-red-50 text-red-500'}">${s.points||0}đ</span>
+        </div>`;
+    }).join('') || '<p class="text-gray-400 text-sm text-center py-8">Lớp chưa có học sinh</p>';
+}
+
+function toggleSeatingGood(studentId) {
+    if (_seatingGood.has(studentId)) _seatingGood.delete(studentId);
+    else _seatingGood.add(studentId);
+    const btn = document.getElementById(`seatingGoodBtn_${studentId}`);
+    if (btn) {
+        const good = _seatingGood.has(studentId);
+        btn.className = `w-9 h-9 rounded-xl flex items-center justify-center font-black text-base transition active:scale-90 flex-shrink-0 ${good?'bg-amber-400 text-white shadow':'bg-gray-100 text-gray-300 hover:bg-gray-200'}`;
+    }
+    _updateSeatingGoodCount();
+}
+
+function _updateSeatingGoodCount() {
+    document.getElementById('seatingGoodCount').innerText = `⭐ ${_seatingGood.size} học tốt`;
+}
+
+// ── Generate seating ────────────────────────────────────────
+function _buildSeating() {
+    _seatingStartNum = Math.max(1, parseInt(document.getElementById('seatingStartNum')?.value)||1);
+    const clsStudents = students.filter(s=>s.classId===currentClassId);
+    const good   = clsStudents.filter(s=>_seatingGood.has(s.id)).sort((a,b)=>a.stt-b.stt);
+    const others = _shuffle(clsStudents.filter(s=>!_seatingGood.has(s.id)));
+    const combined = [...good, ...others].slice(0, 48);
+    _seatingMap = {};
+    combined.forEach((s, i) => { _seatingMap[_physToSeat(i)] = s.id; });
+}
+
+function generateSeating() {
+    _buildSeating();
+    closeSeatingConfig();
+    setTimeout(() => {
+        const cls = classes.find(c=>c.id===currentClassId);
+        const cnt = students.filter(s=>s.classId===currentClassId).length;
+        document.getElementById('seatingResultTitle').innerText = `Phòng thi – ${cls?.name||''}`;
+        document.getElementById('seatingResultSub').innerText = `${cnt} học sinh · SBD ${_seatingStartNum}–${_seatingStartNum+47} · ⭐${_seatingGood.size} học tốt đầu phòng`;
+        document.getElementById('seatingResultOverlay').classList.remove('hidden');
+        _renderSeatingChart();
+    }, 320);
+}
+
+function reshuffleSeating() {
+    _buildSeating();
+    _renderSeatingChart();
+    showToast('Đã xáo lại sơ đồ!');
+}
+
+function closeSeatingResult() {
+    document.getElementById('seatingResultOverlay').classList.add('hidden');
+}
+
+// ── Render chart ───────────────────────────────────────────
+function _renderSeatingChart() {
+    const grid = document.getElementById('seatingChartGrid');
+    const stMap = {};
+    students.filter(s=>s.classId===currentClassId).forEach(s=>{ stMap[s.id]=s; });
+
+    // Column header row
+    let html = `<div class="grid gap-2 mb-2" style="grid-template-columns:repeat(4,minmax(148px,1fr))">`;
+    [1,2,3,4].forEach(d=>{
+        html += `<div class="text-center text-white text-xs font-black py-1.5 tracking-widest opacity-70">DÃY ${d}</div>`;
+    });
+    html += '</div>';
+
+    // 6 rows of desks
+    html += `<div class="grid gap-2" style="grid-template-columns:repeat(4,minmax(148px,1fr))">`;
+    for (let row=0; row<6; row++) {
+        for (let col=0; col<4; col++) {
+            const lSeat = col*12 + row*2 + _seatingStartNum;
+            const rSeat = col*12 + row*2 + 1 + _seatingStartNum;
+            const lSid  = _seatingMap[lSeat];
+            const rSid  = _seatingMap[rSeat];
+            const lSt   = lSid ? stMap[lSid] : null;
+            const rSt   = rSid ? stMap[rSid] : null;
+            const lGood = lSid && _seatingGood.has(lSid);
+            const rGood = rSid && _seatingGood.has(rSid);
+
+            const seatBox = (seat, st, good) => `
+                <div class="flex-1 flex flex-col items-center justify-center py-2 px-1 ${good?'seat-good':'bg-white'} ${!st?'seat-empty':''} rounded-xl transition" style="min-width:68px">
+                    <div class="text-[10px] font-black ${good?'text-amber-700':'text-gray-400'} leading-none mb-0.5">${String(seat).padStart(2,'0')}</div>
+                    ${good?'<div class="text-amber-500 text-[10px] leading-none">⭐</div>':''}
+                    <div class="text-[11px] font-bold ${st?'text-gray-800':'text-gray-300'} leading-tight text-center truncate w-full px-1 mt-0.5" title="${st?.name||''}">
+                        ${st ? st.name.split(' ').pop() : '—'}
+                    </div>
+                    ${st?`<div class="text-[9px] text-gray-400 font-semibold leading-none mt-0.5 truncate w-full text-center px-1">${st.name.split(' ').slice(0,-1).join(' ')||''}</div>`:''}
+                </div>`;
+
+            html += `
+            <div class="bg-white bg-opacity-10 rounded-2xl overflow-hidden border border-white border-opacity-10 shadow flex flex-col">
+                <div class="flex gap-1 p-1.5">
+                    ${seatBox(lSeat, lSt, lGood)}
+                    <div class="w-px bg-white bg-opacity-20 self-stretch mx-0.5"></div>
+                    ${seatBox(rSeat, rSt, rGood)}
+                </div>
+                <div class="text-center text-[9px] font-bold text-white text-opacity-30 pb-1 leading-none">Bàn ${row+1}</div>
+            </div>`;
+        }
+    }
+    html += '</div>';
+    grid.innerHTML = html;
+}
+
+// ── Export Excel ────────────────────────────────────────────
+function exportSeatingExcel() {
+    const cls = classes.find(c=>c.id===currentClassId);
+    const stMap = {};
+    students.filter(s=>s.classId===currentClassId).forEach(s=>{ stMap[s.id]=s; });
+
+    // Header row: 4 pairs of [SBD, Họ tên] = 8 columns
+    const headers = [
+        'DÃY 1 – SBD', 'DÃY 1 – Họ tên', 'DÃY 2 – SBD', 'DÃY 2 – Họ tên',
+        'DÃY 3 – SBD', 'DÃY 3 – Họ tên', 'DÃY 4 – SBD', 'DÃY 4 – Họ tên'
+    ];
+    const wsData = [headers];
+
+    for (let row=0; row<6; row++) {
+        // Each row: 2 seats per column = 8 values (seat+name for each of 4 cols × left seat)
+        // We'll put left-seat row and right-seat row in the same Excel row for compactness
+        // Actually: one desk = 2 lines in Excel
+        const rowLeft  = []; // left seats of this bàn
+        const rowRight = []; // right seats
+
+        for (let col=0; col<4; col++) {
+            const lSeat = col*12 + row*2 + _seatingStartNum;
+            const rSeat = lSeat + 1;
+            const lSt   = stMap[_seatingMap[lSeat]];
+            const rSt   = stMap[_seatingMap[rSeat]];
+            rowLeft.push(lSeat, lSt?.name||'');
+            rowRight.push(rSeat, rSt?.name||'');
+        }
+        wsData.push([`Bàn ${row+1}`, ...Array(7).fill('')]);
+        wsData.push(rowLeft);
+        wsData.push(rowRight);
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols'] = Array(8).fill({wch:18});
+    const hStyle = {font:{bold:true,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'3730a3'}},alignment:{horizontal:'center'}};
+    ['A','B','C','D','E','F','G','H'].forEach((c,i)=>{
+        const ref=c+'1'; if(!ws[ref])ws[ref]={v:headers[i],t:'s'}; ws[ref].s=hStyle;
+    });
+
+    // Color good students in yellow
+    for (let r=1; r<wsData.length; r++) {
+        for (let c=0; c<8; c+=2) {
+            const seatNum = wsData[r][c];
+            if (typeof seatNum === 'number') {
+                const sid = _seatingMap[seatNum];
+                if (sid && _seatingGood.has(sid)) {
+                    const ref = String.fromCharCode(65+c)+String(r+1);
+                    const ref2= String.fromCharCode(65+c+1)+String(r+1);
+                    const yStyle = {fill:{fgColor:{rgb:'FEF3C7'}},font:{bold:true}};
+                    if(ws[ref])  ws[ref].s  = yStyle;
+                    if(ws[ref2]) ws[ref2].s = yStyle;
+                }
+            }
+        }
+    }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'So_do_cho_ngoi');
+    XLSX.writeFile(wb, `SoDo_PhongThi_${cls?.name?.replace(/\s+/g,'_')||'Lop'}_${new Date().toLocaleDateString('vi-VN').replace(/\//g,'-')}.xlsx`);
+    showToast('Đã xuất sơ đồ Excel!');
+}
+
+// ── Print ─────────────────────────────────────────────────
+function printSeating() {
+    const cls = classes.find(c=>c.id===currentClassId);
+    const stMap = {};
+    students.filter(s=>s.classId===currentClassId).forEach(s=>{ stMap[s.id]=s; });
+
+    const deskRows = [];
+    for (let row=0; row<6; row++) {
+        const cols = [];
+        for (let col=0; col<4; col++) {
+            const lSeat = col*12 + row*2 + _seatingStartNum;
+            const rSeat = lSeat + 1;
+            const lSt = stMap[_seatingMap[lSeat]];
+            const rSt = stMap[_seatingMap[rSeat]];
+            const lGood = _seatingMap[lSeat] && _seatingGood.has(_seatingMap[lSeat]);
+            const rGood = _seatingMap[rSeat] && _seatingGood.has(_seatingMap[rSeat]);
+            cols.push(`
+            <td style="border:1px solid #ccc;padding:4px 2px;min-width:100px">
+                <div style="display:flex;gap:4px">
+                    <div style="flex:1;text-align:center;background:${lGood?'#fef3c7':'#f9fafb'};border-radius:6px;padding:4px 2px;font-size:11px">
+                        <b style="font-size:13px;color:#374151">${String(lSeat).padStart(2,'0')}</b>${lGood?' ⭐':''}<br>
+                        <span style="font-size:10px;color:#4b5563">${lSt?lSt.name:'—'}</span>
+                    </div>
+                    <div style="flex:1;text-align:center;background:${rGood?'#fef3c7':'#f9fafb'};border-radius:6px;padding:4px 2px;font-size:11px">
+                        <b style="font-size:13px;color:#374151">${String(rSeat).padStart(2,'0')}</b>${rGood?' ⭐':''}<br>
+                        <span style="font-size:10px;color:#4b5563">${rSt?rSt.name:'—'}</span>
+                    </div>
+                </div>
+                <div style="text-align:center;font-size:9px;color:#9ca3af;margin-top:2px">Bàn ${row+1}</div>
+            </td>`);
+        }
+        deskRows.push(`<tr>${cols.join('')}</tr>`);
+    }
+
+    const html = `
+    <div style="font-family:sans-serif;font-size:12px;padding:8px">
+        <h2 style="text-align:center;font-size:16px;margin:0 0 4px">SƠ ĐỒ PHÒNG THI – ${cls?.name||''}</h2>
+        <p style="text-align:center;font-size:11px;color:#6b7280;margin:0 0 8px">SBD ${_seatingStartNum}–${_seatingStartNum+47} · In ngày ${new Date().toLocaleDateString('vi-VN')}</p>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:8px">
+            <thead>
+                <tr style="background:#312e81;color:white">
+                    <td colspan="4" style="text-align:center;padding:8px;font-weight:bold;font-size:13px;border-radius:4px">🏛️ BAN GIÁM THỊ / GIÁO VIÊN COI THI</td>
+                </tr>
+                <tr style="background:#e0e7ff">
+                    ${[1,2,3,4].map(d=>`<th style="text-align:center;padding:6px;border:1px solid #c7d2fe;font-size:12px">DÃY ${d}</th>`).join('')}
+                </tr>
+            </thead>
+            <tbody>${deskRows.join('')}</tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="4" style="text-align:center;padding:6px;border:1px dashed #d1d5db;color:#9ca3af;font-size:11px">🚪 CỬA RA VÀO</td>
+                </tr>
+            </tfoot>
+        </table>
+        <p style="font-size:9px;color:#9ca3af;text-align:center">⭐ = Học sinh học tốt được xếp đầu phòng</p>
+    </div>`;
+
+    const printArea = document.getElementById('seatingPrintArea');
+    printArea.innerHTML = html;
+    window.print();
+    setTimeout(()=>{ printArea.innerHTML=''; }, 2000);
+}
+
+// ============================================================
+// CHIA NHÓM NGẪU NHIÊN
+// ============================================================
+const GROUP_COLORS = [
+    { bg:'#7c3aed', light:'#ede9fe', text:'#5b21b6', name:'Nhóm' },  // violet
+    { bg:'#2563eb', light:'#dbeafe', text:'#1e40af', name:'Nhóm' },  // blue
+    { bg:'#059669', light:'#d1fae5', text:'#065f46', name:'Nhóm' },  // green
+    { bg:'#dc2626', light:'#fee2e2', text:'#991b1b', name:'Nhóm' },  // red
+    { bg:'#d97706', light:'#fef3c7', text:'#92400e', name:'Nhóm' },  // amber
+    { bg:'#db2777', light:'#fce7f3', text:'#9d174d', name:'Nhóm' },  // pink
+    { bg:'#0891b2', light:'#cffafe', text:'#164e63', name:'Nhóm' },  // cyan
+    { bg:'#65a30d', light:'#ecfccb', text:'#3f6212', name:'Nhóm' },  // lime
+];
+
+let _groupMode    = 'byGroup';  // 'byGroup' | 'bySize'
+let _groupNum     = 4;
+let _groupResult  = [];         // [ [student, ...], ... ]
+let _groupProjector = false;
+
+function openGroupDivider() {
+    const cls = classes.find(c=>c.id===currentClassId);
+    const cnt = students.filter(s=>s.classId===currentClassId).length;
+    document.getElementById('groupDividerSubtitle').innerText = `${cls?.name||''} · ${cnt} học sinh`;
+    _groupMode = 'byGroup';
+    _groupNum  = Math.min(4, Math.floor(cnt/2)||2);
+    _updateGroupUI();
+    document.getElementById('groupDividerBackdrop').classList.remove('hidden');
+    setTimeout(()=>document.getElementById('groupDividerModal').classList.remove('translate-y-full'), 10);
+}
+
+function closeGroupDivider() {
+    document.getElementById('groupDividerModal').classList.add('translate-y-full');
+    setTimeout(()=>document.getElementById('groupDividerBackdrop').classList.add('hidden'), 300);
+}
+
+function setGroupMode(mode) {
+    _groupMode = mode;
+    document.getElementById('groupModeByGroup').className = `flex-1 py-2.5 rounded-xl font-bold text-sm transition ${mode==='byGroup'?'bg-violet-600 text-white shadow':'bg-gray-100 text-gray-600 hover:bg-gray-200'}`;
+    document.getElementById('groupModeBySize').className  = `flex-1 py-2.5 rounded-xl font-bold text-sm transition ${mode==='bySize' ?'bg-violet-600 text-white shadow':'bg-gray-100 text-gray-600 hover:bg-gray-200'}`;
+    document.getElementById('groupInputLabel').innerText = mode==='byGroup' ? 'Số nhóm' : 'Số học sinh / nhóm';
+    _updateGroupUI();
+}
+
+function adjustGroupNum(delta) {
+    const cnt = students.filter(s=>s.classId===currentClassId).length;
+    const min = 2, max = _groupMode==='byGroup' ? Math.floor(cnt/2)||2 : Math.floor(cnt/2)||2;
+    _groupNum = Math.max(min, Math.min(max, _groupNum + delta));
+    _updateGroupUI();
+}
+
+function _updateGroupUI() {
+    const cnt = students.filter(s=>s.classId===currentClassId).length;
+    document.getElementById('groupNumDisplay').innerText = _groupNum;
+    let preview = '';
+    if (_groupMode === 'byGroup') {
+        const perGroup = Math.ceil(cnt / _groupNum);
+        preview = `→ ${_groupNum} nhóm · mỗi nhóm ~${perGroup} học sinh`;
+    } else {
+        const numGroups = Math.ceil(cnt / _groupNum);
+        preview = `→ ${numGroups} nhóm · mỗi nhóm ~${_groupNum} học sinh`;
+    }
+    document.getElementById('groupPreviewText').innerText = preview;
+}
+
+function _shuffle(arr) {
+    const a = [...arr];
+    for (let i=a.length-1; i>0; i--) {
+        const j = Math.floor(Math.random()*(i+1));
+        [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+}
+
+function startGroupDivide() {
+    const all = students.filter(s=>s.classId===currentClassId);
+    if (!all.length) { showToast('Lớp chưa có học sinh!', false); return; }
+    closeGroupDivider();
+    _doGroupDivide(all);
+    setTimeout(()=>{
+        document.getElementById('groupResultOverlay').classList.remove('hidden');
+    }, 320);
+}
+
+function _doGroupDivide(all) {
+    const shuffled = _shuffle(all);
+    const cnt = shuffled.length;
+    let numGroups;
+    if (_groupMode === 'byGroup') {
+        numGroups = Math.min(_groupNum, cnt);
+    } else {
+        numGroups = Math.ceil(cnt / _groupNum);
+    }
+    _groupResult = Array.from({length: numGroups}, ()=>[]);
+    shuffled.forEach((s, i) => _groupResult[i % numGroups].push(s));
+    // If equalSize checked, try to balance
+    const equalSize = document.getElementById('groupEqualSize')?.checked;
+    if (equalSize) {
+        // Already round-robin = balanced
+    }
+    _renderGroupResult();
+}
+
+function reshuffleGroups() {
+    const all = students.filter(s=>s.classId===currentClassId);
+    // Small animation flash
+    const list = document.getElementById('groupResultList');
+    list.style.opacity = '0';
+    list.style.transition = 'opacity 0.15s';
+    setTimeout(()=>{
+        _doGroupDivide(all);
+        list.style.opacity = '1';
+    }, 150);
+}
+
+function _renderGroupResult() {
+    const showAvatar = document.getElementById('groupShowAvatar')?.checked ?? true;
+    const list = document.getElementById('groupResultList');
+    const numGroups = _groupResult.length;
+
+    document.getElementById('groupResultTitle').innerText =
+        `${numGroups} nhóm · ${students.filter(s=>s.classId===currentClassId).length} học sinh`;
+
+    list.className = 'flex-1 overflow-y-auto p-4 no-scrollbar grid gap-4';
+    // Responsive columns
+    if (numGroups <= 2)      list.style.gridTemplateColumns = 'repeat(2,1fr)';
+    else if (numGroups <= 4) list.style.gridTemplateColumns = 'repeat(2,1fr)';
+    else if (numGroups <= 6) list.style.gridTemplateColumns = 'repeat(3,1fr)';
+    else                     list.style.gridTemplateColumns = 'repeat(auto-fit,minmax(160px,1fr))';
+
+    list.innerHTML = _groupResult.map((members, gi) => {
+        const col = GROUP_COLORS[gi % GROUP_COLORS.length];
+        const delay = gi * 80;
+        const memberHTML = members.map((s, mi) => `
+            <div class="flex items-center gap-2 py-1.5 ${mi < members.length-1 ? 'border-b border-white border-opacity-20' : ''}">
+                <!-- STT: prominent display -->
+                <div class="stt-pop flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center font-black shadow-lg"
+                     style="background:rgba(255,255,255,0.22);animation-delay:${delay + mi*60}ms">
+                    <span class="group-member-stt text-white" style="font-size:2rem;line-height:1;letter-spacing:-1px">${s.stt||'?'}</span>
+                </div>
+                <div class="flex-1 overflow-hidden">
+                    ${showAvatar?`<img src="${s.avatar}" class="w-6 h-6 rounded-full object-contain bg-white bg-opacity-20 mb-0.5 inline-block mr-1">`:''}
+                    <span class="group-member-name text-white font-bold leading-tight block truncate" style="font-size:0.85rem">${s.name}</span>
+                </div>
+            </div>`).join('');
+
+        return `
+            <div class="rounded-2xl overflow-hidden group-card-anim shadow-xl" style="animation-delay:${delay}ms;background:${col.bg}">
+                <!-- Group header -->
+                <div class="flex items-center justify-between px-3 pt-3 pb-2" style="background:rgba(0,0,0,0.2)">
+                    <span class="group-card-header text-white font-black" style="font-size:1.1rem">Nhóm ${gi+1}</span>
+                    <span class="text-white text-opacity-70 text-xs font-bold">${members.length} HS</span>
+                </div>
+                <!-- Members -->
+                <div class="px-3 pb-3 flex flex-col gap-0">
+                    ${memberHTML}
+                </div>
+            </div>`;
+    }).join('');
+}
+
+function closeGroupResult() {
+    _groupProjector = false;
+    document.getElementById('groupResultOverlay').classList.remove('projector-mode');
+    document.getElementById('groupResultOverlay').classList.add('hidden');
+    document.getElementById('btnGroupProjector').innerHTML = '<i class="fas fa-expand"></i> Chiếu';
+}
+
+function toggleGroupProjector() {
+    _groupProjector = !_groupProjector;
+    const overlay = document.getElementById('groupResultOverlay');
+    const btn = document.getElementById('btnGroupProjector');
+    if (_groupProjector) {
+        overlay.classList.add('projector-mode');
+        btn.innerHTML = '<i class="fas fa-compress"></i> Thu nhỏ';
+        // Request fullscreen
+        if (overlay.requestFullscreen) overlay.requestFullscreen().catch(()=>{});
+    } else {
+        overlay.classList.remove('projector-mode');
+        btn.innerHTML = '<i class="fas fa-expand"></i> Chiếu';
+        if (document.exitFullscreen) document.exitFullscreen().catch(()=>{});
+    }
+    _renderGroupResult();
+}
+
+// ============================================================
 // INIT
 // ============================================================
 window.addEventListener('DOMContentLoaded', ()=>{
@@ -5082,6 +6282,7 @@ window.onload = () => {
     renderClasses();
     renderStudents();
     renderSkills();
+    _updateProjectorBtn();
 };
 </script>
 </body>
