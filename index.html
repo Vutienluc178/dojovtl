@@ -1468,29 +1468,60 @@
             </div>
             <div id="syncGuide" class="hidden px-4 pb-4 border-t border-gray-50">
                 <ol class="text-sm text-gray-600 flex flex-col gap-2 mt-3">
-                    <li class="flex gap-2"><span class="w-5 h-5 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0">1</span><span>Mở <b>Google Sheets</b> → Tiện ích mở rộng → <b>Apps Script</b></span></li>
-                    <li class="flex gap-2"><span class="w-5 h-5 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0">2</span><span>Xóa code mặc định, dán đoạn code bên dưới vào rồi <b>Lưu</b></span></li>
-                    <li class="flex gap-2"><span class="w-5 h-5 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0">3</span><span>Bấm <b>Triển khai → Triển khai mới → Web app</b></span></li>
-                    <li class="flex gap-2"><span class="w-5 h-5 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0">4</span><span>Ai có quyền truy cập: chọn <b>"Tất cả mọi người"</b> → Triển khai</span></li>
-                    <li class="flex gap-2"><span class="w-5 h-5 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0">5</span><span>Sao chép <b>Script ID</b> (chuỗi dài trong URL triển khai) → Dán vào ô bên dưới</span></li>
+                    <li class="flex gap-2 items-start"><span class="w-5 h-5 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5">1</span><span>Mở <b>Google Sheets</b> → <b>Tiện ích mở rộng</b> → <b>Apps Script</b></span></li>
+                    <li class="flex gap-2 items-start"><span class="w-5 h-5 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5">2</span><span>Xóa code mặc định, dán đoạn code bên dưới vào rồi bấm <b>Lưu (Ctrl+S)</b></span></li>
+                    <li class="flex gap-2 items-start"><span class="w-5 h-5 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5">3</span><span>Bấm <b>Triển khai</b> → <b>Triển khai mới</b> → chọn loại <b>Ứng dụng web</b></span></li>
+                    <li class="flex gap-2 items-start"><span class="w-5 h-5 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5">4</span><span>"Ai có quyền truy cập" chọn <b class="text-red-600">"Tất cả mọi người"</b> <span class="text-red-500 text-xs">(⚠️ không phải "có tài khoản Google")</span> → bấm <b>Triển khai</b></span></li>
+                    <li class="flex gap-2 items-start"><span class="w-5 h-5 bg-green-100 text-green-700 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5">5</span>
+                        <span>Cửa sổ hiện ra có <b>URL ứng dụng web</b> dạng:<br>
+                        <code class="text-[10px] bg-gray-100 rounded px-1 break-all">https://script.google.com/macros/s/<b class="text-green-700">AKfycb...</b>/exec</code><br>
+                        Sao chép phần <b class="text-green-700">AKfycb...</b> (Deployment ID) rồi dán vào ô bên dưới</span>
+                    </li>
                 </ol>
-                <!-- Apps Script code -->
-                <div class="mt-3 bg-gray-900 rounded-xl p-3 relative">
-                    <button onclick="copySyncScript()" class="absolute top-2 right-2 text-[10px] bg-green-500 text-white px-2 py-1 rounded-full font-bold hover:bg-green-600">Sao chép</button>
-                    <pre id="syncScriptCode" class="text-[10px] text-green-300 overflow-x-auto whitespace-pre leading-relaxed" style="max-height:200px;overflow-y:auto"></pre>
+                <!-- Warning box -->
+                <div class="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700 flex gap-2">
+                    <i class="fas fa-triangle-exclamation mt-0.5 flex-shrink-0"></i>
+                    <div><b>Lưu ý:</b> Cần nhập <b>Deployment ID</b> (bắt đầu bằng <code class="bg-amber-100 px-1 rounded">AKfyc</code>, dài ~80 ký tự), <u>không phải</u> Script ID ngắn trong Project Settings.</div>
+                </div>
+                <!-- Apps Script code block -->
+                <div class="mt-4 bg-gray-900 rounded-2xl overflow-hidden border border-gray-700 shadow-lg">
+                    <!-- Header bar -->
+                    <div class="flex items-center justify-between px-3 py-2 bg-gray-800 border-b border-gray-700">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-3 h-3 rounded-full bg-red-500 opacity-80"></span>
+                            <span class="w-3 h-3 rounded-full bg-yellow-500 opacity-80"></span>
+                            <span class="w-3 h-3 rounded-full bg-green-500 opacity-80"></span>
+                            <span class="ml-2 text-[10px] text-gray-400 font-mono">Code.gs — Google Apps Script</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="toggleScriptExpand()" id="scriptExpandBtn"
+                                class="text-[10px] text-gray-300 bg-gray-700 px-2 py-1 rounded-lg hover:bg-gray-600 font-bold flex items-center gap-1">
+                                <i class="fas fa-expand-alt text-[9px]"></i> Mở rộng
+                            </button>
+                            <button onclick="copySyncScript()"
+                                class="text-[10px] bg-green-600 text-white px-3 py-1 rounded-lg font-bold hover:bg-green-500 flex items-center gap-1">
+                                <i class="fas fa-copy text-[9px]"></i> Sao chép
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Code -->
+                    <pre id="syncScriptCode" class="text-[10px] text-green-300 overflow-x-auto whitespace-pre leading-relaxed p-3 transition-all duration-300" style="max-height:320px;overflow-y:auto"></pre>
+                    <!-- Gradient fade at bottom when collapsed -->
+                    <div id="scriptFade" class="h-8 bg-gradient-to-t from-gray-900 to-transparent -mt-8 pointer-events-none relative z-10"></div>
                 </div>
             </div>
         </div>
 
-        <!-- Script ID setting -->
+        <!-- Deployment ID setting -->
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-            <label class="text-xs font-bold text-gray-500 mb-1 block">Script ID của Apps Script riêng</label>
-            <p class="text-xs text-gray-400 mb-2">Để trống → dùng link đồng bộ chung mặc định</p>
+            <label class="text-xs font-bold text-gray-500 mb-0.5 block">Deployment ID (Web App) của bạn</label>
+            <p class="text-xs text-gray-400 mb-2">Bắt đầu bằng <code class="bg-gray-100 px-1 rounded">AKfyc</code> · Để trống = dùng link đồng bộ chung mặc định</p>
             <div class="flex gap-2">
-                <input type="text" id="syncUrl" placeholder="AKfycb... (Script ID)" class="flex-1 border-2 border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:border-green-500 min-w-0 font-mono">
+                <input type="text" id="syncUrl" placeholder="AKfycbxxxxxxxxxxxxxxxx..." class="flex-1 border-2 border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:border-green-500 min-w-0 font-mono">
                 <button onclick="testSyncConnection()" class="px-4 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition text-sm flex-shrink-0">Kiểm tra</button>
             </div>
             <p id="syncUrlPreview" class="text-[10px] text-gray-400 mt-1 break-all hidden"></p>
+            <div id="syncIdWarning" class="hidden mt-1 text-[10px] text-amber-600 flex items-center gap-1"><i class="fas fa-triangle-exclamation"></i> Có vẻ chưa đúng — Deployment ID phải bắt đầu bằng "AKfyc" và dài hơn 50 ký tự.</div>
             <button onclick="saveSyncUrl()" class="mt-2 w-full py-2.5 bg-gray-800 text-white font-bold rounded-xl text-sm hover:bg-gray-700 transition">Lưu</button>
         </div>
 
@@ -5042,6 +5073,7 @@ function doPost(e) {
 
 function doGet(e) {
   if (e.parameter.action === 'ping') return respond({ status:'ok', message:'Kết nối thành công!' });
+  if (e.parameter.action === 'pull') return respond({ status:'ok', data: readAllData() });
   // Viewer mode for students/parents
   if (e.parameter.view) {
     try {
@@ -5122,25 +5154,71 @@ function respond(obj) {
 
 function writeAllData(data) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  writeSheet(ss,'Classes',['id','name'], data.classes||[]);
-  writeSheet(ss,'Students',['id','classId','stt','name','dob','points','positivePoints','negativePoints','avatar'], data.students||[]);
-  writeSheet(ss,'History',['id','classId','studentId','studentName','skillName','points','timestamp'], data.history||[]);
-  writeSheet(ss,'Periods',['id','classId','name','endDate'], (data.periods||[]).map(p=>({...p,students:undefined})));
 
-  // GradeRecords: flatten studentGrades
+  // --- Lớp học ---
+  writeSheet(ss, 'Classes', ['id','name'], data.classes||[]);
+
+  // --- Học sinh ---
+  writeSheet(ss, 'Students',
+    ['id','classId','stt','name','dob','points','positivePoints','negativePoints','avatar','hocTot'],
+    data.students||[]);
+
+  // --- Lịch sử cho điểm ---
+  writeSheet(ss, 'History',
+    ['id','classId','studentId','studentName','skillName','points','timestamp'],
+    data.history||[]);
+
+  // --- Đợt đánh giá ---
+  writeSheet(ss, 'Periods',
+    ['id','classId','name','endDate'],
+    (data.periods||[]).map(p=>({...p, students:undefined})));
+
+  // --- Điểm số THPT (tất cả môn) ---
   const allSubjects = ['Toán','Ngữ văn','Tiếng Anh','Vật lí','Hóa học','Sinh học',
                        'Lịch sử','Địa lí','GDCD','Tin học','Công nghệ','Thể dục','GDQPAN'];
-  const cols = ['periodId','periodName','classId','createdAt','studentId','studentName','stt',...allSubjects];
-  const rows = [];
+  const grCols = ['periodId','periodName','classId','createdAt','studentId','studentName','stt',...allSubjects];
+  const grRows = [];
   (data.gradeRecords||[]).forEach(rec => {
     (rec.studentGrades||[]).forEach(sg => {
       const row = { periodId:rec.id, periodName:rec.periodName, classId:rec.classId,
                     createdAt:rec.createdAt, studentId:sg.studentId||'', studentName:sg.name, stt:sg.stt||'' };
       allSubjects.forEach(sub => { row[sub] = sg.grades&&sg.grades[sub]!==undefined ? sg.grades[sub] : ''; });
-      rows.push(row);
+      grRows.push(row);
     });
   });
-  writeSheet(ss,'GradeRecords', cols, rows);
+  writeSheet(ss, 'GradeRecords', grCols, grRows);
+
+  // --- Sổ điểm bộ môn ---
+  const sgCols = ['recId','classId','subject','semester','txCount','updatedAt',
+                  'studentId','studentName','stt',
+                  'tx1','tx2','tx3','tx4','tx5','tx6','gk','ck','dtb'];
+  const sgRows = [];
+  (data.subjectGrades||[]).forEach(rec => {
+    (rec.rows||[]).forEach(r => {
+      const tx = r.tx||[];
+      const dtbVal = r.dtb && typeof r.dtb==='object' ? r.dtb.val : (r.dtb||'');
+      sgRows.push({
+        recId: rec.id, classId: rec.classId, subject: rec.subject,
+        semester: rec.semester, txCount: rec.txCount||2, updatedAt: rec.updatedAt||'',
+        studentId: r.studentId||'', studentName: r.name||'', stt: r.stt||0,
+        tx1:tx[0]!==undefined?tx[0]:'', tx2:tx[1]!==undefined?tx[1]:'',
+        tx3:tx[2]!==undefined?tx[2]:'', tx4:tx[3]!==undefined?tx[3]:'',
+        tx5:tx[4]!==undefined?tx[4]:'', tx6:tx[5]!==undefined?tx[5]:'',
+        gk: r.gk!==undefined&&r.gk!==''?r.gk:'',
+        ck: r.ck!==undefined&&r.ck!==''?r.ck:'',
+        dtb: dtbVal
+      });
+    });
+  });
+  writeSheet(ss, 'SubjectGrades', sgCols, sgRows);
+
+  // --- Sổ họp & Ghi chú ---
+  const mnCols = ['id','date','title','tag','important','archived','archivedAt','createdAt','items'];
+  const mnRows = (data.meetingNotes||[]).map(n => ({
+    ...n, important: n.important?'TRUE':'FALSE', archived: n.archived?'TRUE':'FALSE',
+    items: JSON.stringify(n.items||[])
+  }));
+  writeSheet(ss, 'MeetingNotes', mnCols, mnRows);
 }
 
 function writeSheet(ss, name, cols, rows) {
@@ -5152,16 +5230,27 @@ function writeSheet(ss, name, cols, rows) {
     const data = rows.map(r => cols.map(c => r[c]!==undefined&&r[c]!==null ? r[c] : ''));
     sheet.getRange(2,1,data.length,cols.length).setValues(data);
   }
+  // Auto-resize columns
+  try { sheet.autoResizeColumns(1, cols.length); } catch(e) {}
 }
 
 function readAllData() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const classes   = readSheet(ss,'Classes');
-  const students  = readSheet(ss,'Students').map(s=>({...s,id:+s.id,classId:+s.classId,stt:+s.stt,points:+s.points,positivePoints:+s.positivePoints,negativePoints:+s.negativePoints}));
-  const history   = readSheet(ss,'History').map(h=>({...h,id:+(h.id||0),classId:+h.classId,studentId:+h.studentId,points:+h.points}));
-  const periods   = readSheet(ss,'Periods').map(p=>({...p,id:+p.id,classId:+p.classId,students:[]}));
+
+  const classes  = readSheet(ss,'Classes');
+  const students = readSheet(ss,'Students').map(s=>({
+    ...s, id:+s.id, classId:+s.classId, stt:+s.stt,
+    points:+s.points, positivePoints:+s.positivePoints, negativePoints:+s.negativePoints
+  }));
+  const history  = readSheet(ss,'History').map(h=>({
+    ...h, id:+(h.id||0), classId:+h.classId, studentId:+h.studentId, points:+h.points
+  }));
+  const periods  = readSheet(ss,'Periods').map(p=>({...p, id:+p.id, classId:+p.classId, students:[]}));
+
+  // GradeRecords
+  const allSubjects=['Toán','Ngữ văn','Tiếng Anh','Vật lí','Hóa học','Sinh học',
+                     'Lịch sử','Địa lí','GDCD','Tin học','Công nghệ','Thể dục','GDQPAN'];
   const gradeRows = readSheet(ss,'GradeRecords');
-  const allSubjects=['Toán','Ngữ văn','Tiếng Anh','Vật lí','Hóa học','Sinh học','Lịch sử','Địa lí','GDCD','Tin học','Công nghệ','Thể dục','GDQPAN'];
   const recMap = {};
   gradeRows.forEach(r => {
     if (!recMap[r.periodId]) recMap[r.periodId]={id:+r.periodId,classId:+r.classId,periodName:r.periodName,createdAt:r.createdAt,studentGrades:[]};
@@ -5169,7 +5258,36 @@ function readAllData() {
     allSubjects.forEach(sub=>{ if(r[sub]!==''&&r[sub]!==undefined) grades[sub]=+r[sub]; });
     recMap[r.periodId].studentGrades.push({studentId:r.studentId?+r.studentId:null,name:r.studentName,stt:+r.stt||0,grades});
   });
-  return { classes, students, history, periods, gradeRecords:Object.values(recMap) };
+  const gradeRecords = Object.values(recMap);
+
+  // SubjectGrades
+  const sgRows = readSheet(ss,'SubjectGrades');
+  const sgMap = {};
+  sgRows.forEach(r => {
+    const key = r.recId+'_'+r.classId;
+    if (!sgMap[key]) sgMap[key]={ id:r.recId, classId:r.classId, subject:r.subject,
+      semester:r.semester, txCount:+r.txCount||2, updatedAt:r.updatedAt, rows:[] };
+    const tx=[];
+    ['tx1','tx2','tx3','tx4','tx5','tx6'].forEach((k,i)=>{ if(r[k]!==''&&r[k]!==undefined) tx[i]=+r[k]; });
+    sgMap[key].rows.push({
+      studentId:r.studentId||null, name:r.studentName, stt:+r.stt||0, tx,
+      gk:r.gk!==''&&r.gk!==undefined?+r.gk:'',
+      ck:r.ck!==''&&r.ck!==undefined?+r.ck:'',
+      dtb:r.dtb!==''&&r.dtb!==undefined?+r.dtb:''
+    });
+  });
+  const subjectGrades = Object.values(sgMap);
+
+  // MeetingNotes
+  const mnRows = readSheet(ss,'MeetingNotes');
+  const meetingNotes = mnRows.map(r => ({
+    ...r,
+    important: r.important==='TRUE'||r.important===true,
+    archived:  r.archived==='TRUE'||r.archived===true,
+    items: (() => { try { return JSON.parse(r.items||'[]'); } catch(e){ return []; } })()
+  }));
+
+  return { classes, students, history, periods, gradeRecords, subjectGrades, meetingNotes };
 }
 
 function readSheet(ss, name) {
@@ -5252,14 +5370,20 @@ function openSyncModal() {
 }
 function _syncUpdatePreview(idVal) {
     const preview = document.getElementById('syncUrlPreview');
+    const warning = document.getElementById('syncIdWarning');
     if (!preview) return;
-    const url = _syncIdToUrl(idVal);
-    if (idVal.trim()) {
+    const trimmed = idVal.trim();
+    const url = _syncIdToUrl(trimmed);
+    if (trimmed) {
         preview.textContent = '→ ' + url;
         preview.classList.remove('hidden');
+        // Validate: Deployment ID starts with AKfyc and is long
+        const looksWrong = !trimmed.startsWith('https://') && (!trimmed.startsWith('AKfyc') || trimmed.length < 50);
+        if (warning) warning.classList.toggle('hidden', !looksWrong);
     } else {
         preview.textContent = '→ Dùng link đồng bộ chung mặc định';
         preview.classList.remove('hidden');
+        if (warning) warning.classList.add('hidden');
     }
 }
 
@@ -5309,6 +5433,25 @@ function copySyncScript() {
     });
 }
 
+let _scriptExpanded = false;
+function toggleScriptExpand() {
+    _scriptExpanded = !_scriptExpanded;
+    const pre  = document.getElementById('syncScriptCode');
+    const btn  = document.getElementById('scriptExpandBtn');
+    const fade = document.getElementById('scriptFade');
+    if (_scriptExpanded) {
+        pre.style.maxHeight  = 'none';
+        pre.style.overflowY  = 'visible';
+        btn.innerHTML = '<i class="fas fa-compress-alt text-[9px]"></i> Thu gọn';
+        fade.classList.add('hidden');
+    } else {
+        pre.style.maxHeight  = '320px';
+        pre.style.overflowY  = 'auto';
+        btn.innerHTML = '<i class="fas fa-expand-alt text-[9px]"></i> Mở rộng';
+        fade.classList.remove('hidden');
+    }
+}
+
 function saveSyncUrl() {
     const idVal = document.getElementById('syncUrl').value.trim();
     const url = _syncIdToUrl(idVal);
@@ -5350,9 +5493,16 @@ function setSyncBtnLoading(btnId, loading, originalHTML) {
 
 async function syncRequest(action, data=null) {
     const url = syncSettings.url;
-    if (!url) throw new Error('Chưa cài URL. Vui lòng nhập URL Apps Script.');
+    if (!url) throw new Error('Chưa cài URL. Vui lòng nhập Deployment ID.');
+    // Pull dùng GET (không có body, không bị mất dữ liệu qua redirect)
+    if (action === 'pull') {
+        const res = await fetch(url + '?action=pull', { redirect: 'follow' });
+        const text = await res.text();
+        if (!text || text.trim() === '') throw new Error('Script trả về rỗng — kiểm tra Authorization trong Apps Script Editor.');
+        try { return JSON.parse(text); } catch { throw new Error('Phản hồi không hợp lệ: ' + text.substring(0,100)); }
+    }
+    // Push dùng POST với text/plain để tránh CORS preflight
     const body = JSON.stringify({ action, data });
-    // Use text/plain to avoid CORS preflight
     const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -5360,24 +5510,41 @@ async function syncRequest(action, data=null) {
         redirect: 'follow'
     });
     const text = await res.text();
+    if (!text || text.trim() === '') throw new Error('Script trả về rỗng — kiểm tra Authorization trong Apps Script Editor.');
     try { return JSON.parse(text); } catch { throw new Error('Phản hồi không hợp lệ: ' + text.substring(0,100)); }
 }
 
 async function testSyncConnection() {
     const idVal = document.getElementById('syncUrl').value.trim();
     const tempUrl = idVal ? _syncIdToUrl(idVal) : syncSettings.url;
-    if (!tempUrl) { setSyncStatus('error','Nhập Script ID trước!'); return; }
-    const origUrl = syncSettings.url;
-    syncSettings.url = tempUrl;
+    if (!tempUrl) { setSyncStatus('error','Nhập Deployment ID trước!'); return; }
     setSyncStatus('loading','Đang kiểm tra kết nối...');
     try {
-        const result = await syncRequest('ping');
+        // Dùng GET để tránh CORS redirect issue của GAS
+        const res = await fetch(tempUrl + '?action=ping', { redirect: 'follow' });
+        if (!res.ok) {
+            if (res.status === 401 || res.status === 403) {
+                setSyncStatus('error', '⛔ Lỗi quyền truy cập ('+res.status+'). Kiểm tra: "Ai có quyền" phải là "Tất cả mọi người" (không phải có tài khoản Google).');
+            } else {
+                setSyncStatus('error', 'Lỗi HTTP ' + res.status + '. Script có thể chưa được triển khai.');
+            }
+            return;
+        }
+        const text = await res.text();
+        if (!text || text.trim() === '') {
+            setSyncStatus('error', '⚠️ Script trả về rỗng. Có thể chưa cấp quyền (Authorization). Hãy mở Apps Script Editor → chạy thử hàm doGet() một lần.');
+            return;
+        }
+        let result;
+        try { result = JSON.parse(text); } catch {
+            setSyncStatus('error', 'Phản hồi không hợp lệ: ' + text.substring(0,80));
+            return;
+        }
         if (result.status === 'ok') setSyncStatus('ok','✅ Kết nối thành công! ' + (result.message||''));
-        else setSyncStatus('error', 'Lỗi: ' + (result.message||'unknown'));
+        else setSyncStatus('error', 'Lỗi từ script: ' + (result.message||'unknown'));
     } catch(e) {
-        setSyncStatus('error', 'Không kết nối được: ' + e.message);
+        setSyncStatus('error', 'Không kết nối được: ' + e.message + ' — Kiểm tra lại Deployment ID và quyền truy cập.');
     }
-    syncSettings.url = origUrl;
 }
 
 async function pushToGSheet() {
