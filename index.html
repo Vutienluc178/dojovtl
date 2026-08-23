@@ -121,6 +121,7 @@
             <button class="text-indigo-600 text-xs font-bold bg-indigo-50 px-2.5 py-1.5 rounded-full hover:bg-indigo-100 transition border border-indigo-100 shadow-sm flex items-center" onclick="openSeatingConfig()"><i class="fas fa-th mr-1"></i>Sơ đồ</button>
             <button id="btnProjectorMode" onclick="toggleProjectorMode()" class="text-cyan-600 text-xs font-bold bg-cyan-50 px-2.5 py-1.5 rounded-full hover:bg-cyan-100 transition border border-cyan-100 shadow-sm flex items-center"><i class="fas fa-broadcast-tower mr-1"></i>Chiếu</button>
             <button id="btnClassNotes" onclick="openClassNotes()" class="text-teal-600 text-xs font-bold bg-teal-50 px-2.5 py-1.5 rounded-full hover:bg-teal-100 transition border border-teal-100 shadow-sm flex items-center"><i class="fas fa-clipboard-list mr-1"></i>Dặn dò</button>
+            <button onclick="openSubjectGrades()" class="text-violet-600 text-xs font-bold bg-violet-50 px-2.5 py-1.5 rounded-full hover:bg-violet-100 transition border border-violet-100 shadow-sm flex items-center"><i class="fas fa-table mr-1"></i>Sổ điểm</button>
         </div>
     </div>
     <div class="mb-3 relative">
@@ -318,6 +319,89 @@
         <table id="gradesTable" class="w-full text-xs border-collapse min-w-max"></table>
     </div>
 </main>
+
+<!-- VIEW: SỔ HỌP -->
+<main id="meetingView" class="p-4 hidden pb-24">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h2 class="text-gray-800 font-black text-xl">📓 Sổ họp & Ghi chú</h2>
+            <p id="meetingViewSub" class="text-xs text-gray-400 mt-0.5"></p>
+        </div>
+        <button onclick="openMeetingEdit(null)" class="bg-amber-500 text-white font-bold text-sm px-4 py-2 rounded-xl shadow flex items-center gap-2 hover:bg-amber-600 transition"><i class="fas fa-plus"></i>Thêm</button>
+    </div>
+    <!-- Filter tags -->
+    <div class="flex gap-2 overflow-x-auto pb-1 mb-4 scrollbar-hide">
+        <button onclick="mnSetTag('all')" id="mnTag_all" class="mn-tag-btn flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-full bg-amber-500 text-white ring-2 ring-amber-400 ring-offset-1">Tất cả</button>
+        <button onclick="mnSetTag('Cơ quan')" id="mnTag_Cơ quan" class="mn-tag-btn flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 hover:bg-amber-100">🏫 Cơ quan</button>
+        <button onclick="mnSetTag('Tổ chuyên môn')" id="mnTag_Tổ chuyên môn" class="mn-tag-btn flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 hover:bg-amber-100">👥 Tổ CM</button>
+        <button onclick="mnSetTag('Lớp 10')" id="mnTag_Lớp 10" class="mn-tag-btn flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 hover:bg-amber-100">🔵 Lớp 10</button>
+        <button onclick="mnSetTag('Lớp 11')" id="mnTag_Lớp 11" class="mn-tag-btn flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 hover:bg-amber-100">🟢 Lớp 11</button>
+        <button onclick="mnSetTag('Lớp 12')" id="mnTag_Lớp 12" class="mn-tag-btn flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 hover:bg-amber-100">🔴 Lớp 12</button>
+        <button onclick="mnSetTag('Khác')" id="mnTag_Khác" class="mn-tag-btn flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 hover:bg-amber-100">📌 Khác</button>
+        <button onclick="mnToggleArchive()" id="mnArchiveBtn" class="mn-tag-btn flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200">🗄️ Lưu trữ</button>
+    </div>
+    <!-- Note list -->
+    <div id="meetingList" class="space-y-3"></div>
+    <div id="meetingEmpty" class="hidden text-center py-16 text-gray-300">
+        <i class="fas fa-book-open text-6xl mb-4 block"></i>
+        <p class="font-bold text-lg">Chưa có ghi chú</p>
+        <p class="text-sm">Bấm "+ Thêm" để tạo</p>
+    </div>
+</main>
+
+<!-- Modal thêm/sửa ghi chú họp -->
+<div id="mnEditBackdrop" class="fixed inset-0 bg-black bg-opacity-50 z-[80] hidden" onclick="closeMeetingEdit()"></div>
+<div id="mnEditModal" class="fixed bottom-0 left-0 w-full bg-white rounded-t-3xl z-[85] transform translate-y-full transition-transform duration-300 ease-out shadow-2xl max-h-[95vh] flex flex-col">
+    <div class="flex items-center justify-between px-4 pt-4 pb-3 border-b flex-shrink-0">
+        <h3 id="mnEditTitle" class="font-black text-gray-800 text-lg">📓 Ghi chú mới</h3>
+        <button onclick="closeMeetingEdit()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="flex-1 overflow-auto p-4 space-y-4">
+        <!-- Date + tag -->
+        <div class="flex gap-3">
+            <div class="flex-1">
+                <label class="text-xs font-bold text-gray-500 mb-1 block">Ngày</label>
+                <input type="date" id="mnDate" class="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm font-bold outline-none focus:border-amber-400">
+            </div>
+            <div class="flex-1">
+                <label class="text-xs font-bold text-gray-500 mb-1 block">Nhãn</label>
+                <select id="mnTag" class="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm font-bold outline-none focus:border-amber-400 bg-white">
+                    <option value="Cơ quan">🏫 Cơ quan</option>
+                    <option value="Tổ chuyên môn">👥 Tổ chuyên môn</option>
+                    <option value="Lớp 10">🔵 Lớp 10</option>
+                    <option value="Lớp 11">🟢 Lớp 11</option>
+                    <option value="Lớp 12">🔴 Lớp 12</option>
+                    <option value="Khác">📌 Khác</option>
+                </select>
+            </div>
+        </div>
+        <!-- Title + important -->
+        <div>
+            <label class="text-xs font-bold text-gray-500 mb-1 block">Tiêu đề / Nội dung họp</label>
+            <div class="flex gap-2 items-start">
+                <input type="text" id="mnTitle" placeholder="VD: Họp hội đồng sư phạm tháng 8..." class="flex-1 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold outline-none focus:border-amber-400">
+                <button id="mnImportantBtn" onclick="mnToggleImportant()" class="w-10 h-10 rounded-xl border-2 border-gray-200 flex items-center justify-center text-gray-300 hover:border-yellow-400 hover:text-yellow-400 transition flex-shrink-0" title="Đánh dấu quan trọng">
+                    <i class="fas fa-star text-lg"></i>
+                </button>
+            </div>
+        </div>
+        <!-- Checklist items -->
+        <div>
+            <div class="flex items-center justify-between mb-2">
+                <label class="text-xs font-bold text-gray-500">Danh sách công việc</label>
+                <button onclick="mnAddItem()" class="text-xs font-bold text-amber-600 hover:text-amber-700"><i class="fas fa-plus mr-1"></i>Thêm việc</button>
+            </div>
+            <div id="mnItemList" class="space-y-2"></div>
+            <button onclick="mnAddItem()" class="w-full mt-2 py-2 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 text-xs font-bold hover:border-amber-300 hover:text-amber-500 transition"><i class="fas fa-plus mr-1"></i>Thêm công việc</button>
+        </div>
+    </div>
+    <!-- Footer -->
+    <div class="px-4 py-3 border-t bg-gray-50 flex gap-2 flex-shrink-0">
+        <button onclick="saveMeetingNote()" class="flex-1 bg-amber-500 text-white font-black py-3 rounded-xl hover:bg-amber-600 transition text-sm"><i class="fas fa-save mr-2"></i>Lưu ghi chú</button>
+        <button id="mnDeleteBtn" onclick="deleteMeetingNote()" class="hidden w-12 bg-red-50 text-red-500 font-bold py-3 rounded-xl hover:bg-red-100 transition"><i class="fas fa-trash"></i></button>
+    </div>
+</div>
 
 <!-- ============ MODALS ============ -->
 
@@ -1034,6 +1118,135 @@
     <div id="projTotalPoints" class="font-bold mt-4" style="font-size:clamp(1rem,3vw,1.8rem);color:rgba(255,255,255,0.45)"></div>
 </div>
 
+<!-- ====== SỔ ĐIỂM BỘ MÔN ====== -->
+<div id="subjectGradesBackdrop" class="fixed inset-0 bg-black bg-opacity-50 z-[85] hidden" onclick="closeSubjectGrades()"></div>
+<div id="subjectGradesModal" class="fixed inset-0 bg-white z-[90] transform translate-y-full transition-transform duration-300 ease-out flex flex-col">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-4 pt-4 pb-3 border-b flex-shrink-0 bg-violet-600 text-white">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-white bg-opacity-20 flex items-center justify-center"><i class="fas fa-table text-white"></i></div>
+            <div>
+                <h3 class="font-black text-base leading-tight">Sổ điểm bộ môn</h3>
+                <p id="sgSubtitle" class="text-xs opacity-80 mt-0.5"></p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="sgSyncGSheet()" id="btnSgSync" class="flex items-center gap-1.5 text-xs font-bold bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-1.5 rounded-lg transition"><i id="sgSyncIcon" class="fas fa-cloud-upload-alt text-sm"></i><span id="sgSyncLabel">GSheet</span></button>
+            <button onclick="closeSubjectGrades()" class="w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+    <!-- Controls bar row 1: môn + kỳ + TX buttons + export -->
+    <div class="flex flex-wrap items-center gap-2 px-4 py-2.5 border-b bg-violet-50 flex-shrink-0">
+        <div class="flex items-center gap-1.5">
+            <label class="text-xs font-bold text-violet-700">Môn:</label>
+            <select id="sgSubject" onchange="sgSave()" class="text-xs font-bold border border-violet-200 rounded-lg px-2 py-1.5 bg-white outline-none focus:border-violet-500">
+                <option value="Toán">Toán</option><option value="Ngữ văn">Ngữ văn</option>
+                <option value="Tiếng Anh">Tiếng Anh</option><option value="Vật lí">Vật lí</option>
+                <option value="Hóa học">Hóa học</option><option value="Sinh học">Sinh học</option>
+                <option value="Lịch sử">Lịch sử</option><option value="Địa lí">Địa lí</option>
+                <option value="GDCD">GDCD</option><option value="Tin học">Tin học</option>
+                <option value="Công nghệ">Công nghệ</option><option value="Thể dục">Thể dục</option>
+                <option value="Khác">Khác...</option>
+            </select>
+        </div>
+        <div class="flex items-center gap-1.5">
+            <label class="text-xs font-bold text-violet-700">HK:</label>
+            <select id="sgSemester" onchange="sgSave()" class="text-xs font-bold border border-violet-200 rounded-lg px-2 py-1.5 bg-white outline-none focus:border-violet-500">
+                <option value="HK1">HK1</option><option value="HK2">HK2</option>
+            </select>
+        </div>
+        <div class="flex items-center gap-1 ml-auto flex-wrap">
+            <button onclick="sgAddTX()" class="text-xs font-bold bg-violet-600 text-white px-2.5 py-1.5 rounded-lg hover:bg-violet-700 transition flex items-center gap-1"><i class="fas fa-plus"></i>TX</button>
+            <button onclick="sgRemoveTX()" id="sgRemoveTXBtn" class="text-xs font-bold bg-gray-100 text-gray-600 px-2.5 py-1.5 rounded-lg hover:bg-gray-200 transition flex items-center gap-1"><i class="fas fa-minus"></i>TX</button>
+            <button onclick="openSgQuickEntry()" class="text-xs font-bold bg-fuchsia-600 text-white px-2.5 py-1.5 rounded-lg hover:bg-fuchsia-700 transition flex items-center gap-1"><i class="fas fa-bolt"></i>Nhập nhanh</button>
+            <button onclick="sgDownloadTemplate()" class="text-xs font-bold bg-blue-500 text-white px-2.5 py-1.5 rounded-lg hover:bg-blue-600 transition flex items-center gap-1"><i class="fas fa-download"></i>Tải mẫu</button>
+            <label class="text-xs font-bold bg-amber-500 text-white px-2.5 py-1.5 rounded-lg hover:bg-amber-600 transition flex items-center gap-1 cursor-pointer"><i class="fas fa-upload"></i>Nhập file<input type="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="sgHandleImport(event)"></label>
+            <button onclick="sgExportExcel()" class="text-xs font-bold bg-emerald-600 text-white px-2.5 py-1.5 rounded-lg hover:bg-emerald-700 transition flex items-center gap-1"><i class="fas fa-file-excel"></i>Xuất Excel</button>
+        </div>
+    </div>
+    <!-- Filter + message bar row 2 -->
+    <div class="flex flex-wrap items-center gap-2 px-4 py-2 border-b bg-gray-50 flex-shrink-0">
+        <span class="text-xs font-bold text-gray-500">Lọc ĐTB:</span>
+        <div class="flex gap-1" id="sgFilterChips">
+            <button onclick="sgSetFilter('all')" class="sg-chip active text-xs font-bold px-2.5 py-1 rounded-full border border-gray-300 bg-white text-gray-600 hover:border-violet-400 transition" data-filter="all">Tất cả</button>
+            <button onclick="sgSetFilter('gioi')" class="sg-chip text-xs font-bold px-2.5 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition" data-filter="gioi">≥ 8 Giỏi</button>
+            <button onclick="sgSetFilter('kha')" class="sg-chip text-xs font-bold px-2.5 py-1 rounded-full border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition" data-filter="kha">6.5–7.9 Khá</button>
+            <button onclick="sgSetFilter('tb')" class="sg-chip text-xs font-bold px-2.5 py-1 rounded-full border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition" data-filter="tb">5–6.4 TB</button>
+            <button onclick="sgSetFilter('yeu')" class="sg-chip text-xs font-bold px-2.5 py-1 rounded-full border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition" data-filter="yeu">&lt; 5 Yếu</button>
+            <button onclick="sgSetFilter('no_dtb')" class="sg-chip text-xs font-bold px-2.5 py-1 rounded-full border border-gray-200 bg-gray-100 text-gray-500 hover:bg-gray-200 transition" data-filter="no_dtb">Chưa có ĐTB</button>
+        </div>
+        <div class="flex items-center gap-1.5 ml-auto">
+            <select id="sgMsgTemplate" class="text-xs font-bold border border-gray-200 rounded-lg px-2 py-1.5 bg-white outline-none">
+                <option value="formal">📋 Trang trọng</option>
+                <option value="friendly">😊 Thân thiện</option>
+                <option value="warning">⚠️ Cảnh báo</option>
+            </select>
+            <button onclick="sgBatchMsg()" class="text-xs font-bold bg-rose-500 text-white px-3 py-1.5 rounded-lg hover:bg-rose-600 transition flex items-center gap-1"><i class="fas fa-envelope-open-text"></i>Gửi hàng loạt (<span id="sgFilterCount">0</span>)</button>
+        </div>
+    </div>
+    <!-- Legend -->
+    <div class="px-4 py-1 flex gap-3 text-xs text-gray-400 bg-gray-50 border-b flex-shrink-0">
+        <span><b class="text-gray-600">TX</b> hệ số 1</span>
+        <span><b class="text-violet-600">GK</b> hệ số 2</span>
+        <span><b class="text-orange-600">CK</b> hệ số 3</span>
+        <span><b class="text-emerald-600">ĐTB</b> = (ΣTX + GK×2 + CK×3) ÷ (nTX+5)</span>
+    </div>
+    <!-- Table -->
+    <div class="flex-1 overflow-auto">
+        <table id="sgTable" class="w-full text-xs border-collapse min-w-max">
+            <thead id="sgThead"></thead>
+            <tbody id="sgTbody"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Quick column entry panel -->
+<div id="sgQuickBackdrop" class="fixed inset-0 bg-black bg-opacity-50 z-[100] hidden" onclick="closeSgQuickEntry()"></div>
+<div id="sgQuickPanel" class="fixed top-0 right-0 h-full w-full max-w-sm bg-white z-[110] shadow-2xl transform translate-x-full transition-transform duration-300 ease-out flex flex-col hidden">
+    <div class="flex items-center justify-between px-4 py-3 bg-fuchsia-600 text-white flex-shrink-0">
+        <div>
+            <h3 class="font-black text-base">⚡ Nhập nhanh theo cột</h3>
+            <p id="sgQESubtitle" class="text-xs opacity-80 mt-0.5"></p>
+        </div>
+        <button onclick="closeSgQuickEntry()" class="w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center"><i class="fas fa-times"></i></button>
+    </div>
+    <!-- Column selector -->
+    <div class="px-4 py-3 border-b bg-fuchsia-50 flex-shrink-0">
+        <p class="text-xs font-bold text-fuchsia-700 mb-2">Chọn cột cần nhập:</p>
+        <div id="sgQEColBtns" class="flex flex-wrap gap-2"></div>
+        <p class="text-xs text-gray-400 mt-2"><i class="fas fa-info-circle mr-1"></i>Nhấn <kbd class="bg-gray-100 border border-gray-300 rounded px-1 py-0.5 font-mono text-xs">Enter</kbd> hoặc <kbd class="bg-gray-100 border border-gray-300 rounded px-1 py-0.5 font-mono text-xs">↓</kbd> để chuyển xuống dòng tiếp</p>
+    </div>
+    <!-- Student list -->
+    <div class="flex-1 overflow-auto" id="sgQEList"></div>
+    <!-- Footer: progress + done -->
+    <div class="px-4 py-3 border-t bg-gray-50 flex-shrink-0">
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-xs text-gray-500">Đã nhập: <b id="sgQEFilledCount" class="text-fuchsia-700">0</b> / <span id="sgQETotal">0</span></span>
+            <button onclick="closeSgQuickEntry()" class="text-xs font-bold bg-fuchsia-600 text-white px-4 py-2 rounded-xl hover:bg-fuchsia-700 transition"><i class="fas fa-check mr-1"></i>Xong</button>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-1.5">
+            <div id="sgQEProgress" class="bg-fuchsia-600 h-1.5 rounded-full transition-all duration-300" style="width:0%"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Batch message modal -->
+<div id="sgMsgBackdrop" class="fixed inset-0 bg-black bg-opacity-60 z-[100] hidden" onclick="closeSgMsg()"></div>
+<div id="sgMsgModal" class="fixed inset-4 bg-white z-[110] rounded-2xl shadow-2xl transform scale-95 opacity-0 transition-all duration-200 flex flex-col hidden">
+    <div class="flex items-center justify-between px-5 py-4 border-b bg-rose-600 text-white rounded-t-2xl flex-shrink-0">
+        <div>
+            <h3 class="font-black text-base" id="sgMsgTitle">Tin nhắn đánh giá</h3>
+            <p class="text-xs opacity-80" id="sgMsgSubtitle"></p>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="sgCopyAllMsg()" class="text-xs font-bold bg-white bg-opacity-20 px-3 py-1.5 rounded-lg hover:bg-opacity-30 transition flex items-center gap-1"><i class="fas fa-copy"></i> Sao chép tất cả</button>
+            <button onclick="sgExportMsgExcel()" class="text-xs font-bold bg-white bg-opacity-20 px-3 py-1.5 rounded-lg hover:bg-opacity-30 transition flex items-center gap-1"><i class="fas fa-file-excel"></i> Xuất Excel</button>
+            <button onclick="closeSgMsg()" class="w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+    <div id="sgMsgList" class="flex-1 overflow-auto p-4 space-y-3"></div>
+</div>
+
 <!-- ====== SƠ ĐỒ CHỖ NGỒI PHÒNG THI ====== -->
 <div id="seatingConfigBackdrop" class="fixed inset-0 bg-black bg-opacity-50 z-[85] hidden" onclick="closeSeatingConfig()"></div>
 <div id="seatingConfigModal" class="fixed bottom-0 left-0 w-full bg-white rounded-t-3xl z-[90] transform translate-y-full transition-transform duration-300 ease-out shadow-2xl max-h-[92vh] flex flex-col">
@@ -1238,19 +1451,28 @@
         <!-- Status badge -->
         <div id="syncStatusBadge" class="hidden flex items-center gap-2 p-3 rounded-xl text-sm font-bold"></div>
 
-        <!-- Bước hướng dẫn -->
+        <!-- Bước hướng dẫn (khóa mật khẩu) -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <button onclick="toggleSyncGuide()" class="w-full p-4 flex justify-between items-center text-left">
-                <span class="font-bold text-gray-800 flex items-center gap-2"><i class="fas fa-info-circle text-blue-400"></i> Hướng dẫn cài đặt lần đầu</span>
+                <span class="font-bold text-gray-800 flex items-center gap-2"><i class="fas fa-lock text-amber-400"></i> Hướng dẫn cài đặt lần đầu</span>
                 <i id="syncGuideIcon" class="fas fa-chevron-down text-gray-400 transition-transform"></i>
             </button>
+            <!-- Password gate -->
+            <div id="syncGuidePwGate" class="hidden px-4 pb-4 border-t border-gray-50">
+                <p class="text-xs text-gray-500 mt-3 mb-2 font-semibold"><i class="fas fa-lock text-amber-400 mr-1"></i>Nhập mật khẩu để xem hướng dẫn:</p>
+                <div class="flex gap-2">
+                    <input type="password" id="syncGuidePw" placeholder="Mật khẩu..." class="flex-1 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400" onkeydown="if(event.key==='Enter')checkSyncGuidePassword()">
+                    <button onclick="checkSyncGuidePassword()" class="px-4 py-2 bg-amber-500 text-white font-bold rounded-xl text-sm hover:bg-amber-600 transition">Xác nhận</button>
+                </div>
+                <p id="syncGuidePwErr" class="text-xs text-red-500 mt-1 hidden">Mật khẩu không đúng!</p>
+            </div>
             <div id="syncGuide" class="hidden px-4 pb-4 border-t border-gray-50">
                 <ol class="text-sm text-gray-600 flex flex-col gap-2 mt-3">
                     <li class="flex gap-2"><span class="w-5 h-5 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0">1</span><span>Mở <b>Google Sheets</b> → Tiện ích mở rộng → <b>Apps Script</b></span></li>
                     <li class="flex gap-2"><span class="w-5 h-5 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0">2</span><span>Xóa code mặc định, dán đoạn code bên dưới vào rồi <b>Lưu</b></span></li>
                     <li class="flex gap-2"><span class="w-5 h-5 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0">3</span><span>Bấm <b>Triển khai → Triển khai mới → Web app</b></span></li>
                     <li class="flex gap-2"><span class="w-5 h-5 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0">4</span><span>Ai có quyền truy cập: chọn <b>"Tất cả mọi người"</b> → Triển khai</span></li>
-                    <li class="flex gap-2"><span class="w-5 h-5 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0">5</span><span>Sao chép <b>URL web app</b> → Dán vào ô bên dưới</span></li>
+                    <li class="flex gap-2"><span class="w-5 h-5 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0">5</span><span>Sao chép <b>Script ID</b> (chuỗi dài trong URL triển khai) → Dán vào ô bên dưới</span></li>
                 </ol>
                 <!-- Apps Script code -->
                 <div class="mt-3 bg-gray-900 rounded-xl p-3 relative">
@@ -1260,14 +1482,16 @@
             </div>
         </div>
 
-        <!-- URL setting -->
+        <!-- Script ID setting -->
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-            <label class="text-xs font-bold text-gray-500 mb-2 block">URL Web App (Apps Script)</label>
+            <label class="text-xs font-bold text-gray-500 mb-1 block">Script ID của Apps Script riêng</label>
+            <p class="text-xs text-gray-400 mb-2">Để trống → dùng link đồng bộ chung mặc định</p>
             <div class="flex gap-2">
-                <input type="url" id="syncUrl" placeholder="https://script.google.com/macros/s/..." class="flex-1 border-2 border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:border-green-500 min-w-0">
+                <input type="text" id="syncUrl" placeholder="AKfycb... (Script ID)" class="flex-1 border-2 border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:border-green-500 min-w-0 font-mono">
                 <button onclick="testSyncConnection()" class="px-4 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition text-sm flex-shrink-0">Kiểm tra</button>
             </div>
-            <button onclick="saveSyncUrl()" class="mt-2 w-full py-2.5 bg-gray-800 text-white font-bold rounded-xl text-sm hover:bg-gray-700 transition">Lưu URL</button>
+            <p id="syncUrlPreview" class="text-[10px] text-gray-400 mt-1 break-all hidden"></p>
+            <button onclick="saveSyncUrl()" class="mt-2 w-full py-2.5 bg-gray-800 text-white font-bold rounded-xl text-sm hover:bg-gray-700 transition">Lưu</button>
         </div>
 
         <!-- Sync actions -->
@@ -1313,13 +1537,14 @@
 <audio id="soundTick" src="https://assets.mixkit.co/active_storage/sfx/2578/2578-preview.mp3" preload="auto"></audio>
 <audio id="soundTaDa" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3" preload="auto"></audio>
 
-<!-- BOTTOM NAV (4 tabs) -->
+<!-- BOTTOM NAV -->
 <nav class="fixed bottom-0 w-full bg-white border-t border-gray-200 flex justify-around p-2 pb-4 text-[10px] font-semibold text-gray-400 z-10 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-    <button id="nav-classroom" onclick="switchView('classroom')" class="flex flex-col items-center gap-0.5 p-1 w-[19%] text-dojo-blue transition-colors"><i class="fas fa-chalkboard text-lg"></i><span>Lớp học</span></button>
-    <button id="nav-report"    onclick="switchView('report')"    class="flex flex-col items-center gap-0.5 p-1 w-[19%] text-gray-400 hover:text-gray-600 transition-colors"><i class="fas fa-chart-pie text-lg"></i><span>Báo cáo</span></button>
-    <button id="nav-grades"    onclick="switchView('grades')"    class="flex flex-col items-center gap-0.5 p-1 w-[19%] text-gray-400 hover:text-gray-600 transition-colors"><i class="fas fa-graduation-cap text-lg"></i><span>Điểm số</span></button>
-    <button id="nav-history"   onclick="switchView('history')"   class="flex flex-col items-center gap-0.5 p-1 w-[19%] text-gray-400 hover:text-gray-600 transition-colors"><i class="fas fa-history text-lg"></i><span>Lịch sử</span></button>
-    <button id="nav-settings"  onclick="switchView('settings')"  class="flex flex-col items-center gap-0.5 p-1 w-[19%] text-gray-400 hover:text-gray-600 transition-colors"><i class="fas fa-sliders-h text-lg"></i><span>Kỹ năng</span></button>
+    <button id="nav-classroom" onclick="switchView('classroom')" class="flex flex-col items-center gap-0.5 p-1 w-[16%] text-dojo-blue transition-colors"><i class="fas fa-chalkboard text-lg"></i><span>Lớp học</span></button>
+    <button id="nav-report"    onclick="switchView('report')"    class="flex flex-col items-center gap-0.5 p-1 w-[16%] text-gray-400 hover:text-gray-600 transition-colors"><i class="fas fa-chart-pie text-lg"></i><span>Báo cáo</span></button>
+    <button id="nav-grades"    onclick="switchView('grades')"    class="flex flex-col items-center gap-0.5 p-1 w-[16%] text-gray-400 hover:text-gray-600 transition-colors"><i class="fas fa-graduation-cap text-lg"></i><span>Điểm số</span></button>
+    <button id="nav-history"   onclick="switchView('history')"   class="flex flex-col items-center gap-0.5 p-1 w-[16%] text-gray-400 hover:text-gray-600 transition-colors"><i class="fas fa-history text-lg"></i><span>Lịch sử</span></button>
+    <button id="nav-meeting"   onclick="switchView('meeting')"   class="flex flex-col items-center gap-0.5 p-1 w-[16%] text-gray-400 hover:text-gray-600 transition-colors relative"><i class="fas fa-book-open text-lg"></i><span>Sổ họp</span><span id="meetingBadge" class="hidden absolute -top-0.5 right-2 bg-red-500 text-white text-[9px] font-black rounded-full px-1 min-w-[16px] text-center"></span></button>
+    <button id="nav-settings"  onclick="switchView('settings')"  class="flex flex-col items-center gap-0.5 p-1 w-[16%] text-gray-400 hover:text-gray-600 transition-colors"><i class="fas fa-sliders-h text-lg"></i><span>Kỹ năng</span></button>
 </nav>
 
 <script>
@@ -1539,6 +1764,8 @@ let gradeRecords       = [];  // { id, classId, periodName, createdAt, studentGr
 let communicationLog   = [];  // { id, classId, studentId|null, studentName, studentAvatar, type, content, date, createdAt }
 let studentGoals       = [];  // { id, classId, studentId, title, type, targetValue, currentValue, bonusPoints, deadline, status, createdAt }
 let classNotes         = [];  // { id, classId, content, deadline, done, doneAt, createdAt }
+let meetingNotes       = [];  // { id, date, title, tag, important, archived, archivedAt, createdAt, items:[{id,text,done}] }
+let subjectGrades      = [];  // { id, classId, subject, semester, txCount, updatedAt, rows:[{studentId,name,stt,tx:[],gk,ck,dtb}] }
 let currentGradePeriodId = null;
 let _editingNoteId = null;
 let currentPeriodId  = null;
@@ -1563,6 +1790,8 @@ function saveData() {
         localStorage.setItem('dojo_commLog',         JSON.stringify(communicationLog));
         localStorage.setItem('dojo_goals',           JSON.stringify(studentGoals));
         localStorage.setItem('dojo_classNotes',      JSON.stringify(classNotes));
+        localStorage.setItem('dojo_subjectGrades',   JSON.stringify(subjectGrades));
+        localStorage.setItem('dojo_meetingNotes',    JSON.stringify(meetingNotes));
         localStorage.setItem('dojo_sync',            JSON.stringify(syncSettings));
     } catch(e) { console.warn('Lưu thất bại:', e); }
 }
@@ -1587,6 +1816,10 @@ function loadData() {
         if(gl) studentGoals = JSON.parse(gl);
         const cn=localStorage.getItem('dojo_classNotes');
         if(cn) classNotes = JSON.parse(cn);
+        const sg2=localStorage.getItem('dojo_subjectGrades');
+        if(sg2) subjectGrades = JSON.parse(sg2);
+        const mn=localStorage.getItem('dojo_meetingNotes');
+        if(mn) meetingNotes = JSON.parse(mn);
         const sy=localStorage.getItem('dojo_sync');
         if(sy) { syncSettings = JSON.parse(sy); if(!syncSettings.url) syncSettings.url = DEFAULT_SYNC_URL; }
         if(classes.length > 0) currentClassId = classes[0].id;
@@ -1641,10 +1874,10 @@ function checkMilestone(student, oldPoints) {
 // ============================================================
 function switchView(view) {
     currentView=view;
-    ['classroom','report','grades','history','settings'].forEach(v=>{
-        document.getElementById(v+'View').classList.toggle('hidden', v!==view);
+    ['classroom','report','grades','history','settings','meeting'].forEach(v=>{
+        const el=document.getElementById(v+'View'); if(el) el.classList.toggle('hidden', v!==view);
         const nav=document.getElementById('nav-'+v);
-        if(nav) nav.className=`flex flex-col items-center gap-0.5 p-1 w-[19%] transition-colors ${v===view?'text-dojo-blue':'text-gray-400 hover:text-gray-600'}`;
+        if(nav) nav.className=`flex flex-col items-center gap-0.5 p-1 w-[16%] transition-colors relative ${v===view?'text-dojo-blue':'text-gray-400 hover:text-gray-600'}`;
     });
     document.getElementById('headerAddBtn').classList.toggle('hidden', view!=='classroom');
     if(view !== 'report' && mainChartInstance) { mainChartInstance.destroy(); mainChartInstance=null; }
@@ -1655,6 +1888,7 @@ function switchView(view) {
     else if(view==='grades') renderGradeView();
     else if(view==='history') renderHistory();
     else if(view==='settings') renderSettings();
+    else if(view==='meeting') renderMeetingView();
 }
 
 // ============================================================
@@ -1711,6 +1945,7 @@ function selectClass(id) {
     else if(currentView==='history') renderHistory();
     else if(currentView==='settings') renderSkills();
     _updateClassNotesBtn();
+    _updateMeetingBadge();
 }
 
 function openAddClassModal() { toggleSidebar(); document.getElementById('addClassBackdrop').classList.remove('hidden'); document.getElementById('addClassModal').classList.remove('hidden'); document.getElementById('newClassName').focus(); }
@@ -3169,6 +3404,233 @@ function renderGoalsOverview() {
 }
 
 // ============================================================
+// SỔ HỌP – MEETING NOTES
+// ============================================================
+const MN_TAGS = ['Cơ quan','Tổ chuyên môn','Lớp 10','Lớp 11','Lớp 12','Khác'];
+const MN_TAG_COLOR = {
+    'Cơ quan':'bg-blue-100 text-blue-700','Tổ chuyên môn':'bg-purple-100 text-purple-700',
+    'Lớp 10':'bg-cyan-100 text-cyan-700','Lớp 11':'bg-green-100 text-green-700',
+    'Lớp 12':'bg-red-100 text-red-700','Khác':'bg-gray-100 text-gray-600'
+};
+let _mnCurrentTag = 'all';
+let _mnShowArchive = false;
+let _mnEditId = null;
+let _mnImportant = false;
+
+function renderMeetingView() {
+    const filtered = meetingNotes.filter(n=>{
+        if (n.archived !== _mnShowArchive) return false;
+        if (_mnCurrentTag !== 'all' && n.tag !== _mnCurrentTag) return false;
+        return true;
+    });
+    // Sort: important first, then by date desc
+    filtered.sort((a,b)=>{
+        if (a.important && !b.important) return -1;
+        if (!a.important && b.important) return 1;
+        return (b.date||'').localeCompare(a.date||'');
+    });
+
+    const active = meetingNotes.filter(n=>!n.archived);
+    const important = active.filter(n=>n.important).length;
+    document.getElementById('meetingViewSub').textContent =
+        `${active.length} ghi chú · ${important} quan trọng · ${meetingNotes.filter(n=>n.archived).length} lưu trữ`;
+
+    // Badge
+    const badge = document.getElementById('meetingBadge');
+    const urgent = active.filter(n=>n.important && n.items && n.items.some(i=>!i.done));
+    if (urgent.length > 0) { badge.textContent=urgent.length; badge.classList.remove('hidden'); }
+    else badge.classList.add('hidden');
+
+    const list = document.getElementById('meetingList');
+    const empty = document.getElementById('meetingEmpty');
+    if (!filtered.length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+
+    list.innerHTML = filtered.map(note => {
+        const items = note.items || [];
+        const doneCount = items.filter(i=>i.done).length;
+        const totalCount = items.length;
+        const progress = totalCount > 0 ? Math.round(doneCount/totalCount*100) : 0;
+        const allDone = totalCount > 0 && doneCount === totalCount;
+        const tagColor = MN_TAG_COLOR[note.tag] || 'bg-gray-100 text-gray-600';
+        const dateStr = note.date ? new Date(note.date+'T00:00:00').toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'}) : '';
+
+        return `<div class="bg-white rounded-2xl shadow-sm border ${note.important?'border-yellow-300':'border-gray-100'} p-4 ${allDone?'opacity-70':''}">
+            <div class="flex items-start justify-between gap-2 mb-2">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1 flex-wrap">
+                        ${note.important?'<i class="fas fa-star text-yellow-400 text-sm flex-shrink-0"></i>':''}
+                        <span class="text-xs font-bold px-2 py-0.5 rounded-full ${tagColor}">${note.tag}</span>
+                        ${dateStr?`<span class="text-xs text-gray-400">${dateStr}</span>`:''}
+                    </div>
+                    <h3 class="font-black text-gray-800 text-sm leading-snug">${note.title||'(Không có tiêu đề)'}</h3>
+                </div>
+                <div class="flex items-center gap-1 flex-shrink-0">
+                    <button onclick="openMeetingEdit('${note.id}')" class="w-8 h-8 rounded-xl bg-gray-100 text-gray-500 flex items-center justify-center hover:bg-amber-100 hover:text-amber-600 transition"><i class="fas fa-edit text-xs"></i></button>
+                    <button onclick="mnArchiveToggle('${note.id}')" class="w-8 h-8 rounded-xl bg-gray-100 text-gray-500 flex items-center justify-center hover:bg-blue-100 hover:text-blue-600 transition" title="${note.archived?'Khôi phục':'Lưu trữ'}"><i class="fas fa-${note.archived?'inbox':'archive'} text-xs"></i></button>
+                    <button onclick="mnDelete('${note.id}')" class="w-8 h-8 rounded-xl bg-gray-100 text-gray-500 flex items-center justify-center hover:bg-red-100 hover:text-red-500 transition"><i class="fas fa-trash text-xs"></i></button>
+                </div>
+            </div>
+            ${totalCount > 0 ? `
+            <div class="mb-2">
+                <div class="flex justify-between text-xs text-gray-400 mb-1"><span>Tiến độ</span><span class="${allDone?'text-green-600 font-bold':''}">${doneCount}/${totalCount} ${allDone?'✅ Hoàn thành':''}</span></div>
+                <div class="w-full bg-gray-100 rounded-full h-1.5">
+                    <div class="h-1.5 rounded-full transition-all ${allDone?'bg-green-500':'bg-amber-400'}" style="width:${progress}%"></div>
+                </div>
+            </div>
+            <div class="space-y-1.5">
+                ${items.map(item=>`
+                <div class="flex items-start gap-2">
+                    <input type="checkbox" ${item.done?'checked':''} onchange="mnToggleItem('${note.id}','${item.id}',this.checked)"
+                        class="mt-0.5 w-4 h-4 rounded border-gray-300 accent-amber-500 flex-shrink-0 cursor-pointer">
+                    <span class="text-xs text-gray-700 ${item.done?'line-through text-gray-400':''} leading-relaxed">${item.text}</span>
+                </div>`).join('')}
+            </div>` : '<p class="text-xs text-gray-400 italic">Không có công việc cụ thể</p>'}
+        </div>`;
+    }).join('');
+}
+
+function mnSetTag(tag) {
+    _mnCurrentTag = tag;
+    document.querySelectorAll('.mn-tag-btn').forEach(b=>{
+        const isActive = b.id === `mnTag_${tag}`;
+        b.className = `mn-tag-btn flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-full transition ${isActive?'bg-amber-500 text-white ring-2 ring-amber-400 ring-offset-1':'bg-gray-100 text-gray-600 hover:bg-amber-100'}`;
+    });
+    renderMeetingView();
+}
+function mnToggleArchive() {
+    _mnShowArchive = !_mnShowArchive;
+    const btn = document.getElementById('mnArchiveBtn');
+    btn.className = `mn-tag-btn flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-full transition ${_mnShowArchive?'bg-gray-600 text-white ring-2 ring-gray-400 ring-offset-1':'bg-gray-100 text-gray-500 hover:bg-gray-200'}`;
+    if (_mnShowArchive) { _mnCurrentTag='all'; document.querySelectorAll('.mn-tag-btn:not(#mnArchiveBtn)').forEach(b=>{ b.className='mn-tag-btn flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-full transition bg-gray-100 text-gray-600 hover:bg-amber-100'; }); }
+    renderMeetingView();
+}
+
+function openMeetingEdit(id) {
+    _mnEditId = id;
+    _mnImportant = false;
+    const note = id ? meetingNotes.find(n=>n.id===id) : null;
+    document.getElementById('mnEditTitle').textContent = note ? '✏️ Sửa ghi chú' : '📓 Ghi chú mới';
+    document.getElementById('mnDate').value = note?.date || new Date().toISOString().slice(0,10);
+    document.getElementById('mnTag').value = note?.tag || 'Cơ quan';
+    document.getElementById('mnTitle').value = note?.title || '';
+    _mnImportant = note?.important || false;
+    _mnUpdateImportantBtn();
+    document.getElementById('mnDeleteBtn').classList.toggle('hidden', !note);
+    _mnRenderItems(note?.items || []);
+    document.getElementById('mnEditBackdrop').classList.remove('hidden');
+    const m = document.getElementById('mnEditModal');
+    requestAnimationFrame(()=>{ m.style.transform='translateY(0)'; });
+    setTimeout(()=>{ document.getElementById('mnTitle').focus(); }, 350);
+}
+function closeMeetingEdit() {
+    document.getElementById('mnEditModal').style.transform='translateY(100%)';
+    setTimeout(()=>{ document.getElementById('mnEditBackdrop').classList.add('hidden'); }, 280);
+}
+
+function _mnUpdateImportantBtn() {
+    const btn = document.getElementById('mnImportantBtn');
+    btn.className = `w-10 h-10 rounded-xl border-2 flex items-center justify-center transition flex-shrink-0 ${_mnImportant?'border-yellow-400 text-yellow-400 bg-yellow-50':'border-gray-200 text-gray-300 hover:border-yellow-400 hover:text-yellow-400'}`;
+}
+function mnToggleImportant() {
+    _mnImportant = !_mnImportant;
+    _mnUpdateImportantBtn();
+}
+
+let _mnItems = [];
+function _mnRenderItems(items) {
+    _mnItems = items.map(i=>({...i}));
+    const container = document.getElementById('mnItemList');
+    container.innerHTML = _mnItems.map((item,i)=>`
+        <div class="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2">
+            <i class="fas fa-grip-lines text-gray-300 text-xs flex-shrink-0"></i>
+            <input type="text" value="${item.text}" placeholder="Nội dung công việc..."
+                class="flex-1 text-xs font-semibold bg-transparent outline-none text-gray-700"
+                oninput="_mnItems[${i}].text=this.value">
+            <button onclick="_mnRemoveItem(${i})" class="text-gray-300 hover:text-red-400 transition flex-shrink-0"><i class="fas fa-times"></i></button>
+        </div>`).join('');
+}
+function mnAddItem() {
+    _mnItems.push({ id: 'item_'+Date.now(), text:'', done:false });
+    _mnRenderItems(_mnItems);
+    // Focus last input
+    setTimeout(()=>{
+        const inputs = document.querySelectorAll('#mnItemList input[type=text]');
+        if (inputs.length) inputs[inputs.length-1].focus();
+    }, 50);
+}
+function _mnRemoveItem(idx) {
+    _mnItems.splice(idx,1);
+    _mnRenderItems(_mnItems);
+}
+
+function saveMeetingNote() {
+    const title = document.getElementById('mnTitle').value.trim();
+    const date  = document.getElementById('mnDate').value;
+    const tag   = document.getElementById('mnTag').value;
+    // Sync text from inputs (in case oninput didn't fire for last char)
+    document.querySelectorAll('#mnItemList input[type=text]').forEach((inp,i)=>{ if(_mnItems[i]) _mnItems[i].text=inp.value; });
+    const items = _mnItems.filter(i=>i.text.trim());
+
+    if (_mnEditId) {
+        const note = meetingNotes.find(n=>n.id===_mnEditId);
+        if (note) { note.title=title; note.date=date; note.tag=tag; note.important=_mnImportant; note.items=items; note.updatedAt=new Date().toISOString(); }
+    } else {
+        meetingNotes.push({ id:'mn_'+Date.now(), date, title, tag, important:_mnImportant, archived:false, archivedAt:null, createdAt:new Date().toISOString(), items });
+    }
+    saveData(); closeMeetingEdit(); renderMeetingView();
+    showToast(_mnEditId ? 'Đã cập nhật ghi chú!' : 'Đã thêm ghi chú mới!');
+}
+
+function deleteMeetingNote() {
+    if (!_mnEditId || !confirm('Xóa ghi chú này?')) return;
+    meetingNotes = meetingNotes.filter(n=>n.id!==_mnEditId);
+    saveData(); closeMeetingEdit(); renderMeetingView();
+    showToast('Đã xóa ghi chú', false);
+}
+
+function mnArchiveToggle(id) {
+    const note = meetingNotes.find(n=>n.id===id); if(!note) return;
+    note.archived = !note.archived;
+    note.archivedAt = note.archived ? new Date().toISOString() : null;
+    saveData(); renderMeetingView();
+    showToast(note.archived ? '🗄️ Đã lưu trữ' : '📤 Đã khôi phục');
+}
+
+function mnDelete(id) {
+    if (!confirm('Xóa ghi chú này vĩnh viễn?')) return;
+    meetingNotes = meetingNotes.filter(n=>n.id!==id);
+    saveData(); renderMeetingView();
+    showToast('Đã xóa', false);
+}
+
+function mnToggleItem(noteId, itemId, checked) {
+    const note = meetingNotes.find(n=>n.id===noteId); if(!note) return;
+    const item = note.items && note.items.find(i=>i.id===itemId); if(!item) return;
+    item.done = checked;
+    // If all done, prompt archive
+    const allDone = note.items.every(i=>i.done);
+    saveData(); renderMeetingView();
+    if (allDone && note.items.length > 0) {
+        setTimeout(()=>{
+            if (confirm(`✅ "${note.title||'Ghi chú'}" đã hoàn thành tất cả!\nChuyển vào lưu trữ?`)) {
+                note.archived=true; note.archivedAt=new Date().toISOString();
+                saveData(); renderMeetingView(); showToast('🗄️ Đã lưu trữ ghi chú hoàn thành!');
+            }
+        }, 300);
+    }
+}
+
+// Update meeting badge on init
+function _updateMeetingBadge() {
+    const badge = document.getElementById('meetingBadge');
+    if (!badge) return;
+    const urgent = meetingNotes.filter(n=>!n.archived && n.important && n.items && n.items.some(i=>!i.done));
+    if (urgent.length > 0) { badge.textContent=urgent.length; badge.classList.remove('hidden'); }
+    else badge.classList.add('hidden');
+}
+
+// ============================================================
 // GRADE RECORDS – ĐÁNH GIÁ HỌC TẬP
 // ============================================================
 const THPT_SUBJECTS = [
@@ -4537,7 +4999,7 @@ function checkViewerMode() {
         // Enter viewer mode: hide app, show overlay
         document.querySelector('header').style.display='none';
         document.querySelector('nav').style.display='none';
-        ['classroomView','reportView','gradesView','historyView','settingsView'].forEach(id=>{
+        ['classroomView','reportView','gradesView','historyView','settingsView','meetingView'].forEach(id=>{
             const el=document.getElementById(id); if(el) el.style.display='none';
         });
         // Open viewer with no copy link (read-only URL mode)
@@ -4728,7 +5190,7 @@ async function quickSync() {
     icon.className  = 'fas fa-spinner fa-spin text-base';
     label.innerText = 'Đang lưu...';
     try {
-        const result = await syncRequest('push', { classes, students, history, periods, gradeRecords });
+        const result = await syncRequest('push', { classes, students, history, periods, gradeRecords, subjectGrades });
         if (result.status === 'ok') {
             syncSettings.lastSync = new Date().toISOString();
             saveData();
@@ -4760,25 +5222,83 @@ function setSyncScriptCode() {
     if (el) el.textContent = APPS_SCRIPT_CODE;
 }
 
+// Extract Script ID from saved URL (or return '' if it's the default shared URL)
+function _syncUrlToId(url) {
+    if (!url || url === DEFAULT_SYNC_URL) return '';
+    const m = url.match(/\/macros\/s\/([^/]+)\/exec/);
+    return m ? m[1] : url; // fallback: show raw if format unknown
+}
+// Build full URL from Script ID (or return DEFAULT_SYNC_URL if empty)
+function _syncIdToUrl(id) {
+    const trimmed = id.trim();
+    if (!trimmed) return DEFAULT_SYNC_URL;
+    if (trimmed.startsWith('https://')) return trimmed; // already full URL
+    return `https://script.google.com/macros/s/${trimmed}/exec`;
+}
+
 function openSyncModal() {
     setSyncScriptCode();
-    document.getElementById('syncUrl').value = syncSettings.url || '';
+    const savedId = _syncUrlToId(syncSettings.url);
+    document.getElementById('syncUrl').value = savedId;
+    _syncUpdatePreview(savedId);
     document.getElementById('syncLastTime').innerText = syncSettings.lastSync
         ? `Lần cuối: ${new Date(syncSettings.lastSync).toLocaleString('vi-VN')}`
         : 'Chưa đồng bộ lần nào';
     document.getElementById('syncModal').classList.remove('hidden');
     setSyncStatus('', '');
+    // Listen for input to show preview
+    const inp = document.getElementById('syncUrl');
+    inp.oninput = () => _syncUpdatePreview(inp.value);
+}
+function _syncUpdatePreview(idVal) {
+    const preview = document.getElementById('syncUrlPreview');
+    if (!preview) return;
+    const url = _syncIdToUrl(idVal);
+    if (idVal.trim()) {
+        preview.textContent = '→ ' + url;
+        preview.classList.remove('hidden');
+    } else {
+        preview.textContent = '→ Dùng link đồng bộ chung mặc định';
+        preview.classList.remove('hidden');
+    }
 }
 
 function closeSyncModal() {
     document.getElementById('syncModal').classList.add('hidden');
 }
 
+let _syncGuideUnlocked = false;
 function toggleSyncGuide() {
-    const guide = document.getElementById('syncGuide');
-    const icon  = document.getElementById('syncGuideIcon');
-    const hidden = guide.classList.toggle('hidden');
-    icon.style.transform = hidden ? '' : 'rotate(180deg)';
+    const icon = document.getElementById('syncGuideIcon');
+    if (_syncGuideUnlocked) {
+        const guide = document.getElementById('syncGuide');
+        const hidden = guide.classList.toggle('hidden');
+        icon.style.transform = hidden ? '' : 'rotate(180deg)';
+        return;
+    }
+    // Show password gate
+    const gate = document.getElementById('syncGuidePwGate');
+    const isHidden = gate.classList.toggle('hidden');
+    icon.style.transform = isHidden ? '' : 'rotate(180deg)';
+    if (!isHidden) {
+        document.getElementById('syncGuidePw').value='';
+        document.getElementById('syncGuidePwErr').classList.add('hidden');
+        setTimeout(()=>document.getElementById('syncGuidePw').focus(), 100);
+    }
+}
+function checkSyncGuidePassword() {
+    const pw = document.getElementById('syncGuidePw').value;
+    if (pw.trim().toLowerCase() === 'thanh hoa') {
+        _syncGuideUnlocked = true;
+        document.getElementById('syncGuidePwGate').classList.add('hidden');
+        document.getElementById('syncGuide').classList.remove('hidden');
+        document.getElementById('syncGuideIcon').style.transform = 'rotate(180deg)';
+        setSyncScriptCode();
+        document.getElementById('syncGuidePwErr').classList.add('hidden');
+    } else {
+        document.getElementById('syncGuidePwErr').classList.remove('hidden');
+        document.getElementById('syncGuidePw').select();
+    }
 }
 
 function copySyncScript() {
@@ -4790,13 +5310,18 @@ function copySyncScript() {
 }
 
 function saveSyncUrl() {
-    const url = document.getElementById('syncUrl').value.trim();
-    if (!url) { setSyncStatus('error','Vui lòng nhập URL!'); return; }
-    if (!url.includes('script.google.com')) { setSyncStatus('error','URL không đúng định dạng Apps Script.'); return; }
+    const idVal = document.getElementById('syncUrl').value.trim();
+    const url = _syncIdToUrl(idVal);
     syncSettings.url = url;
     saveData();
-    setSyncStatus('ok','URL đã được lưu!');
-    showToast('Đã lưu URL đồng bộ!');
+    if (!idVal) {
+        setSyncStatus('ok','Đã đặt về link đồng bộ chung mặc định!');
+        showToast('Dùng link đồng bộ chung mặc định!');
+    } else {
+        setSyncStatus('ok','Đã lưu Script ID!');
+        showToast('Đã lưu Script ID của bạn!');
+    }
+    _syncUpdatePreview(idVal);
 }
 
 function setSyncStatus(type, msg) {
@@ -4839,11 +5364,9 @@ async function syncRequest(action, data=null) {
 }
 
 async function testSyncConnection() {
-    if (!syncSettings.url && !document.getElementById('syncUrl').value.trim()) {
-        setSyncStatus('error','Nhập URL trước!'); return;
-    }
-    // Temporarily use input value
-    const tempUrl = syncSettings.url || document.getElementById('syncUrl').value.trim();
+    const idVal = document.getElementById('syncUrl').value.trim();
+    const tempUrl = idVal ? _syncIdToUrl(idVal) : syncSettings.url;
+    if (!tempUrl) { setSyncStatus('error','Nhập Script ID trước!'); return; }
     const origUrl = syncSettings.url;
     syncSettings.url = tempUrl;
     setSyncStatus('loading','Đang kiểm tra kết nối...');
@@ -4863,7 +5386,7 @@ async function pushToGSheet() {
     setSyncBtnLoading('btnPush', true, orig);
     setSyncStatus('loading','Đang đẩy dữ liệu lên...');
     try {
-        const result = await syncRequest('push', { classes, students, history, periods, gradeRecords });
+        const result = await syncRequest('push', { classes, students, history, periods, gradeRecords, subjectGrades });
         if (result.status === 'ok') {
             syncSettings.lastSync = new Date().toISOString();
             saveData();
@@ -4898,6 +5421,7 @@ async function pullFromGSheet() {
             if (d.history)   history      = d.history;
             if (d.periods)   periods      = d.periods;
             if (d.gradeRecords) gradeRecords = d.gradeRecords;
+            if (d.subjectGrades) subjectGrades = d.subjectGrades;
             if (classes.length) currentClassId = classes[0].id;
             syncSettings.lastSync = new Date().toISOString();
             saveData();
@@ -4915,6 +5439,708 @@ async function pullFromGSheet() {
         setSyncStatus('error', e.message);
     }
     setSyncBtnLoading('btnPull', false, orig);
+}
+
+// ============================================================
+// SỔ ĐIỂM BỘ MÔN – SUBJECT GRADE BOOK
+// ============================================================
+function _sgRec() {
+    return subjectGrades.find(r => r.classId === currentClassId) || null;
+}
+function _sgEnsure() {
+    let rec = _sgRec();
+    if (!rec) {
+        rec = { id: Date.now(), classId: currentClassId, subject: 'Toán', semester: 'HK1', txCount: 2, updatedAt: new Date().toISOString(), rows: [] };
+        subjectGrades.push(rec);
+    }
+    return rec;
+}
+function _sgCalcDTB(tx, txCount, gk, ck) {
+    let num = 0, den = 0, total_possible = txCount + 5;
+    for (let i = 0; i < txCount; i++) {
+        const v = (tx && tx[i] !== undefined && tx[i] !== '') ? parseFloat(tx[i]) : null;
+        if (v !== null && !isNaN(v)) { num += v; den += 1; }
+    }
+    const gkV = (gk !== undefined && gk !== '') ? parseFloat(gk) : null;
+    if (gkV !== null && !isNaN(gkV)) { num += gkV * 2; den += 2; }
+    const ckV = (ck !== undefined && ck !== '') ? parseFloat(ck) : null;
+    if (ckV !== null && !isNaN(ckV)) { num += ckV * 3; den += 3; }
+    if (den === 0) return { val: '', partial: false };
+    const val = Math.round(num / den * 10) / 10;
+    const partial = den < total_possible;
+    return { val, partial };
+}
+// Helper: get numeric DTB value (for comparisons)
+function _sgDTBVal(row) {
+    const r = row.dtb;
+    if (!r || r === '') return null;
+    return typeof r === 'object' ? r.val : r;
+}
+function _sgDTBColor(v) {
+    if (v >= 8) return '#16a34a';
+    if (v >= 6.5) return '#2563eb';
+    if (v >= 5) return '#d97706';
+    return '#dc2626';
+}
+function _sgDTBDisplay(dtb) {
+    // dtb can be {val, partial} or '' or a plain number (legacy)
+    if (dtb === '' || dtb === undefined || dtb === null) return { text: '—', color: '#9ca3af', title: '' };
+    const val   = (typeof dtb === 'object') ? dtb.val   : dtb;
+    const part  = (typeof dtb === 'object') ? dtb.partial : false;
+    if (val === '' || val === undefined) return { text: '—', color: '#9ca3af', title: '' };
+    const color = _sgDTBColor(val);
+    const text  = part ? `${val}*` : `${val}`;
+    const title = part ? 'ĐTB tạm (chưa đủ cột điểm)' : 'ĐTB chính thức';
+    return { text, color, title };
+}
+
+let _sgCurrentFilter = 'all';
+
+function openSubjectGrades() {
+    if (!currentClassId) { showToast('Chọn lớp trước!', false); return; }
+    const rec = _sgEnsure();
+    const cls = classes.find(c=>c.id===currentClassId);
+    document.getElementById('sgSubtitle').textContent = cls?.name || '';
+    document.getElementById('sgSubject').value = rec.subject || 'Toán';
+    document.getElementById('sgSemester').value = rec.semester || 'HK1';
+    _sgCurrentFilter = 'all';
+    _sgApplyFilterChip('all');
+    _sgSyncStudents(rec);
+    _sgRenderTable(rec);
+    document.getElementById('subjectGradesBackdrop').classList.remove('hidden');
+    const modal = document.getElementById('subjectGradesModal');
+    requestAnimationFrame(()=>{ modal.style.transform='translateY(0)'; });
+}
+function closeSubjectGrades() {
+    document.getElementById('subjectGradesModal').style.transform='translateY(100%)';
+    setTimeout(()=>{ document.getElementById('subjectGradesBackdrop').classList.add('hidden'); }, 280);
+}
+
+function _sgSyncStudents(rec) {
+    const cls_students = students.filter(s=>s.classId===currentClassId).sort((a,b)=>(a.stt||0)-(b.stt||0));
+    cls_students.forEach(s => {
+        if (!rec.rows.find(r=>r.studentId===s.id)) {
+            rec.rows.push({ studentId: s.id, name: s.name, stt: s.stt||0, tx: [], gk: '', ck: '', dtb: '' });
+        }
+    });
+    // Remove rows for deleted students
+    rec.rows = rec.rows.filter(r => cls_students.find(s=>s.id===r.studentId));
+    // Update names/stt
+    rec.rows.forEach(r => {
+        const s = cls_students.find(st=>st.id===r.studentId);
+        if (s) { r.name=s.name; r.stt=s.stt||0; }
+    });
+    rec.rows.sort((a,b)=>(a.stt||999)-(b.stt||999));
+}
+
+function _sgRowPassesFilter(row, filter) {
+    const dtb = _sgDTBVal(row);
+    if (filter === 'all') return true;
+    if (filter === 'no_dtb') return dtb === null;
+    if (dtb === null) return false;
+    if (filter === 'gioi') return dtb >= 8;
+    if (filter === 'kha') return dtb >= 6.5 && dtb < 8;
+    if (filter === 'tb') return dtb >= 5 && dtb < 6.5;
+    if (filter === 'yeu') return dtb < 5;
+    return true;
+}
+function _sgApplyFilterChip(filter) {
+    document.querySelectorAll('.sg-chip').forEach(c=>{
+        const isActive = c.dataset.filter === filter;
+        c.classList.toggle('ring-2', isActive);
+        c.classList.toggle('ring-violet-500', isActive);
+        c.classList.toggle('ring-offset-1', isActive);
+    });
+}
+
+function _sgRenderTable(rec) {
+    const txCount = rec.txCount || 1;
+    const thead = document.getElementById('sgThead');
+    const tbody = document.getElementById('sgTbody');
+    document.getElementById('sgRemoveTXBtn').disabled = txCount <= 1;
+    document.getElementById('sgRemoveTXBtn').classList.toggle('opacity-40', txCount <= 1);
+
+    // Header
+    let thHtml = `<tr class="bg-violet-600 text-white text-center sticky top-0 z-10">
+        <th class="px-2 py-2 font-bold w-8">STT</th>
+        <th class="px-3 py-2 font-bold text-left min-w-[140px]">Họ và tên</th>`;
+    for (let i=1; i<=txCount; i++) {
+        thHtml += `<th class="px-2 py-2 font-bold w-16 bg-violet-700">TX${i}<br><span class="text-[9px] opacity-70 font-normal">hs 1</span></th>`;
+    }
+    thHtml += `<th class="px-2 py-2 font-bold w-16 bg-violet-500">GK<br><span class="text-[9px] opacity-70 font-normal">hs 2</span></th>`;
+    thHtml += `<th class="px-2 py-2 font-bold w-16 bg-orange-500">CK<br><span class="text-[9px] opacity-70 font-normal">hs 3</span></th>`;
+    thHtml += `<th class="px-2 py-2 font-bold w-16 bg-emerald-600">ĐTB</th>`;
+    thHtml += `<th class="px-2 py-2 font-bold w-12 bg-rose-500">Nhắn</th></tr>`;
+    thead.innerHTML = thHtml;
+
+    // Body — filter rows
+    let visibleCount = 0;
+    let html = '';
+    rec.rows.forEach((row, ri) => {
+        const passes = _sgRowPassesFilter(row, _sgCurrentFilter);
+        const rowStyle = passes ? '' : 'display:none';
+        if (passes) visibleCount++;
+        const { text: dtbText, color: dtbColor, title: dtbTitle } = _sgDTBDisplay(row.dtb);
+        html += `<tr class="${ri%2===0?'bg-white':'bg-violet-50'} hover:bg-violet-100 transition" style="${rowStyle}">
+            <td class="px-2 py-1.5 text-center text-gray-500 font-bold">${row.stt||ri+1}</td>
+            <td class="px-3 py-1.5 font-semibold text-gray-800">${row.name}</td>`;
+        for (let i=0; i<txCount; i++) {
+            const val = (row.tx && row.tx[i] !== undefined && row.tx[i] !== '') ? row.tx[i] : '';
+            html += `<td class="px-1 py-1 text-center">
+                <input type="number" min="0" max="10" step="0.1" value="${val}"
+                    class="w-14 text-center text-xs font-bold border border-violet-200 rounded-lg py-1 outline-none focus:border-violet-500 bg-white"
+                    oninput="sgUpdateCell(${ri},'tx',${i},this.value)"
+                    onblur="sgUpdateCell(${ri},'tx',${i},this.value)"></td>`;
+        }
+        html += `<td class="px-1 py-1 text-center">
+            <input type="number" min="0" max="10" step="0.1" value="${row.gk!==undefined&&row.gk!==''?row.gk:''}"
+                class="w-14 text-center text-xs font-bold border border-violet-300 rounded-lg py-1 outline-none focus:border-violet-500 bg-violet-50"
+                oninput="sgUpdateCell(${ri},'gk',0,this.value)"
+                onblur="sgUpdateCell(${ri},'gk',0,this.value)"></td>`;
+        html += `<td class="px-1 py-1 text-center">
+            <input type="number" min="0" max="10" step="0.1" value="${row.ck!==undefined&&row.ck!==''?row.ck:''}"
+                class="w-14 text-center text-xs font-bold border border-orange-200 rounded-lg py-1 outline-none focus:border-orange-400 bg-orange-50"
+                oninput="sgUpdateCell(${ri},'ck',0,this.value)"
+                onblur="sgUpdateCell(${ri},'ck',0,this.value)"></td>`;
+        html += `<td class="px-2 py-1.5 text-center font-black text-sm" id="sgDTB_${ri}" style="color:${dtbColor}" title="${dtbTitle}">${dtbText}</td>`;
+        html += `<td class="px-1 py-1 text-center">
+            <button onclick="sgShowStudentMsg(${ri})" class="text-xs bg-rose-100 text-rose-600 font-bold px-2 py-1 rounded-lg hover:bg-rose-200 transition"><i class="fas fa-comment-alt"></i></button></td>`;
+        html += '</tr>';
+    });
+    tbody.innerHTML = html;
+    document.getElementById('sgFilterCount').textContent = visibleCount;
+}
+
+function sgUpdateCell(ri, field, col, value) {
+    const rec = _sgRec(); if (!rec) return;
+    const row = rec.rows[ri]; if (!row) return;
+    const v = value === '' ? '' : parseFloat(value);
+    if (field === 'tx') {
+        if (!row.tx) row.tx = [];
+        while (row.tx.length <= col) row.tx.push('');
+        row.tx[col] = v;
+    } else if (field === 'gk') {
+        row.gk = v;
+    } else if (field === 'ck') {
+        row.ck = v;
+    }
+    // Recalc DTB from whatever scores are available
+    row.dtb = _sgCalcDTB(row.tx||[], rec.txCount, row.gk, row.ck);
+    // Update DTB cell without full re-render
+    const dtbCell = document.getElementById(`sgDTB_${ri}`);
+    if (dtbCell) {
+        const { text, color, title } = _sgDTBDisplay(row.dtb);
+        dtbCell.textContent = text;
+        dtbCell.style.color = color;
+        dtbCell.title = title;
+    }
+    rec.updatedAt = new Date().toISOString();
+    saveData();
+}
+
+function sgSave() {
+    const rec = _sgEnsure();
+    rec.subject = document.getElementById('sgSubject').value;
+    rec.semester = document.getElementById('sgSemester').value;
+    rec.updatedAt = new Date().toISOString();
+    saveData();
+}
+
+function sgAddTX() {
+    const rec = _sgEnsure();
+    rec.txCount = (rec.txCount || 1) + 1;
+    rec.updatedAt = new Date().toISOString();
+    saveData(); _sgRenderTable(rec);
+}
+function sgRemoveTX() {
+    const rec = _sgEnsure();
+    if (rec.txCount <= 1) return;
+    rec.txCount--;
+    // Remove last TX value from all rows
+    rec.rows.forEach(r => { if (r.tx && r.tx.length > rec.txCount) r.tx = r.tx.slice(0, rec.txCount); });
+    // Recalc DTBs
+    rec.rows.forEach(r => {
+        r.dtb = _sgCalcDTB(r.tx||[], rec.txCount, r.gk, r.ck);
+    });
+    rec.updatedAt = new Date().toISOString();
+    saveData(); _sgRenderTable(rec);
+}
+
+function sgExportExcel() {
+    const rec = _sgRec(); if (!rec || !rec.rows.length) { showToast('Chưa có dữ liệu!', false); return; }
+    const cls = classes.find(c=>c.id===currentClassId);
+    const txCount = rec.txCount || 1;
+
+    // Build header
+    const txHeaders = Array.from({length:txCount},(_,i)=>`TX${i+1} (hs1)`);
+    const header = ['STT','Họ và tên',...txHeaders,'GK (hs2)','CK (hs3)','ĐTB'];
+    const wsData = [
+        [`BẢNG ĐIỂM ${rec.subject.toUpperCase()} - LỚP ${cls?.name.toUpperCase()||''} - ${rec.semester}`, ...Array(header.length-1).fill('')],
+        [`Xuất ngày: ${new Date().toLocaleDateString('vi-VN')}`, ...Array(header.length-1).fill('')],
+        header
+    ];
+    rec.rows.forEach(r => {
+        const txVals = Array.from({length:txCount},(_,i)=>r.tx&&r.tx[i]!==undefined&&r.tx[i]!==''?r.tx[i]:'');
+        const dtbV = _sgDTBVal(r);
+        wsData.push([r.stt||'', r.name, ...txVals, r.gk!==''?r.gk:'', r.ck!==''?r.ck:'', dtbV!==null?dtbV:'']);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    // Styling
+    const ncols = header.length;
+    ws['!merges'] = [{s:{r:0,c:0},e:{r:0,c:ncols-1}},{s:{r:1,c:0},e:{r:1,c:ncols-1}}];
+    ws['!cols'] = [{wch:6},{wch:26},...Array(txCount).fill({wch:12}),{wch:12},{wch:12},{wch:12}];
+
+    const headerRowIdx = 2;
+    for (let ci=0; ci<ncols; ci++) {
+        const addr = XLSX.utils.encode_cell({r:headerRowIdx,c:ci});
+        if (ws[addr]) ws[addr].s={font:{bold:true,color:{rgb:"FFFFFF"}},fill:{fgColor:{rgb:"7C3AED"}},alignment:{horizontal:'center'}};
+    }
+    // Color DTB column
+    for (let ri=3; ri<wsData.length; ri++) {
+        const dtbAddr = XLSX.utils.encode_cell({r:ri,c:ncols-1});
+        if (ws[dtbAddr]&&ws[dtbAddr].v!=='') {
+            const v = parseFloat(ws[dtbAddr].v);
+            const rgb = v>=8?'16A34A':v>=6.5?'2563EB':v>=5?'D97706':'DC2626';
+            ws[dtbAddr].s = {font:{bold:true,color:{rgb}},alignment:{horizontal:'center'}};
+        }
+    }
+    // Partial indicator in DTB header
+    const dtbHdrAddr = XLSX.utils.encode_cell({r:2,c:ncols-1});
+    if (ws[dtbHdrAddr]) ws[dtbHdrAddr].v = 'ĐTB (* = tạm)';
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Bảng điểm');
+    XLSX.writeFile(wb, `Diem_${rec.subject}_${cls?.name||'lop'}_${rec.semester}.xlsx`);
+    showToast('Đã xuất Excel!');
+}
+
+// ---- Google Sheets sync from Sổ điểm modal ----
+async function sgSyncGSheet() {
+    if (!syncSettings.url) {
+        showToast('Chưa cài URL Google Sheets. Vào Cài đặt → Đồng bộ để cài.', false);
+        return;
+    }
+    const btn   = document.getElementById('btnSgSync');
+    const icon  = document.getElementById('sgSyncIcon');
+    const label = document.getElementById('sgSyncLabel');
+    if (btn.disabled) return;
+    btn.disabled = true;
+    icon.className = 'fas fa-spinner fa-spin text-sm';
+    label.textContent = 'Đang lưu...';
+    try {
+        const result = await syncRequest('push', { classes, students, history, periods, gradeRecords, subjectGrades });
+        if (result.status === 'ok') {
+            syncSettings.lastSync = new Date().toISOString();
+            saveData();
+            icon.className = 'fas fa-check text-sm';
+            label.textContent = 'Đã lưu!';
+            showToast('Đồng bộ sổ điểm lên Google Sheets thành công! ☁️');
+            setTimeout(()=>{ icon.className='fas fa-cloud-upload-alt text-sm'; label.textContent='GSheet'; btn.disabled=false; }, 2500);
+        } else {
+            throw new Error(result.message||'Lỗi không xác định');
+        }
+    } catch(e) {
+        icon.className = 'fas fa-exclamation-circle text-sm';
+        label.textContent = 'Lỗi!';
+        showToast('Đồng bộ thất bại: ' + e.message, false);
+        setTimeout(()=>{ icon.className='fas fa-cloud-upload-alt text-sm'; label.textContent='GSheet'; btn.disabled=false; }, 3000);
+    }
+}
+
+// ---- Quick Column Entry ----
+let _sgQECol = null;  // { field: 'tx'|'gk'|'ck', idx: 0 }
+
+function openSgQuickEntry() {
+    const rec = _sgEnsure(); if (!rec.rows.length) { showToast('Chưa có học sinh!', false); return; }
+    const cls = classes.find(c=>c.id===currentClassId);
+    document.getElementById('sgQESubtitle').textContent = `${rec.subject} – ${rec.semester} – ${cls?.name||''}`;
+    _sgQECol = null;
+    _sgRenderQEColBtns(rec);
+    document.getElementById('sgQEList').innerHTML = '<div class="flex items-center justify-center h-32 text-gray-400 text-sm"><i class="fas fa-arrow-up mr-2"></i>Chọn cột ở trên</div>';
+    document.getElementById('sgQEFilledCount').textContent = '0';
+    document.getElementById('sgQETotal').textContent = rec.rows.length;
+    document.getElementById('sgQEProgress').style.width = '0%';
+
+    const bd = document.getElementById('sgQuickBackdrop');
+    const panel = document.getElementById('sgQuickPanel');
+    bd.classList.remove('hidden'); panel.classList.remove('hidden');
+    requestAnimationFrame(()=>{ panel.style.transform='translateX(0)'; });
+}
+function closeSgQuickEntry() {
+    const panel = document.getElementById('sgQuickPanel');
+    panel.style.transform='translateX(100%)';
+    setTimeout(()=>{
+        panel.classList.add('hidden');
+        document.getElementById('sgQuickBackdrop').classList.add('hidden');
+    }, 300);
+    // Sync back to main table
+    const rec = _sgRec(); if (rec) _sgRenderTable(rec);
+}
+
+function _sgRenderQEColBtns(rec) {
+    const txCount = rec.txCount || 1;
+    const container = document.getElementById('sgQEColBtns');
+    let html = '';
+    for (let i=0; i<txCount; i++) {
+        html += `<button onclick="sgQESelectCol('tx',${i})" id="sgQEBtn_tx_${i}"
+            class="qe-col-btn text-xs font-bold px-3 py-1.5 rounded-lg border border-violet-200 bg-white text-violet-700 hover:bg-violet-50 transition">
+            TX${i+1}</button>`;
+    }
+    html += `<button onclick="sgQESelectCol('gk',0)" id="sgQEBtn_gk_0"
+        class="qe-col-btn text-xs font-bold px-3 py-1.5 rounded-lg border border-violet-200 bg-white text-violet-600 hover:bg-violet-50 transition">
+        GK (hs2)</button>`;
+    html += `<button onclick="sgQESelectCol('ck',0)" id="sgQEBtn_ck_0"
+        class="qe-col-btn text-xs font-bold px-3 py-1.5 rounded-lg border border-orange-200 bg-white text-orange-600 hover:bg-orange-50 transition">
+        CK (hs3)</button>`;
+    container.innerHTML = html;
+}
+
+function sgQESelectCol(field, idx) {
+    _sgQECol = { field, idx };
+    // Highlight active button
+    document.querySelectorAll('.qe-col-btn').forEach(b=>{
+        b.classList.remove('ring-2','ring-fuchsia-500','bg-fuchsia-50','text-fuchsia-700','ring-offset-1');
+    });
+    const btn = document.getElementById(`sgQEBtn_${field}_${idx}`);
+    if (btn) btn.classList.add('ring-2','ring-fuchsia-500','bg-fuchsia-50','text-fuchsia-700','ring-offset-1');
+
+    const rec = _sgRec(); if (!rec) return;
+    const colLabel = field==='gk'?'GK (Giữa kỳ – hệ số 2)':field==='ck'?'CK (Cuối kỳ – hệ số 3)':`TX${idx+1} (Thường xuyên)`;
+    _sgRenderQEList(rec, field, idx, colLabel);
+}
+
+function _sgRenderQEList(rec, field, idx, colLabel) {
+    const list = document.getElementById('sgQEList');
+    let html = `<div class="px-4 py-2 bg-fuchsia-50 border-b sticky top-0 z-10">
+        <span class="text-xs font-black text-fuchsia-700">Đang nhập: ${colLabel}</span>
+    </div>`;
+    rec.rows.forEach((row, ri) => {
+        let curVal = '';
+        if (field==='tx') curVal = (row.tx&&row.tx[idx]!==undefined&&row.tx[idx]!=='') ? row.tx[idx] : '';
+        else if (field==='gk') curVal = (row.gk!==undefined&&row.gk!=='') ? row.gk : '';
+        else if (field==='ck') curVal = (row.ck!==undefined&&row.ck!=='') ? row.ck : '';
+        const hasVal = curVal !== '';
+        html += `<div class="flex items-center gap-3 px-4 py-2.5 border-b hover:bg-fuchsia-50 transition ${hasVal?'bg-green-50':''}">
+            <span class="text-xs text-gray-400 font-bold w-6 text-right flex-shrink-0">${row.stt||ri+1}</span>
+            <span class="text-sm font-semibold text-gray-800 flex-1 truncate">${row.name}</span>
+            <div class="flex items-center gap-2 flex-shrink-0">
+                <input type="number" id="sgQE_${ri}" min="0" max="10" step="0.1"
+                    value="${curVal}" placeholder="—"
+                    class="w-20 text-center text-base font-black border-2 ${hasVal?'border-green-400 bg-green-50':'border-gray-200 bg-white'} rounded-xl py-1.5 outline-none focus:border-fuchsia-500 focus:bg-fuchsia-50 transition"
+                    oninput="sgQEUpdateCell(${ri},'${field}',${idx},this)"
+                    onkeydown="sgQEHandleKey(event,${ri},${rec.rows.length})">
+                ${hasVal?'<i class="fas fa-check-circle text-green-500 text-base"></i>':'<i class="fas fa-circle text-gray-200 text-base"></i>'}
+            </div>
+        </div>`;
+    });
+    list.innerHTML = html;
+    _sgUpdateQEProgress(rec, field, idx);
+    // Auto-focus first empty input
+    const firstEmpty = rec.rows.findIndex(r=>{
+        if (field==='tx') return !r.tx||r.tx[idx]===undefined||r.tx[idx]==='';
+        if (field==='gk') return r.gk===undefined||r.gk==='';
+        if (field==='ck') return r.ck===undefined||r.ck==='';
+    });
+    const focusIdx = firstEmpty >= 0 ? firstEmpty : 0;
+    setTimeout(()=>{ const inp=document.getElementById(`sgQE_${focusIdx}`); if(inp) inp.focus(); }, 80);
+}
+
+function sgQEHandleKey(e, ri, total) {
+    if (e.key === 'Enter' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        const next = document.getElementById(`sgQE_${ri+1}`);
+        if (next) { next.focus(); next.select(); }
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prev = document.getElementById(`sgQE_${ri-1}`);
+        if (prev) { prev.focus(); prev.select(); }
+    }
+}
+
+function sgQEUpdateCell(ri, field, idx, input) {
+    const rec = _sgRec(); if (!rec) return;
+    const row = rec.rows[ri]; if (!row) return;
+    const v = input.value === '' ? '' : parseFloat(input.value);
+    if (field==='tx') {
+        if (!row.tx) row.tx=[];
+        while (row.tx.length<=idx) row.tx.push('');
+        row.tx[idx]=v;
+    } else if (field==='gk') { row.gk=v; }
+    else if (field==='ck') { row.ck=v; }
+    // Recalc DTB
+    row.dtb = _sgCalcDTB(row.tx||[], rec.txCount||1, row.gk, row.ck);
+    // Visual feedback on this input
+    const hasVal = input.value !== '';
+    input.classList.toggle('border-green-400', hasVal);
+    input.classList.toggle('bg-green-50', hasVal);
+    input.classList.toggle('border-gray-200', !hasVal);
+    input.classList.toggle('bg-white', !hasVal);
+    // Update check icon
+    const iconEl = input.parentElement.nextElementSibling;
+    if (iconEl && iconEl.tagName==='I') {
+        iconEl.className = hasVal ? 'fas fa-check-circle text-green-500 text-base' : 'fas fa-circle text-gray-200 text-base';
+    }
+    rec.updatedAt = new Date().toISOString();
+    saveData();
+    _sgUpdateQEProgress(rec, field, idx);
+}
+
+function _sgUpdateQEProgress(rec, field, idx) {
+    const total = rec.rows.length;
+    const filled = rec.rows.filter(r=>{
+        if (field==='tx') return r.tx&&r.tx[idx]!==undefined&&r.tx[idx]!=='';
+        if (field==='gk') return r.gk!==undefined&&r.gk!=='';
+        if (field==='ck') return r.ck!==undefined&&r.ck!=='';
+    }).length;
+    document.getElementById('sgQEFilledCount').textContent = filled;
+    document.getElementById('sgQETotal').textContent = total;
+    document.getElementById('sgQEProgress').style.width = total > 0 ? `${Math.round(filled/total*100)}%` : '0%';
+}
+
+// ---- Filter ----
+function sgSetFilter(filter) {
+    _sgCurrentFilter = filter;
+    _sgApplyFilterChip(filter);
+    const rec = _sgRec(); if (!rec) return;
+    // Show/hide rows without full re-render
+    let count = 0;
+    rec.rows.forEach((row, ri) => {
+        const passes = _sgRowPassesFilter(row, filter);
+        const tr = document.querySelector(`#sgTbody tr:nth-child(${ri+1})`);
+        if (tr) tr.style.display = passes ? '' : 'none';
+        if (passes) count++;
+    });
+    document.getElementById('sgFilterCount').textContent = count;
+}
+
+// ---- Download template ----
+function sgDownloadTemplate() {
+    const rec = _sgEnsure();
+    const cls = classes.find(c=>c.id===currentClassId);
+    const txCount = rec.txCount || 1;
+    const cls_students = students.filter(s=>s.classId===currentClassId).sort((a,b)=>(a.stt||0)-(b.stt||0));
+    const txHeaders = Array.from({length:txCount},(_,i)=>`TX${i+1}`);
+    const header = ['STT','Họ và tên',...txHeaders,'GK (hệ số 2)','CK (hệ số 3)'];
+    const wsData = [
+        [`MẪU ĐIỂM ${rec.subject.toUpperCase()} - LỚP ${cls?.name||''} - ${rec.semester}`, ...Array(header.length-1).fill('')],
+        [`⚠ Chú ý: Điểm từ 0–10, tối đa 1 chữ số thập phân. Không sửa cột STT và Họ tên.`, ...Array(header.length-1).fill('')],
+        header
+    ];
+    cls_students.forEach(s => {
+        wsData.push([s.stt||'', s.name, ...Array(txCount+2).fill('')]);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!merges'] = [{s:{r:0,c:0},e:{r:0,c:header.length-1}},{s:{r:1,c:0},e:{r:1,c:header.length-1}}];
+    ws['!cols'] = [{wch:6},{wch:28},...Array(txCount+2).fill({wch:14})];
+    // Style header row
+    for (let ci=0; ci<header.length; ci++) {
+        const addr = XLSX.utils.encode_cell({r:2,c:ci});
+        if (ws[addr]) ws[addr].s={font:{bold:true,color:{rgb:"FFFFFF"}},fill:{fgColor:{rgb:"7C3AED"}},alignment:{horizontal:'center'}};
+    }
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Mẫu điểm');
+    XLSX.writeFile(wb, `Mau_diem_${rec.subject}_${cls?.name||'lop'}_${rec.semester}.xlsx`);
+    showToast('Đã tải file mẫu!');
+}
+
+// ---- Import from Excel ----
+function sgHandleImport(e) {
+    const rec = _sgEnsure();
+    const f = e.target.files[0]; if (!f) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        try {
+            const wb = XLSX.read(ev.target.result, {type:'binary'});
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const data = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+            // Find header row (contains TX1)
+            let headerRow = -1;
+            for (let i=0; i<data.length; i++) {
+                if (data[i].some(c=>String(c).includes('TX1')||String(c).includes('Họ'))) { headerRow=i; break; }
+            }
+            if (headerRow<0) { alert('Không tìm thấy hàng tiêu đề (TX1 / Họ và tên)!'); return; }
+            const headers = data[headerRow].map(h=>String(h).trim());
+            const nameIdx = headers.findIndex(h=>h.includes('Họ')||h.includes('tên'));
+            const sttIdx  = headers.findIndex(h=>h.toLowerCase()==='stt');
+            const txCount = rec.txCount || 1;
+            const gkIdx   = headers.findIndex(h=>String(h).toUpperCase().includes('GK'));
+            const ckIdx   = headers.findIndex(h=>String(h).toUpperCase().includes('CK'));
+            let imported = 0;
+            for (let ri=headerRow+1; ri<data.length; ri++) {
+                const row = data[ri];
+                if (!row[nameIdx]) continue;
+                const name = String(row[nameIdx]).trim();
+                const sgRow = rec.rows.find(r=>r.name===name || (sttIdx>=0 && r.stt==row[sttIdx]));
+                if (!sgRow) continue;
+                for (let ti=0; ti<txCount; ti++) {
+                    const txI = headers.findIndex((h,idx)=>idx>1&&String(h).replace(/\s/g,'').toUpperCase()===`TX${ti+1}`);
+                    if (txI>=0 && row[txI]!=='') {
+                        if (!sgRow.tx) sgRow.tx=[];
+                        sgRow.tx[ti] = parseFloat(row[txI]);
+                    }
+                }
+                if (gkIdx>=0 && row[gkIdx]!=='') sgRow.gk = parseFloat(row[gkIdx]);
+                if (ckIdx>=0 && row[ckIdx]!=='') sgRow.ck = parseFloat(row[ckIdx]);
+                // Recalc DTB
+                sgRow.dtb = _sgCalcDTB(sgRow.tx||[], txCount, sgRow.gk, sgRow.ck);
+                imported++;
+            }
+            rec.updatedAt = new Date().toISOString();
+            saveData(); _sgRenderTable(rec);
+            showToast(`Đã nhập điểm ${imported} học sinh!`);
+        } catch(err) { console.error(err); alert('Lỗi đọc file. Vui lòng dùng đúng file mẫu đã tải.'); }
+        e.target.value='';
+    };
+    reader.readAsBinaryString(f);
+}
+
+// ---- Build message for one student ----
+function _sgBuildMsg(row, rec, template) {
+    const cls = classes.find(c=>c.id===currentClassId);
+    const today = new Date().toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'});
+    const dtb = _sgDTBVal(row);
+    const isPartial = dtb !== null && typeof row.dtb === 'object' && row.dtb.partial;
+    const xepLoai = dtb === null ? '(chưa đủ điểm)' : isPartial ? `${dtb >= 8?'Giỏi':dtb>=6.5?'Khá':dtb>=5?'Trung bình':'Yếu'} (tạm)` : dtb>=8?'Giỏi':dtb>=6.5?'Khá':dtb>=5?'Trung bình':'Yếu';
+    const txCount = rec.txCount || 1;
+    const txLines = Array.from({length:txCount},(_,i)=>{
+        const v = row.tx&&row.tx[i]!==undefined&&row.tx[i]!=='' ? row.tx[i] : '—';
+        return `TX${i+1}: ${v}`;
+    }).join(' | ');
+    const gkLine = row.gk!==''&&row.gk!==undefined ? row.gk : '—';
+    const ckLine = row.ck!==''&&row.ck!==undefined ? row.ck : '—';
+    const dtbLine = dtb !== null ? `${dtb} (${xepLoai})` : '—';
+
+    if (template === 'warning') {
+        let msg = `⚠️ THÔNG BÁO KẾT QUẢ HỌC TẬP\n`;
+        msg += `Kính gửi Phụ huynh em ${row.name}\n`;
+        msg += `Lớp: ${cls?.name||''} | Môn: ${rec.subject} | ${rec.semester}\n\n`;
+        msg += `📉 Điểm trung bình môn: ${dtbLine}\n`;
+        msg += `${txLines} | GK: ${gkLine} | CK: ${ckLine}\n\n`;
+        if (dtb !== null && dtb < 5) {
+            msg += `❗ Em đang ở mức DƯỚI TRUNG BÌNH. Đề nghị PH phối hợp với GV để có kế hoạch hỗ trợ em học tập tốt hơn.\n`;
+        } else if (dtb !== null && dtb < 6.5) {
+            msg += `📌 Em đang ở mức Trung Bình. PH cần nhắc nhở em ôn tập đều đặn hơn.\n`;
+        }
+        msg += `\nGiáo viên ${rec.subject} - Lớp ${cls?.name||''}\n${today}`;
+        return msg;
+    }
+    if (template === 'friendly') {
+        let msg = `👋 Chào PH em ${row.name} (${cls?.name||''}) - ${today}\n`;
+        msg += `📚 Môn ${rec.subject} – ${rec.semester}\n\n`;
+        msg += `🏆 ĐTB: ${dtbLine}\n`;
+        msg += `📝 ${txLines}\n`;
+        msg += `📋 GK: ${gkLine} | CK: ${ckLine}\n`;
+        if (dtb !== null) {
+            if (dtb >= 8) msg += `\n🌟 Tuyệt vời! Em học rất tốt môn này. Tiếp tục phát huy nhé!`;
+            else if (dtb >= 6.5) msg += `\n💪 Em học khá tốt! Cố gắng thêm một chút để lên Giỏi nhé!`;
+            else if (dtb >= 5) msg += `\n📌 Em cần cố gắng thêm để cải thiện điểm số.`;
+            else msg += `\n⚠️ Em cần được hỗ trợ nhiều hơn. PH hãy liên hệ GV để bàn kế hoạch.`;
+        }
+        msg += `\n\n🙏 Trân trọng – GV ${rec.subject}`;
+        return msg;
+    }
+    // formal (default)
+    let msg = `Kính gửi Quý Phụ huynh em ${row.name}\n`;
+    msg += `Lớp: ${cls?.name||''} | Môn: ${rec.subject} | ${rec.semester} | Ngày: ${today}\n\n`;
+    msg += `📊 ĐIỂM SỐ:\n`;
+    msg += `  ${txLines}\n`;
+    msg += `  GK (hệ số 2): ${gkLine}\n`;
+    msg += `  CK (hệ số 3): ${ckLine}\n`;
+    msg += `  ĐTB: ${dtbLine}\n`;
+    if (dtb !== null) {
+        msg += `\n📌 Nhận xét: `;
+        if (dtb >= 8) msg += 'Em đạt loại Giỏi, tiếp tục phát huy!';
+        else if (dtb >= 6.5) msg += 'Em đạt loại Khá, cần nỗ lực thêm.';
+        else if (dtb >= 5) msg += 'Em đạt loại Trung Bình, cần ôn tập đều hơn.';
+        else msg += 'Em đang ở mức Yếu, cần có kế hoạch hỗ trợ kịp thời.';
+    }
+    msg += `\n\nTrân trọng,\nGiáo viên môn ${rec.subject} – Lớp ${cls?.name||''}`;
+    return msg;
+}
+
+// ---- Show message for 1 student ----
+function sgShowStudentMsg(ri) {
+    const rec = _sgRec(); if (!rec) return;
+    const row = rec.rows[ri]; if (!row) return;
+    const template = document.getElementById('sgMsgTemplate').value;
+    const msg = _sgBuildMsg(row, rec, template);
+    document.getElementById('sgMsgTitle').textContent = `Tin nhắn: ${row.name}`;
+    document.getElementById('sgMsgSubtitle').textContent = `Môn ${rec.subject} – ${rec.semester}`;
+    document.getElementById('sgMsgList').innerHTML = `
+        <div class="bg-gray-50 rounded-xl border border-gray-200 p-4">
+            <div class="flex justify-between items-start mb-2">
+                <span class="font-bold text-gray-700 text-sm">${row.name}</span>
+                <button onclick="navigator.clipboard.writeText(document.getElementById('sgMsgText_0').value);showToast('Đã sao chép!')" class="text-xs bg-violet-100 text-violet-700 font-bold px-2.5 py-1 rounded-lg hover:bg-violet-200 transition"><i class="fas fa-copy mr-1"></i>Copy</button>
+            </div>
+            <textarea id="sgMsgText_0" class="w-full text-xs leading-relaxed text-gray-700 bg-white border border-gray-200 rounded-lg p-3 resize-y outline-none" rows="14">${msg}</textarea>
+        </div>`;
+    _openSgMsgModal();
+}
+
+// ---- Batch messages for filtered students ----
+let _sgMsgRows = [];
+function sgBatchMsg() {
+    const rec = _sgRec(); if (!rec || !rec.rows.length) { showToast('Chưa có dữ liệu!', false); return; }
+    const template = document.getElementById('sgMsgTemplate').value;
+    _sgMsgRows = rec.rows.filter(r => _sgRowPassesFilter(r, _sgCurrentFilter));
+    if (!_sgMsgRows.length) { showToast('Không có học sinh nào phù hợp!', false); return; }
+    const cls = classes.find(c=>c.id===currentClassId);
+    const filterLabel = {all:'Tất cả',gioi:'Giỏi (≥8)',kha:'Khá (6.5–7.9)',tb:'TB (5–6.4)',yeu:'Yếu (<5)',no_dtb:'Chưa có ĐTB'}[_sgCurrentFilter]||'';
+    document.getElementById('sgMsgTitle').textContent = `Tin nhắn hàng loạt – ${_sgMsgRows.length} HS`;
+    document.getElementById('sgMsgSubtitle').textContent = `${rec.subject} – ${rec.semester} – ${filterLabel}`;
+
+    let html = '';
+    _sgMsgRows.forEach((row, i) => {
+        const msg = _sgBuildMsg(row, rec, template);
+        html += `<div class="bg-gray-50 rounded-xl border border-gray-200 p-3">
+            <div class="flex justify-between items-center mb-1.5">
+                <span class="font-bold text-gray-700 text-sm">${row.stt||i+1}. ${row.name}</span>
+                <button onclick="navigator.clipboard.writeText(document.getElementById('sgMsgText_${i}').value);showToast('Đã sao chép!')" class="text-xs bg-violet-100 text-violet-700 font-bold px-2.5 py-1 rounded-lg hover:bg-violet-200 transition"><i class="fas fa-copy mr-1"></i>Copy</button>
+            </div>
+            <textarea id="sgMsgText_${i}" class="w-full text-xs leading-relaxed text-gray-700 bg-white border border-gray-200 rounded-lg p-2.5 resize-y outline-none" rows="10">${msg}</textarea>
+        </div>`;
+    });
+    document.getElementById('sgMsgList').innerHTML = html;
+    _openSgMsgModal();
+}
+
+function _openSgMsgModal() {
+    const bd = document.getElementById('sgMsgBackdrop');
+    const m  = document.getElementById('sgMsgModal');
+    bd.classList.remove('hidden'); m.classList.remove('hidden');
+    requestAnimationFrame(()=>{ m.style.transform='scale(1)'; m.style.opacity='1'; });
+}
+function closeSgMsg() {
+    const m = document.getElementById('sgMsgModal');
+    m.style.transform='scale(0.95)'; m.style.opacity='0';
+    setTimeout(()=>{
+        m.classList.add('hidden');
+        document.getElementById('sgMsgBackdrop').classList.add('hidden');
+    }, 200);
+}
+function sgCopyAllMsg() {
+    const texts = [];
+    document.querySelectorAll('#sgMsgList textarea').forEach(t=>texts.push(t.value));
+    navigator.clipboard.writeText(texts.join('\n\n' + '─'.repeat(40) + '\n\n'));
+    showToast(`Đã sao chép ${texts.length} tin nhắn!`);
+}
+function sgExportMsgExcel() {
+    const rec = _sgRec(); if (!rec) return;
+    const cls = classes.find(c=>c.id===currentClassId);
+    const template = document.getElementById('sgMsgTemplate').value;
+    const rows = _sgMsgRows.length ? _sgMsgRows : rec.rows.filter(r=>_sgRowPassesFilter(r,_sgCurrentFilter));
+    if (!rows.length) { showToast('Không có dữ liệu!', false); return; }
+    const wsData = [['STT','Họ và tên','ĐTB','Tin nhắn phụ huynh']];
+    rows.forEach(r => {
+        const v = _sgDTBVal(r);
+        wsData.push([r.stt||'', r.name, v!==null?v:'—', _sgBuildMsg(r, rec, template)]);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols'] = [{wch:6},{wch:26},{wch:8},{wch:80}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Tin nhắn');
+    XLSX.writeFile(wb, `TinNhan_${rec.subject}_${cls?.name||'lop'}_${rec.semester}.xlsx`);
+    showToast('Đã xuất Excel tin nhắn!');
 }
 
 // ============================================================
