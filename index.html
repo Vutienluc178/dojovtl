@@ -4080,69 +4080,80 @@ function _buildParentMsg(s, days, template) {
     const today = new Date().toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'});
     const cutoff = days > 0 ? new Date(Date.now() - days*86400000) : new Date(0);
 
-    const sHist   = history.filter(h=>h.classId===currentClassId && h.studentId===s.id && new Date(h.timestamp)>=cutoff);
+    const sHist    = history.filter(h=>h.classId===currentClassId && h.studentId===s.id && new Date(h.timestamp)>=cutoff);
     const posItems = sHist.filter(h=>h.points>0);
     const negItems = sHist.filter(h=>h.points<0);
     const notes    = communicationLog.filter(n=>n.classId===currentClassId && n.studentId===s.id)
         .sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).slice(0,5);
 
-    // Aggregate skill counts
-    const skillCount = (arr) => {
+    // Aggregate: { skillName → { count, points } } sorted by frequency
+    const skillDetail = (arr) => {
         const map = {};
-        arr.forEach(h=>{ map[h.skillName]=(map[h.skillName]||0)+1; });
-        return Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([name,cnt])=>cnt>1?`${name} (×${cnt})`:name);
+        arr.forEach(h=>{
+            if (!map[h.skillName]) map[h.skillName] = { count:0, pts:h.points };
+            map[h.skillName].count++;
+        });
+        return Object.entries(map).sort((a,b)=>b[1].count-a[1].count).map(([name,{count,pts}])=>{
+            const total = pts * count;
+            const sign  = pts > 0 ? '+' : '';
+            return count > 1
+                ? `${name}: ${sign}${pts}đ × ${count} lần = ${sign}${total}đ`
+                : `${name}: ${sign}${pts}đ`;
+        });
     };
 
     const noteTypeIcon = { praise:'⭐', concern:'⚠️', notice:'📢', reminder:'⏰' };
+    const rangeLabel   = days > 0 ? `${days} ngày gần nhất` : 'toàn bộ';
 
     if (template === 'formal') {
-        let msg = `Kính gửi Phụ huynh em ${s.name}\n`;
-        msg += `Lớp: ${cls?.name||''} | Ngày: ${today}\n`;
-        msg += `${'─'.repeat(35)}\n`;
-        msg += `📊 ĐIỂM THI ĐUA: ${s.points||0} điểm\n`;
+        let msg = `Kính gửi Quý Phụ huynh em ${s.name}\n`;
+        msg += `Lớp: ${cls?.name||''} | Ngày: ${today}\n\n`;
+        msg += `📊 Điểm thi đua hiện tại: ${s.points||0} điểm\n`;
+        msg += `(Thống kê ${rangeLabel})\n`;
         if (posItems.length) {
-            msg += `\n✅ THÀNH TÍCH NỔI BẬT:\n`;
-            skillCount(posItems).forEach(sk=>{ msg += `  • ${sk}\n`; });
+            msg += `\n✅ KHEN THƯỞNG:\n`;
+            skillDetail(posItems).forEach(sk=>{ msg += `  • ${sk}\n`; });
         }
         if (negItems.length) {
-            msg += `\n⚠️ CẦN NHẮC NHỞ:\n`;
-            skillCount(negItems).forEach(sk=>{ msg += `  • ${sk}\n`; });
+            msg += `\n⚠️ VI PHẠM / CẦN NHẮC NHỞ:\n`;
+            skillDetail(negItems).forEach(sk=>{ msg += `  • ${sk}\n`; });
         }
         if (notes.length) {
             msg += `\n📝 NHẬN XÉT CỦA GIÁO VIÊN:\n`;
             notes.forEach(n=>{ msg += `  ${noteTypeIcon[n.type]||'📌'} ${n.content}\n`; });
         }
-        msg += `${'─'.repeat(35)}\n`;
-        msg += `Trân trọng,\nGiáo viên lớp ${cls?.name||''}`;
+        msg += `\nTrân trọng,\nGiáo viên lớp ${cls?.name||''}`;
         return msg;
     }
 
     if (template === 'friendly') {
-        let msg = `👋 Chào PH em ${s.name} (Lớp ${cls?.name||''}) - ${today}\n\n`;
+        let msg = `👋 Chào PH em ${s.name} - Lớp ${cls?.name||''}\n`;
+        msg += `📅 ${today} | Thống kê ${rangeLabel}\n\n`;
         msg += `🏆 Điểm thi đua: ${s.points||0} điểm\n`;
         if (posItems.length) {
-            msg += `\n🌟 Em đã làm tốt:\n`;
-            skillCount(posItems).forEach(sk=>{ msg += `  ✅ ${sk}\n`; });
+            msg += `\n🌟 Khen thưởng:\n`;
+            skillDetail(posItems).forEach(sk=>{ msg += `  ✅ ${sk}\n`; });
         }
         if (negItems.length) {
-            msg += `\n💪 Em cần cố gắng hơn:\n`;
-            skillCount(negItems).forEach(sk=>{ msg += `  🔸 ${sk}\n`; });
+            msg += `\n💪 Vi phạm / cần cố gắng:\n`;
+            skillDetail(negItems).forEach(sk=>{ msg += `  🔸 ${sk}\n`; });
         }
         if (notes.length) {
             msg += `\n💬 Nhận xét:\n`;
             notes.forEach(n=>{ msg += `  ${noteTypeIcon[n.type]||'📌'} ${n.content}\n`; });
         }
-        msg += `\n🙏 Cảm ơn sự phối hợp của PH!`;
+        msg += `\n🙏 Cảm ơn PH đã phối hợp cùng nhà trường!`;
         return msg;
     }
 
     // brief
-    const posNames = skillCount(posItems).slice(0,3).join(', ') || '–';
-    const negNames = skillCount(negItems).slice(0,3).join(', ') || '–';
-    let msg = `[${today}] ${s.name} - ${cls?.name||''}\n`;
-    msg += `⭐ Điểm: ${s.points||0} | ✅ Khen: ${posNames} | ⚠️ Nhắc: ${negNames}`;
-    if (notes.length) msg += `\n📝 ${notes[0].content}`;
-    return msg;
+    const posNames = skillDetail(posItems).slice(0,3).join('; ') || '–';
+    const negNames = skillDetail(negItems).slice(0,3).join('; ') || '–';
+    let msg = `[${today}] ${s.name} - ${cls?.name||''} | Điểm: ${s.points||0}\n`;
+    if (posItems.length) msg += `✅ Khen: ${posNames}\n`;
+    if (negItems.length) msg += `⚠️ Vi phạm: ${negNames}\n`;
+    if (notes.length) msg += `📝 ${notes[0].content}`;
+    return msg.trim();
 }
 
 function _copyStudentMessage() {
