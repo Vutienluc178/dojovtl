@@ -94,6 +94,7 @@
     <div class="p-4 border-t border-gray-100 flex flex-col gap-3">
         <button onclick="document.getElementById('excelInput').click()" class="w-full py-3 bg-green-100 text-green-700 font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-green-200"><i class="fas fa-file-excel"></i> Nhập danh sách (Excel)</button>
         <input type="file" id="excelInput" class="hidden" accept=".xlsx,.xls,.csv" onchange="handleExcelUpload(event)">
+        <button onclick="openClassroomImport()" class="w-full py-3 bg-indigo-100 text-indigo-700 font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-indigo-200"><i class="fab fa-google text-indigo-500"></i> Nhập từ Google Classroom</button>
         <button onclick="openAddClassModal()" class="w-full py-3 bg-dojo-blue text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-md"><i class="fas fa-plus-circle"></i> Tạo lớp mới</button>
     </div>
     <!-- Branding strip -->
@@ -430,6 +431,58 @@
         </label>
     </div>
     <div class="flex gap-3"><button onclick="closeAddClassModal()" class="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl">Hủy</button><button onclick="addClass()" class="flex-1 py-3 bg-dojo-blue text-white font-bold rounded-xl shadow-lg">Lưu lại</button></div>
+</div>
+
+<!-- Google Classroom Import Modal -->
+<div id="classroomImportBackdrop" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden" onclick="closeClassroomImport()"></div>
+<div id="classroomImportModal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95%] max-w-md bg-white rounded-2xl z-50 hidden shadow-2xl flex flex-col" style="max-height:85vh">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100 flex-shrink-0">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-xl bg-indigo-100 flex items-center justify-center">
+                <i class="fab fa-google text-indigo-600 text-sm"></i>
+            </div>
+            <div>
+                <h3 class="font-bold text-gray-800 text-base leading-tight">Nhập từ Google Classroom</h3>
+                <p id="classroomImportSubtitle" class="text-xs text-gray-400">Chọn lớp để nhập học sinh</p>
+            </div>
+        </div>
+        <button onclick="closeClassroomImport()" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200"><i class="fas fa-times text-sm"></i></button>
+    </div>
+    <!-- Body -->
+    <div id="classroomImportBody" class="flex-1 overflow-y-auto px-5 py-4 min-h-0">
+        <!-- Loading state -->
+        <div id="classroomLoading" class="flex flex-col items-center justify-center py-8 gap-3">
+            <div class="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+            <p class="text-sm text-gray-500">Đang tải danh sách lớp...</p>
+        </div>
+        <!-- Error state -->
+        <div id="classroomError" class="hidden py-4">
+            <div class="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-600" id="classroomErrorMsg"></div>
+            <div id="classroomErrorHint" class="hidden mt-3 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700"></div>
+        </div>
+        <!-- Course list -->
+        <div id="classroomCourseList" class="hidden flex flex-col gap-2"></div>
+        <!-- Student preview -->
+        <div id="classroomStudentPreview" class="hidden">
+            <div class="flex items-center gap-2 mb-3">
+                <button onclick="_classroomBackToCourses()" class="text-xs text-indigo-600 font-bold flex items-center gap-1"><i class="fas fa-arrow-left text-[10px]"></i> Chọn lại lớp</button>
+            </div>
+            <div class="mb-3 bg-indigo-50 rounded-xl p-3">
+                <p class="text-xs text-indigo-500 font-bold">Tên lớp trong ứng dụng</p>
+                <input type="text" id="classroomClassName" class="w-full border-0 bg-transparent text-sm font-bold text-indigo-800 focus:outline-none mt-0.5" placeholder="Tên lớp...">
+            </div>
+            <p class="text-xs font-bold text-gray-500 mb-2">Danh sách học sinh (<span id="classroomStudentCount">0</span> em)</p>
+            <div id="classroomStudentList" class="flex flex-col gap-1 max-h-52 overflow-y-auto rounded-xl border border-gray-100 p-2 bg-gray-50"></div>
+        </div>
+    </div>
+    <!-- Footer -->
+    <div id="classroomImportFooter" class="hidden px-5 pb-5 pt-3 border-t border-gray-100 flex-shrink-0">
+        <button onclick="confirmClassroomImport()" id="btnConfirmClassroomImport"
+            class="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-indigo-700 transition active:scale-95 shadow-lg">
+            <i class="fas fa-file-import"></i> Nhập vào ứng dụng
+        </button>
+    </div>
 </div>
 
 <!-- Edit class -->
@@ -1977,6 +2030,185 @@ function selectClass(id) {
     else if(currentView==='settings') renderSkills();
     _updateClassNotesBtn();
     _updateMeetingBadge();
+}
+
+// ============================================================
+// GOOGLE CLASSROOM IMPORT
+// ============================================================
+let _classroomCourses = [];
+let _classroomSelectedCourse = null;
+let _classroomStudents = [];
+
+function openClassroomImport() {
+    toggleSidebar();
+    if (syncSettings.url === DEFAULT_SYNC_URL || !syncSettings.url) {
+        showToast('Cần cài đặt Deployment ID riêng trước khi dùng tính năng này!', false, 4000);
+        switchView('settings');
+        return;
+    }
+    document.getElementById('classroomImportBackdrop').classList.remove('hidden');
+    document.getElementById('classroomImportModal').classList.remove('hidden');
+    _classroomShowLoading();
+    _classroomFetchCourses();
+}
+
+function closeClassroomImport() {
+    document.getElementById('classroomImportBackdrop').classList.add('hidden');
+    document.getElementById('classroomImportModal').classList.add('hidden');
+    _classroomCourses = [];
+    _classroomSelectedCourse = null;
+    _classroomStudents = [];
+}
+
+function _classroomShowLoading(msg='Đang tải danh sách lớp...') {
+    document.getElementById('classroomLoading').classList.remove('hidden');
+    document.getElementById('classroomLoading').querySelector('p').textContent = msg;
+    document.getElementById('classroomError').classList.add('hidden');
+    document.getElementById('classroomCourseList').classList.add('hidden');
+    document.getElementById('classroomStudentPreview').classList.add('hidden');
+    document.getElementById('classroomImportFooter').classList.add('hidden');
+}
+
+function _classroomShowError(msg, hint='') {
+    document.getElementById('classroomLoading').classList.add('hidden');
+    document.getElementById('classroomError').classList.remove('hidden');
+    document.getElementById('classroomErrorMsg').textContent = msg;
+    const hintEl = document.getElementById('classroomErrorHint');
+    if (hint) { hintEl.innerHTML = hint; hintEl.classList.remove('hidden'); }
+    else hintEl.classList.add('hidden');
+    document.getElementById('classroomCourseList').classList.add('hidden');
+    document.getElementById('classroomStudentPreview').classList.add('hidden');
+    document.getElementById('classroomImportFooter').classList.add('hidden');
+}
+
+async function _classroomFetchCourses() {
+    try {
+        const url = syncSettings.url + '?action=listClasses';
+        const res = await fetch(url, { redirect: 'follow' });
+        const text = await res.text();
+        if (!text || text.trim() === '') {
+            _classroomShowError(
+                'Script không trả về dữ liệu.',
+                '⚠️ Cần bật <b>Classroom API</b> trong Apps Script: mở editor → bên trái chọn <b>Dịch vụ (+)</b> → tìm <b>Google Classroom API</b> → Thêm.'
+            );
+            return;
+        }
+        const result = JSON.parse(text);
+        if (result.status !== 'ok') {
+            _classroomShowError(
+                '❌ ' + (result.message || 'Lỗi không xác định'),
+                result.message && result.message.includes('Classroom') ?
+                    '⚠️ Cần bật <b>Google Classroom API</b>: trong Apps Script Editor → <b>Dịch vụ (+)</b> → tìm <b>Google Classroom API v1</b> → Thêm → Lưu & triển khai lại.' : ''
+            );
+            return;
+        }
+        _classroomCourses = result.data || [];
+        _renderClassroomCourses();
+    } catch(e) {
+        _classroomShowError('Không kết nối được: ' + e.message);
+    }
+}
+
+function _renderClassroomCourses() {
+    document.getElementById('classroomLoading').classList.add('hidden');
+    document.getElementById('classroomError').classList.add('hidden');
+    document.getElementById('classroomStudentPreview').classList.add('hidden');
+    document.getElementById('classroomImportFooter').classList.add('hidden');
+    document.getElementById('classroomImportSubtitle').textContent = 'Chọn lớp để nhập học sinh';
+    const list = document.getElementById('classroomCourseList');
+    list.classList.remove('hidden');
+    if (_classroomCourses.length === 0) {
+        list.innerHTML = '<div class="text-center py-8 text-gray-400"><i class="fas fa-school text-3xl mb-2 block"></i><p class="text-sm">Không tìm thấy lớp nào trên Google Classroom.<br>Bạn phải là giáo viên của lớp đó.</p></div>';
+        return;
+    }
+    list.innerHTML = _classroomCourses.map(c => `
+        <button onclick="selectClassroomCourse('${c.id}','${c.name.replace(/'/g,"\\'")}','${(c.section||'').replace(/'/g,"\\'")}' )"
+            class="w-full text-left flex items-center gap-3 p-3 rounded-xl border-2 border-transparent bg-gray-50 hover:border-indigo-300 hover:bg-indigo-50 transition active:scale-95">
+            <div class="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-chalkboard text-indigo-500 text-sm"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="font-bold text-gray-800 text-sm truncate">${c.name}</p>
+                ${c.section ? `<p class="text-xs text-gray-400 truncate">${c.section}</p>` : ''}
+            </div>
+            <i class="fas fa-chevron-right text-gray-300 flex-shrink-0"></i>
+        </button>
+    `).join('');
+}
+
+async function selectClassroomCourse(courseId, courseName, section) {
+    _classroomSelectedCourse = { id: courseId, name: courseName, section };
+    _classroomShowLoading('Đang tải danh sách học sinh...');
+    try {
+        const url = syncSettings.url + `?action=importClass&courseId=${encodeURIComponent(courseId)}`;
+        const res = await fetch(url, { redirect: 'follow' });
+        const text = await res.text();
+        if (!text || text.trim() === '') { _classroomShowError('Script trả về rỗng — kiểm tra Authorization.'); return; }
+        const result = JSON.parse(text);
+        if (result.status !== 'ok') { _classroomShowError('❌ ' + (result.message||'Lỗi không xác định')); return; }
+        _classroomStudents = result.data || [];
+        _renderClassroomStudentPreview(courseName, section);
+    } catch(e) {
+        _classroomShowError('Lỗi: ' + e.message);
+    }
+}
+
+function _renderClassroomStudentPreview(courseName, section) {
+    document.getElementById('classroomLoading').classList.add('hidden');
+    document.getElementById('classroomError').classList.add('hidden');
+    document.getElementById('classroomCourseList').classList.add('hidden');
+    document.getElementById('classroomImportSubtitle').textContent = courseName + (section ? ' · ' + section : '');
+    const preview = document.getElementById('classroomStudentPreview');
+    preview.classList.remove('hidden');
+    document.getElementById('classroomImportFooter').classList.remove('hidden');
+    // Pre-fill class name
+    document.getElementById('classroomClassName').value = courseName + (section ? ' - ' + section : '');
+    document.getElementById('classroomStudentCount').textContent = _classroomStudents.length;
+    const listEl = document.getElementById('classroomStudentList');
+    if (_classroomStudents.length === 0) {
+        listEl.innerHTML = '<p class="text-center text-gray-400 text-xs py-4">Không có học sinh nào trong lớp.</p>';
+    } else {
+        listEl.innerHTML = _classroomStudents.map((s, i) => `
+            <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white transition">
+                <span class="text-xs text-gray-400 w-5 text-right flex-shrink-0">${i+1}</span>
+                <span class="text-sm font-semibold text-gray-700 truncate">${s.name}</span>
+                ${s.email ? `<span class="text-[10px] text-gray-400 truncate ml-auto">${s.email}</span>` : ''}
+            </div>
+        `).join('');
+    }
+}
+
+function _classroomBackToCourses() {
+    _classroomSelectedCourse = null;
+    _classroomStudents = [];
+    _renderClassroomCourses();
+}
+
+function confirmClassroomImport() {
+    const className = document.getElementById('classroomClassName').value.trim();
+    if (!className) { document.getElementById('classroomClassName').focus(); showToast('Nhập tên lớp!', false); return; }
+    if (_classroomStudents.length === 0) { showToast('Không có học sinh để nhập!', false); return; }
+    // Create class
+    const newClassId = classes.length ? Math.max(...classes.map(c=>c.id))+1 : 1;
+    classes.push({ id: newClassId, name: className });
+    // Create students
+    const avatarBase = 'https://api.dicebear.com/7.x/thumbs/svg?seed=';
+    _classroomStudents.forEach((s, i) => {
+        const newId = students.length ? Math.max(...students.map(st=>st.id))+1 : 1;
+        const avatarSeed = s.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s/g,'');
+        students.push({
+            id: newId, classId: newClassId, stt: i+1, name: s.name, dob: '', email: s.email||'',
+            points: 0, positivePoints: 0, negativePoints: 0,
+            avatar: avatarBase + avatarSeed
+        });
+    });
+    currentClassId = newClassId;
+    saveData();
+    renderClasses();
+    renderStudents();
+    closeClassroomImport();
+    if (typeof toggleSidebar === 'function') toggleSidebar();
+    showToast(`✅ Đã nhập lớp "${className}" với ${_classroomStudents.length} học sinh!`, true, 4000);
 }
 
 function openAddClassModal() { toggleSidebar(); document.getElementById('addClassBackdrop').classList.remove('hidden'); document.getElementById('addClassModal').classList.remove('hidden'); document.getElementById('newClassName').focus(); }
@@ -5074,6 +5306,35 @@ function doPost(e) {
 function doGet(e) {
   if (e.parameter.action === 'ping') return respond({ status:'ok', message:'Kết nối thành công!' });
   if (e.parameter.action === 'pull') return respond({ status:'ok', data: readAllData() });
+
+  // ── Google Classroom: danh sách lớp đang dạy ──
+  if (e.parameter.action === 'listClasses') {
+    try {
+      const res = Classroom.Courses.list({ teacherId: 'me', courseStates: ['ACTIVE'], pageSize: 30 });
+      const courses = (res.courses || []).map(c => ({
+        id: c.id, name: c.name, section: c.section || '', room: c.room || ''
+      }));
+      return respond({ status:'ok', data: courses });
+    } catch(err) {
+      return respond({ status:'error', message: 'Cần bật Google Classroom API trong Dịch vụ: ' + err.message });
+    }
+  }
+
+  // ── Google Classroom: danh sách học sinh theo lớp ──
+  if (e.parameter.action === 'importClass') {
+    const courseId = e.parameter.courseId;
+    if (!courseId) return respond({ status:'error', message:'Thiếu courseId' });
+    try {
+      const res = Classroom.Courses.Students.list(courseId, { pageSize: 200 });
+      const students = (res.students || []).map(s => ({
+        name: s.profile.name.fullName,
+        email: s.profile.emailAddress || ''
+      }));
+      return respond({ status:'ok', data: students });
+    } catch(err) {
+      return respond({ status:'error', message: err.message });
+    }
+  }
   // Viewer mode for students/parents
   if (e.parameter.view) {
     try {
