@@ -27,6 +27,12 @@
         .text-glow{text-shadow:0 0 15px rgba(51,163,220,.5),0 0 30px rgba(51,163,220,.3)}
         @keyframes milestoneIn{0%{transform:scale(0) rotate(-20deg);opacity:0}60%{transform:scale(1.3) rotate(5deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
         .milestone-badge{animation:milestoneIn .4s ease forwards;display:inline-block}
+        @keyframes streakShimmer{0%{background-position:200% center}100%{background-position:-200% center}}
+        @keyframes streakPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,200,0,0.4)}50%{transform:scale(1.03);box-shadow:0 0 0 8px rgba(255,200,0,0)}}
+        @keyframes badgePop{0%{transform:scale(0) rotate(-15deg);opacity:0}70%{transform:scale(1.15) rotate(3deg)}100%{transform:scale(1) rotate(0);opacity:1}}
+        .streak-card{animation:streakPulse 2.5s ease-in-out infinite}
+        .streak-badge-pop{animation:badgePop .5s cubic-bezier(.175,.885,.32,1.275) forwards}
+        .streak-shimmer{background:linear-gradient(90deg,rgba(255,255,255,0) 0%,rgba(255,255,255,0.3) 50%,rgba(255,255,255,0) 100%);background-size:200% 100%;animation:streakShimmer 2s linear infinite}
         @keyframes groupCardIn{0%{transform:scale(0.7) translateY(30px);opacity:0}70%{transform:scale(1.04) translateY(-4px)}100%{transform:scale(1) translateY(0);opacity:1}}
         .group-card-anim{animation:groupCardIn .45s cubic-bezier(.175,.885,.32,1.275) both}
         @keyframes sttPop{0%{transform:scale(0) rotate(-15deg);opacity:0}70%{transform:scale(1.15) rotate(3deg)}100%{transform:scale(1) rotate(0);opacity:1}}
@@ -214,6 +220,8 @@
         <button onclick="exportClassList()" class="flex-1 py-2 bg-teal-50 text-teal-600 font-bold rounded-xl border border-teal-100 hover:bg-teal-100 transition flex items-center justify-center gap-2 text-sm"><i class="fas fa-list-ol"></i> Danh sách lớp</button>
         <button onclick="openBatchCertModal()" class="flex-1 py-2 bg-amber-50 text-amber-600 font-bold rounded-xl border border-amber-100 hover:bg-amber-100 transition flex items-center justify-center gap-2 text-sm"><i class="fas fa-award"></i> Chứng nhận</button>
     </div>
+    <!-- Streak Hall of Fame -->
+    <div id="streakHallOfFame" class="mb-3"></div>
     <div id="reportList" class="flex flex-col gap-3"></div>
 </main>
 
@@ -1797,6 +1805,122 @@ const MILESTONES = [
     { threshold: 50, icon: '👑', label: 'Vô địch',   bg: 'bg-purple-50', border: 'border-purple-200' },
 ];
 
+// Huy hiệu chuỗi điểm cộng (streak badges)
+// type:'day' = n ngày liên tiếp có điểm cộng | type:'week' = n tuần liên tiếp
+const STREAK_BADGES = [
+    { type:'day',  min:3,  icon:'🔥', name:'Bùng Cháy',      desc:'3 ngày liên tiếp',   grad:'linear-gradient(135deg,#f97316,#ef4444)', shadow:'rgba(249,115,22,0.5)' },
+    { type:'day',  min:5,  icon:'⚡', name:'Tia Sét',         desc:'5 ngày liên tiếp',   grad:'linear-gradient(135deg,#eab308,#f59e0b)', shadow:'rgba(234,179,8,0.5)'  },
+    { type:'day',  min:7,  icon:'🌟', name:'Tuần Hoàn Hảo',  desc:'7 ngày liên tiếp',   grad:'linear-gradient(135deg,#6366f1,#8b5cf6)', shadow:'rgba(99,102,241,0.5)' },
+    { type:'day',  min:14, icon:'💫', name:'Thiên Tài',       desc:'14 ngày liên tiếp',  grad:'linear-gradient(135deg,#8b5cf6,#ec4899)', shadow:'rgba(139,92,246,0.5)' },
+    { type:'day',  min:30, icon:'🏆', name:'Huyền Thoại',    desc:'30 ngày liên tiếp',  grad:'linear-gradient(135deg,#f59e0b,#fbbf24)', shadow:'rgba(245,158,11,0.6)' },
+    { type:'week', min:2,  icon:'🎯', name:'Kép Đôi',         desc:'2 tuần liên tiếp',   grad:'linear-gradient(135deg,#06b6d4,#3b82f6)', shadow:'rgba(6,182,212,0.5)'  },
+    { type:'week', min:3,  icon:'🏅', name:'Bộ Ba Vàng',     desc:'3 tuần liên tiếp',   grad:'linear-gradient(135deg,#f59e0b,#ef4444)', shadow:'rgba(245,158,11,0.5)' },
+    { type:'week', min:4,  icon:'🌈', name:'Tháng Vàng',     desc:'4 tuần liên tiếp',   grad:'linear-gradient(135deg,#10b981,#06b6d4)', shadow:'rgba(16,185,129,0.5)' },
+    { type:'week', min:6,  icon:'💎', name:'Kim Cương',       desc:'6 tuần liên tiếp',   grad:'linear-gradient(135deg,#0ea5e9,#6366f1)', shadow:'rgba(14,165,233,0.5)' },
+    { type:'week', min:8,  icon:'👑', name:'Hoàng Đế',        desc:'8+ tuần liên tiếp',  grad:'linear-gradient(135deg,#a855f7,#ec4899)', shadow:'rgba(168,85,247,0.6)' },
+];
+
+function _getISOWeekKey(date) {
+    const d = new Date(date); d.setHours(12,0,0,0);
+    const day = d.getDay()||7;
+    d.setDate(d.getDate()+4-day);
+    const ys = new Date(d.getFullYear(),0,1);
+    const wn = Math.ceil((((d-ys)/86400000)+1)/7);
+    return `${d.getFullYear()}-${String(wn).padStart(2,'0')}`;
+}
+
+function computeStreaks(studentId, classId) {
+    const sh = history.filter(h=>h.studentId===studentId&&h.classId===classId&&h.points>0);
+    if (!sh.length) return { maxDay:0, maxWeek:0, curDay:0, curWeek:0 };
+    // Unique sorted day strings
+    const daySet = new Set(sh.map(h=>{const d=new Date(h.timestamp);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}));
+    const days = [...daySet].sort();
+    const dayDates = days.map(s=>new Date(s));
+    // Max consecutive days
+    let maxDay=1, run=1;
+    for(let i=1;i<dayDates.length;i++){
+        const diff=Math.round((dayDates[i]-dayDates[i-1])/86400000);
+        if(diff===1){run++;if(run>maxDay)maxDay=run;}else run=1;
+    }
+    // Current streak (active if last entry ≤1 day ago)
+    let curDay=0;
+    if(dayDates.length){
+        const today=new Date();today.setHours(0,0,0,0);
+        const last=new Date(dayDates[dayDates.length-1]);last.setHours(0,0,0,0);
+        if(Math.round((today-last)/86400000)<=1){
+            let cr=1;
+            for(let i=dayDates.length-2;i>=0;i--){
+                if(Math.round((dayDates[i+1]-dayDates[i])/86400000)===1)cr++;else break;
+            }
+            curDay=cr;
+        }
+    }
+    // Week streaks
+    const weekSet=new Set(sh.map(h=>_getISOWeekKey(new Date(h.timestamp))));
+    const weeks=[...weekSet].sort();
+    let maxWeek=weeks.length?1:0, wrun=1;
+    for(let i=1;i<weeks.length;i++){
+        const [y1,w1]=weeks[i-1].split('-').map(Number),[y2,w2]=weeks[i].split('-').map(Number);
+        const consec=(y1===y2&&w2===w1+1)||(y2===y1+1&&w2===1&&w1>=52);
+        if(consec){wrun++;if(wrun>maxWeek)maxWeek=wrun;}else wrun=1;
+    }
+    // Current week streak
+    let curWeek=0;
+    if(weeks.length){
+        const thisWk=_getISOWeekKey(new Date()),lastWk=weeks[weeks.length-1];
+        const [y1,w1]=lastWk.split('-').map(Number),[y2,w2]=thisWk.split('-').map(Number);
+        const recent=lastWk===thisWk||(y1===y2&&w2===w1+1)||(y2===y1+1&&w2===1&&w1>=52);
+        if(recent)curWeek=wrun;
+    }
+    return {maxDay,maxWeek,curDay,curWeek};
+}
+
+function getEarnedStreakBadges(maxDay, maxWeek) {
+    return STREAK_BADGES.filter(b=>(b.type==='day'?maxDay:maxWeek)>=b.min);
+}
+function getTopStreakBadge(maxDay, maxWeek) {
+    const earned=getEarnedStreakBadges(maxDay,maxWeek);
+    return earned.length?earned[earned.length-1]:null;
+}
+
+function renderStreakHallOfFame() {
+    const el=document.getElementById('streakHallOfFame'); if(!el)return;
+    if(currentPeriodId!==null){el.innerHTML='';return;}
+    const clsStudents=students.filter(s=>s.classId===currentClassId);
+    const heroes=[];
+    clsStudents.forEach(s=>{
+        const st=computeStreaks(s.id,currentClassId);
+        const badge=getTopStreakBadge(st.maxDay,st.maxWeek);
+        if(badge) heroes.push({s,st,badge,earned:getEarnedStreakBadges(st.maxDay,st.maxWeek)});
+    });
+    if(!heroes.length){el.innerHTML='';return;}
+    // Sort best badge first
+    heroes.sort((a,b)=>STREAK_BADGES.indexOf(b.badge)-STREAK_BADGES.indexOf(a.badge));
+    let html=`<div>
+    <div class="flex items-center gap-2 mb-2 px-1">
+      <span class="text-xl">🏅</span>
+      <h3 class="font-black text-gray-800 text-sm tracking-wide">DANH HIỆU CHUỖI ĐIỂM CỘNG</h3>
+      <span class="text-xs text-gray-400 font-semibold">${heroes.length} học sinh</span>
+    </div>
+    <div class="flex gap-3 overflow-x-auto no-scrollbar pb-2">`;
+    heroes.forEach(({s,st,badge,earned},idx)=>{
+        const delay=idx*80;
+        const isActive=st.curDay>=badge.min||(badge.type==='week'&&st.curWeek>=badge.min);
+        const allIcons=earned.map(b=>`<span title="${b.name}: ${b.desc}">${b.icon}</span>`).join('');
+        const streakInfo=st.curDay>0?`🔥 ${st.curDay} ngày`:(st.curWeek>0?`📅 ${st.curWeek} tuần`:'');
+        html+=`<div class="flex-shrink-0 w-[130px] rounded-2xl p-3 text-white cursor-pointer streak-badge-pop ${isActive?'streak-card':''}" style="background:${badge.grad};box-shadow:0 6px 20px ${badge.shadow};animation-delay:${delay}ms" onclick="openStudentProfile('${s.id}')">
+          <div class="relative"><div class="text-4xl text-center leading-none mb-1 streak-shimmer rounded-lg py-1">${badge.icon}</div></div>
+          <div class="text-[11px] font-black text-center truncate leading-tight">${s.name}</div>
+          <div class="text-[10px] font-bold text-center mt-0.5 opacity-90">${badge.name}</div>
+          <div class="text-[9px] text-center opacity-75 mt-0.5">${badge.desc}</div>
+          ${streakInfo?`<div class="text-[9px] font-bold text-center mt-1 bg-white bg-opacity-25 rounded-full px-1 py-0.5">${streakInfo}</div>`:''}
+          <div class="flex justify-center gap-0.5 mt-1.5 text-sm flex-wrap">${allIcons}</div>
+        </div>`;
+    });
+    html+='</div></div>';
+    el.innerHTML=html;
+}
+
 // ============================================================
 // NHẬN XÉT TỰ ĐỘNG
 // ============================================================
@@ -2924,6 +3048,7 @@ function closeRandomModal() {
 function renderReport() {
     const list=document.getElementById('reportList'); list.innerHTML='';
     renderPeriodTabs();
+    renderStreakHallOfFame();
     let displayStudents;
     const title=document.getElementById('reportTitle');
     const actions=document.getElementById('reportActions');
@@ -2942,30 +3067,90 @@ function renderReport() {
     const sortBy=document.getElementById('sortOrder').value;
     const sorted=[...displayStudents].sort((a,b)=>sortBy==='points'?b.points-a.points:a.name.localeCompare(b.name));
 
+    // ---- Modern Leaderboard Table ----
+    const RANK_CFG = [
+        { icon:'👑', rowBg:'linear-gradient(90deg,#fffbeb 0%,#fef9c3 60%,#ffffff 100%)', border:'#f59e0b', scoreBg:'linear-gradient(135deg,#f59e0b,#fbbf24)', label:'Quán quân' },
+        { icon:'🥈', rowBg:'linear-gradient(90deg,#f8fafc 0%,#f1f5f9 60%,#ffffff 100%)', border:'#94a3b8', scoreBg:'linear-gradient(135deg,#64748b,#94a3b8)', label:'Á quân'   },
+        { icon:'🥉', rowBg:'linear-gradient(90deg,#fff7ed 0%,#ffedd5 60%,#ffffff 100%)', border:'#f97316', scoreBg:'linear-gradient(135deg,#ea580c,#f97316)', label:'Hạng ba'  },
+    ];
+
+    let tableHtml = `<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-dojo-blue to-violet-600 text-white">
+        <i class="fas fa-trophy text-yellow-300 text-sm"></i>
+        <span class="font-black text-sm tracking-wide">BẢNG XẾP HẠNG</span>
+        <span class="ml-auto text-[11px] opacity-75 font-semibold">${sorted.length} học sinh</span>
+      </div>
+      <div class="divide-y divide-gray-50">`;
+
     sorted.forEach((student,i)=>{
-        let rank=`<span class="w-8 text-center text-gray-400 font-bold text-lg">${i+1}</span>`;
-        if(sortBy==='points'){
-            if(i===0&&student.points>0) rank=`<div class="w-8 flex justify-center text-2xl"><i class="fas fa-crown text-yellow-400"></i></div>`;
-            else if(i===1&&student.points>0) rank=`<div class="w-8 flex justify-center text-2xl"><i class="fas fa-medal text-gray-400"></i></div>`;
-            else if(i===2&&student.points>0) rank=`<div class="w-8 flex justify-center text-2xl"><i class="fas fa-medal text-orange-400"></i></div>`;
-        }
-        const pColor=student.points>0?'bg-dojo-green text-white shadow-md shadow-green-200':(student.points<0?'bg-dojo-red text-white shadow-md shadow-red-200':'bg-gray-100 text-gray-600');
-        const ms=getMilestone(student.points);
-        list.insertAdjacentHTML('beforeend',`
-            <div class="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3 active:scale-[0.98] transition-transform">
-                ${rank}
-                <div class="w-12 h-12 bg-blue-50 rounded-full flex-shrink-0 p-1 border border-blue-100 overflow-hidden"><img src="${student.avatar}" class="w-full h-full object-contain"></div>
-                <div class="flex-1 overflow-hidden">
-                    <h4 class="font-bold text-gray-800 text-base truncate">${student.name}${ms?` <span title="${ms.label}">${ms.icon}</span>`:''}</h4>
-                    <div class="flex gap-2 mt-1">
-                        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full"><i class="fas fa-plus"></i>${student.positivePoints}</span>
-                        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded-full"><i class="fas fa-minus"></i>${student.negativePoints}</span>
-                    </div>
-                    <p class="text-[11px] text-gray-400 italic mt-1 leading-snug">${generateComment(student)}</p>
-                </div>
-                <div class="w-10 h-10 rounded-full flex items-center justify-center font-black text-lg ${pColor} flex-shrink-0">${student.points}</div>
-            </div>`);
+        const rc = i<3 && sortBy==='points' && student.points>0 ? RANK_CFG[i] : null;
+        const ms = getMilestone(student.points);
+        const st = computeStreaks(student.id,currentClassId);
+        const earned = getEarnedStreakBadges(st.maxDay,st.maxWeek);
+        const topBadge = earned.length ? earned[earned.length-1] : null;
+
+        // Rank cell
+        let rankCell;
+        if(rc) rankCell=`<div class="w-9 flex flex-col items-center gap-0.5 flex-shrink-0"><span class="text-2xl leading-none">${rc.icon}</span><span class="text-[9px] font-black" style="color:${rc.border}">${rc.label}</span></div>`;
+        else rankCell=`<div class="w-9 flex items-center justify-center flex-shrink-0"><span class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-[11px] font-black text-gray-500">${i+1}</span></div>`;
+
+        // Score cell
+        const pts = student.points;
+        let scoreBg,scoreText;
+        if(rc){ scoreBg=rc.scoreBg; scoreText='text-white'; }
+        else if(pts>0){ scoreBg='linear-gradient(135deg,#22c55e,#16a34a)'; scoreText='text-white'; }
+        else if(pts<0){ scoreBg='linear-gradient(135deg,#ef4444,#b91c1c)'; scoreText='text-white'; }
+        else { scoreBg='#f3f4f6'; scoreText='text-gray-500'; }
+
+        // Badges row
+        const msBadge = ms ? `<span class="text-base" title="${ms.label}">${ms.icon}</span>` : '';
+        const streakIcons = earned.map(b=>`<span class="text-sm" title="${b.name}: ${b.desc}">${b.icon}</span>`).join('');
+        const activeBadge = st.curDay>0
+            ? `<span class="text-[9px] font-black text-orange-500 bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded-full">🔥${st.curDay}ngày</span>`
+            : (st.curWeek>=2 ? `<span class="text-[9px] font-black text-blue-500 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded-full">📅${st.curWeek}tuần</span>` : '');
+        const badgesHtml = (msBadge||streakIcons||activeBadge)
+            ? `<div class="flex items-center gap-0.5 flex-wrap mt-0.5">${msBadge}${streakIcons}${activeBadge}</div>` : '';
+
+        // Row bg & border
+        const rowStyle = rc
+            ? `background:${rc.rowBg};border-left:4px solid ${rc.border}`
+            : topBadge
+                ? `background:#ffffff;border-left:4px solid ${topBadge.shadow.replace('0.5)','0.8)')}`
+                : `background:#ffffff;border-left:4px solid #e5e7eb`;
+
+        // Avatar ring
+        const avatarRing = rc ? `border-2` : `border`;
+        const avatarRingColor = rc ? `style="border-color:${rc.border}"` : ``;
+
+        // Podium glow
+        const glowEl = rc && i===0 ? `<div class="absolute inset-0 rounded-full opacity-20 animate-ping" style="background:${rc.border}"></div>` : '';
+
+        tableHtml += `
+        <div class="flex items-center gap-2.5 px-3 py-2.5 active:brightness-95 transition-all cursor-pointer" style="${rowStyle}" onclick="openStudentProfile('${student.id}')">
+          ${rankCell}
+          <div class="relative flex-shrink-0">
+            ${glowEl}
+            <div class="w-10 h-10 rounded-full bg-blue-50 overflow-hidden ${avatarRing} border-blue-100" ${avatarRingColor}>
+              <img src="${student.avatar}" class="w-full h-full object-contain">
+            </div>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="font-black text-gray-800 text-sm truncate leading-tight">${student.name}</div>
+            ${badgesHtml}
+            <div class="flex gap-1.5 mt-1 items-center">
+              <span class="inline-flex items-center gap-0.5 text-[10px] font-bold text-green-700 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded-full"><i class="fas fa-plus text-[8px]"></i>${student.positivePoints}</span>
+              <span class="inline-flex items-center gap-0.5 text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-full"><i class="fas fa-minus text-[8px]"></i>${student.negativePoints}</span>
+              <span class="text-[10px] text-gray-400 italic truncate">${generateComment(student).slice(0,40)}${generateComment(student).length>40?'…':''}</span>
+            </div>
+          </div>
+          <div class="flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center font-black text-base ${scoreText} shadow-md" style="background:${scoreBg}">
+            ${pts>0?'+':''}${pts}
+          </div>
+        </div>`;
     });
+
+    tableHtml += `</div></div>`;
+    list.innerHTML = tableHtml;
 }
 
 function renderPeriodTabs() {
