@@ -1590,6 +1590,9 @@
             <button onclick="_randomCall()" class="flex items-center gap-1.5 bg-pink-500 hover:bg-pink-400 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition active:scale-95 shadow">
                 <i class="fas fa-dice"></i> Gọi ngẫu nhiên
             </button>
+            <button onclick="openCompetition()" class="flex items-center gap-1.5 bg-orange-400 hover:bg-orange-300 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition active:scale-95 shadow">
+                <i class="fas fa-trophy"></i> Thi đấu
+            </button>
             <button id="btnAwardAllGroups" onclick="_awardAllGroups()" class="flex items-center gap-1.5 bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold px-3 py-1.5 rounded-xl text-xs transition active:scale-95">
                 <i class="fas fa-star"></i> Cả lớp
             </button>
@@ -1603,6 +1606,93 @@
     </div>
     <!-- Groups scroll area -->
     <div id="groupResultList" class="flex-1 overflow-y-auto p-4 no-scrollbar"></div>
+</div>
+
+<!-- ====== COMPETITION OVERLAY ====== -->
+<div id="competitionOverlay" class="fixed inset-0 z-[96] hidden flex flex-col" style="background:linear-gradient(155deg,#1e1b4b 0%,#1e3a8a 60%,#14532d 100%)">
+    <!-- Header -->
+    <div class="flex-shrink-0 flex items-center justify-between px-4 py-3" style="background:rgba(0,0,0,0.35)">
+        <button onclick="closeCompetition()" class="flex items-center gap-2 text-white text-opacity-70 hover:text-opacity-100 font-bold text-sm active:scale-95">
+            <i class="fas fa-arrow-left"></i><span class="hidden sm:inline">Thoát</span>
+        </button>
+        <div class="text-center">
+            <p id="compRoundLabel" class="text-white font-black text-base tracking-wide">Vòng 1</p>
+            <div id="compRoundDots" class="flex gap-1 justify-center mt-1"></div>
+        </div>
+        <button onclick="endCompetition()" class="flex items-center gap-1.5 bg-yellow-400 text-gray-900 font-black px-3 py-1.5 rounded-xl text-xs active:scale-95 transition shadow">
+            <i class="fas fa-flag-checkered"></i> Kết thúc
+        </button>
+    </div>
+
+    <!-- Score summary bar -->
+    <div class="flex-shrink-0 px-4 py-2.5 overflow-x-auto no-scrollbar" style="background:rgba(0,0,0,0.2)">
+        <div id="compScoreBar" class="flex gap-2 justify-center flex-wrap"></div>
+    </div>
+
+    <!-- Instruction -->
+    <p id="compInstruction" class="text-center text-white text-opacity-50 text-xs font-semibold py-1.5 px-4">
+        Chọn Đúng / Sai cho từng nhóm, sau đó nhấn Chốt
+    </p>
+
+    <!-- Group grid -->
+    <div id="compGroupGrid" class="flex-1 overflow-y-auto p-3 no-scrollbar grid gap-3"></div>
+
+    <!-- Finalize button -->
+    <div class="flex-shrink-0 p-4 pb-6">
+        <button id="btnCompFinalize" onclick="finalizeRound()"
+            class="w-full py-4 text-gray-900 font-black text-lg rounded-2xl shadow-2xl active:scale-95 transition-transform flex items-center justify-center gap-2"
+            style="background:linear-gradient(135deg,#fbbf24,#f59e0b)">
+            <i class="fas fa-gavel"></i> Chốt kết quả vòng <span id="btnFinalizeRound">1</span>
+        </button>
+    </div>
+
+    <!-- Round result panel (slides up from bottom) -->
+    <div id="compResultPanel" class="hidden absolute inset-0 flex flex-col" style="background:rgba(10,5,40,0.96)">
+        <div class="flex-1 flex flex-col items-center justify-center gap-4 p-5 overflow-y-auto">
+            <div class="text-center">
+                <p class="text-yellow-300 text-xs font-black uppercase tracking-widest">🏁 Kết quả</p>
+                <p class="text-white font-black text-xl mt-0.5">Vòng <span id="compResultRoundNum">1</span></p>
+            </div>
+            <div id="compResultList" class="w-full max-w-sm space-y-2.5"></div>
+        </div>
+        <div class="flex-shrink-0 p-4 pb-6 flex gap-3">
+            <button onclick="nextRound()" class="flex-1 py-3.5 bg-white text-gray-900 font-black text-base rounded-2xl shadow-lg active:scale-95 transition flex items-center justify-center gap-2">
+                <i class="fas fa-forward"></i> Vòng tiếp
+            </button>
+            <button onclick="endCompetition()" class="flex-1 py-3.5 text-gray-900 font-black text-base rounded-2xl shadow-lg active:scale-95 transition flex items-center justify-center gap-2"
+                style="background:linear-gradient(135deg,#fbbf24,#f59e0b)">
+                <i class="fas fa-flag-checkered"></i> Kết thúc
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ====== COMPETITION RANKING OVERLAY ====== -->
+<div id="compRankingOverlay" class="fixed inset-0 z-[97] hidden flex flex-col" style="background:linear-gradient(155deg,#0f172a 0%,#1e1b4b 50%,#0c1a0c 100%)">
+    <!-- Header -->
+    <div class="flex-shrink-0 flex items-center justify-between px-4 py-4" style="background:rgba(0,0,0,0.4)">
+        <button onclick="closeCompRanking()" class="text-white text-opacity-70 hover:text-opacity-100 font-bold text-sm flex items-center gap-2">
+            <i class="fas fa-times"></i>
+        </button>
+        <h2 class="text-white font-black text-base flex items-center gap-2">
+            <i class="fas fa-trophy text-yellow-400"></i> Bảng xếp hạng thi đấu
+        </h2>
+        <div class="w-8"></div>
+    </div>
+    <!-- Stats summary -->
+    <div id="compStatsSummary" class="flex-shrink-0 px-4 py-2 text-center">
+        <p id="compStatsText" class="text-white text-opacity-50 text-xs font-semibold"></p>
+    </div>
+    <!-- Leaderboard -->
+    <div id="compRankingList" class="flex-1 overflow-y-auto px-4 pb-2 space-y-3 no-scrollbar"></div>
+    <!-- Award buttons -->
+    <div class="flex-shrink-0 px-4 pb-6 pt-2 space-y-2.5 border-t" style="border-color:rgba(255,255,255,0.1)">
+        <p class="text-white text-opacity-50 text-xs text-center font-semibold">Cho điểm kỹ năng theo thứ hạng:</p>
+        <div id="compAwardButtons" class="flex gap-2 flex-wrap"></div>
+        <button onclick="_awardAllCompGroups()" class="w-full py-3 bg-dojo-blue text-white font-black rounded-2xl active:scale-95 transition text-sm shadow-lg">
+            <i class="fas fa-users mr-1.5"></i> Cho điểm tất cả các nhóm
+        </button>
+    </div>
 </div>
 
 <!-- RANDOM CALL MODAL -->
@@ -9814,6 +9904,245 @@ function _awardAllGroups() {
     if (!all.length) return;
     const ids = all.map(s => s.id);
     openGroupModal(ids, `Tất cả ${_groupResult.length} nhóm · ${ids.length} học sinh`);
+}
+
+// ============================================================
+// CHẾ ĐỘ THI ĐẤU (COMPETITION MODE)
+// ============================================================
+let _compState = null; // { round, groupScores, roundAnswers, roundFinalized, history[] }
+
+function openCompetition() {
+    if (!_groupResult || !_groupResult.length) {
+        showToast('Chia nhóm trước rồi hãy thi đấu!', false); return;
+    }
+    _compState = {
+        round:           1,
+        groupScores:     _groupResult.map(() => 0),
+        roundAnswers:    _groupResult.map(() => null), // null|true|false
+        roundFinalized:  false,
+        history:         [],         // [{ round, answers:[...], scores_after:[...] }]
+    };
+    document.getElementById('compResultPanel').classList.add('hidden');
+    document.getElementById('competitionOverlay').classList.remove('hidden');
+    _renderComp();
+}
+
+function closeCompetition() {
+    document.getElementById('competitionOverlay').classList.add('hidden');
+}
+
+function _renderComp() {
+    const { round, groupScores, roundAnswers, roundFinalized } = _compState;
+    const ng = _groupResult.length;
+
+    // Round label + dots
+    document.getElementById('compRoundLabel').textContent = `Vòng ${round}`;
+    document.getElementById('btnFinalizeRound').textContent = round;
+    const dotsEl = document.getElementById('compRoundDots');
+    // show last 10 rounds as dots
+    const start = Math.max(1, round - 9);
+    dotsEl.innerHTML = Array.from({length: round - start + 1}, (_, i) => {
+        const r = start + i;
+        const done = r < round;
+        return `<span class="inline-block w-2 h-2 rounded-full transition-all" style="background:${done ? '#86efac' : r === round ? '#fbbf24' : 'rgba(255,255,255,0.2)'}"></span>`;
+    }).join('');
+
+    // Score bar
+    document.getElementById('compScoreBar').innerHTML = _groupResult.map((_, gi) => {
+        const col = GROUP_COLORS[gi % GROUP_COLORS.length];
+        const score = groupScores[gi];
+        return `<div class="flex flex-col items-center gap-0.5 min-w-[52px]">
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center font-black text-white text-base shadow"
+                style="background:${col.bg}">N${gi+1}</div>
+            <span class="text-white font-black text-sm">${score}</span>
+            <span class="text-white text-opacity-40 text-[9px] font-semibold leading-none">điểm</span>
+        </div>`;
+    }).join('');
+
+    // Group grid
+    const grid = document.getElementById('compGroupGrid');
+    grid.style.gridTemplateColumns =
+        ng <= 2 ? 'repeat(2,1fr)' :
+        ng <= 4 ? 'repeat(2,1fr)' :
+        ng <= 6 ? 'repeat(3,1fr)' : 'repeat(auto-fit,minmax(140px,1fr))';
+
+    grid.innerHTML = _groupResult.map((members, gi) => {
+        const col = GROUP_COLORS[gi % GROUP_COLORS.length];
+        const ans = roundAnswers[gi];
+        const borderStyle = ans === true  ? 'border:3px solid #4ade80'
+                          : ans === false ? 'border:3px solid #f87171'
+                          : 'border:3px solid transparent';
+        const overlayColor = ans === true  ? 'rgba(74,222,128,0.15)'
+                           : ans === false ? 'rgba(248,113,113,0.15)' : '';
+        const badge = ans === true ? '✅' : ans === false ? '❌' : '';
+
+        return `<div class="rounded-2xl overflow-hidden transition-all duration-200 select-none"
+            style="background:${col.bg};${borderStyle};${overlayColor ? `box-shadow:inset 0 0 0 999px ${overlayColor}` : ''}">
+            <div class="flex items-center justify-between px-3 pt-2.5 pb-1" style="background:rgba(0,0,0,0.2)">
+                <span class="text-white font-black text-base">Nhóm ${gi+1}</span>
+                <span class="text-white text-opacity-60 text-xs font-bold">${members.length} HS</span>
+            </div>
+            <div class="flex flex-col items-center py-3 gap-1">
+                <span class="text-4xl min-h-[2.5rem] leading-none">${badge}</span>
+                <span class="text-white font-black text-2xl">${groupScores[gi]}</span>
+                <span class="text-white text-opacity-50 text-[10px] font-semibold">điểm</span>
+            </div>
+            ${!roundFinalized ? `
+            <div class="flex gap-2 px-2 pb-3">
+                <button onclick="setGroupAnswer(${gi},true)"
+                    class="flex-1 py-2.5 rounded-xl font-black text-sm transition active:scale-90
+                    ${ans===true ? 'bg-green-400 text-white shadow-lg' : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30'}">
+                    ✓ Đúng
+                </button>
+                <button onclick="setGroupAnswer(${gi},false)"
+                    class="flex-1 py-2.5 rounded-xl font-black text-sm transition active:scale-90
+                    ${ans===false ? 'bg-red-400 text-white shadow-lg' : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30'}">
+                    ✗ Sai
+                </button>
+            </div>` : `<div class="h-2"></div>`}
+        </div>`;
+    }).join('');
+
+    // Finalize button state
+    const canFinalize = roundAnswers.some(a => a !== null) && !roundFinalized;
+    const btnF = document.getElementById('btnCompFinalize');
+    btnF.disabled = !canFinalize;
+    btnF.style.opacity = canFinalize ? '1' : '0.35';
+}
+
+function setGroupAnswer(gi, correct) {
+    if (_compState.roundFinalized) return;
+    // Toggle: click same answer again → clear
+    _compState.roundAnswers[gi] = _compState.roundAnswers[gi] === correct ? null : correct;
+    _renderComp();
+}
+
+function finalizeRound() {
+    if (_compState.roundFinalized) return;
+    const { round, groupScores, roundAnswers } = _compState;
+    _compState.roundFinalized = true;
+
+    // Award +1 per correct answer
+    roundAnswers.forEach((ans, gi) => { if (ans === true) groupScores[gi]++; });
+    _compState.history.push({ round, answers: [...roundAnswers], scores_after: [...groupScores] });
+
+    // Build result panel
+    document.getElementById('compResultRoundNum').textContent = round;
+    const ranked = _groupResult.map((m, gi) => ({gi, members:m, ans:roundAnswers[gi], score:groupScores[gi]}))
+        .sort((a,b) => b.score - a.score || a.gi - b.gi);
+
+    const MEDALS = ['🥇','🥈','🥉'];
+    let lastScore = null, rankDisplay = 0;
+    document.getElementById('compResultList').innerHTML = ranked.map((r, i) => {
+        if (r.score !== lastScore) { rankDisplay = i + 1; lastScore = r.score; }
+        const col = GROUP_COLORS[r.gi % GROUP_COLORS.length];
+        const medal = MEDALS[rankDisplay-1] || `#${rankDisplay}`;
+        const ansIcon = r.ans === true ? '✅ Đúng' : r.ans === false ? '❌ Sai' : '— Chưa chọn';
+        const ansColor = r.ans === true ? '#4ade80' : r.ans === false ? '#f87171' : '#9ca3af';
+        return `<div class="flex items-center gap-3 p-3 rounded-2xl" style="background:rgba(255,255,255,0.07)">
+            <span class="text-2xl w-9 text-center shrink-0">${medal}</span>
+            <div class="flex-1 overflow-hidden">
+                <p class="text-white font-black truncate">Nhóm ${r.gi+1}</p>
+                <p class="text-xs font-bold" style="color:${ansColor}">${ansIcon}</p>
+            </div>
+            <div class="text-right shrink-0">
+                <p class="text-white font-black text-xl">${r.score}</p>
+                <p class="text-white text-opacity-40 text-[10px]">điểm</p>
+            </div>
+        </div>`;
+    }).join('');
+
+    document.getElementById('compResultPanel').classList.remove('hidden');
+}
+
+function nextRound() {
+    _compState.round++;
+    _compState.roundAnswers = _groupResult.map(() => null);
+    _compState.roundFinalized = false;
+    document.getElementById('compResultPanel').classList.add('hidden');
+    _renderComp();
+}
+
+function endCompetition() {
+    document.getElementById('competitionOverlay').classList.add('hidden');
+    _showCompRanking();
+}
+
+function _showCompRanking() {
+    const { groupScores, history } = _compState;
+    const totalRounds = history.length;
+
+    // Stats summary
+    document.getElementById('compStatsText').textContent =
+        `${totalRounds} vòng đấu · ${_groupResult.length} nhóm`;
+
+    // Build ranked list
+    const ranked = _groupResult.map((members, gi) => ({gi, members, score:groupScores[gi]}))
+        .sort((a,b) => b.score - a.score || a.gi - b.gi);
+
+    const MEDALS = ['🥇','🥈','🥉'];
+    const RANK_BGSCORE = ['#fbbf24','#9ca3af','#d97706'];
+    let lastScore = null, rankDisplay = 0;
+
+    document.getElementById('compRankingList').innerHTML = ranked.map((r, i) => {
+        if (r.score !== lastScore) { rankDisplay = i + 1; lastScore = r.score; }
+        const col = GROUP_COLORS[r.gi % GROUP_COLORS.length];
+        const medal = MEDALS[rankDisplay-1] || `<span class="text-white text-opacity-60 font-black text-xl">#${rankDisplay}</span>`;
+        const memberSnippet = r.members.slice(0,4).map(s=>s.name).join(', ') + (r.members.length>4?'...':'');
+        // Per-round stats for this group
+        const correctCount = history.filter(h => h.answers[r.gi] === true).length;
+        const wrongCount   = history.filter(h => h.answers[r.gi] === false).length;
+        return `<div class="flex items-center gap-3 p-3.5 rounded-2xl" style="background:rgba(255,255,255,0.07);${rankDisplay<=3?`border:1px solid ${RANK_BGSCORE[rankDisplay-1]}40`:``}">
+            <span class="text-3xl w-10 text-center shrink-0">${medal}</span>
+            <div class="flex-1 overflow-hidden">
+                <p class="text-white font-black">Nhóm ${r.gi+1}</p>
+                <p class="text-white text-opacity-40 text-xs truncate">${memberSnippet}</p>
+                <div class="flex gap-2 mt-1">
+                    <span class="text-green-400 text-[10px] font-bold">✓ ${correctCount}</span>
+                    <span class="text-red-400 text-[10px] font-bold">✗ ${wrongCount}</span>
+                </div>
+            </div>
+            <div class="text-right shrink-0">
+                <p class="text-white font-black text-2xl">${r.score}</p>
+                <p class="text-white text-opacity-40 text-[10px]">điểm</p>
+            </div>
+        </div>`;
+    }).join('');
+
+    // Award buttons per group
+    document.getElementById('compAwardButtons').innerHTML = ranked.map((r, i) => {
+        if (r.score !== ranked[i>0?i-1:0].score && i>0) rankDisplay = i + 1;
+        const medal = MEDALS[i] || '';
+        const rankColors = [
+            'background:#fbbf24;color:#1f2937',
+            'background:#9ca3af;color:#111',
+            'background:#d97706;color:#fff',
+            'background:rgba(255,255,255,0.15);color:#fff',
+        ];
+        return `<button onclick="_awardCompGroup(${r.gi})"
+            class="flex-1 py-2.5 rounded-xl font-black text-sm active:scale-95 transition shadow"
+            style="min-width:70px;${rankColors[i]||rankColors[3]}">
+            ${medal} N${r.gi+1}
+        </button>`;
+    }).join('');
+
+    document.getElementById('compRankingOverlay').classList.remove('hidden');
+}
+
+function closeCompRanking() {
+    document.getElementById('compRankingOverlay').classList.add('hidden');
+    document.getElementById('competitionOverlay').classList.add('hidden');
+}
+
+function _awardCompGroup(gi) {
+    const members = _groupResult[gi];
+    if (!members || !members.length) return;
+    openGroupModal(members.map(s=>s.id), `Nhóm ${gi+1} · ${members.length} học sinh`);
+}
+
+function _awardAllCompGroups() {
+    const all = _groupResult.flat();
+    openGroupModal(all.map(s=>s.id), `Tất cả ${_groupResult.length} nhóm · ${all.length} học sinh`);
 }
 
 function toggleGroupProjector() {
