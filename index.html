@@ -1597,6 +1597,9 @@
             <button onclick="openTreasureSetup()" class="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition active:scale-95 shadow">
                 🗺️ Kho Báu
             </button>
+            <button onclick="openKbSetup()" class="flex items-center gap-1.5 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition active:scale-95 shadow" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">
+                🏦 Ngân hàng
+            </button>
             <button id="btnAwardAllGroups" onclick="_awardAllGroups()" class="flex items-center gap-1.5 bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold px-3 py-1.5 rounded-xl text-xs transition active:scale-95">
                 <i class="fas fa-star"></i> Cả lớp
             </button>
@@ -1742,6 +1745,32 @@
     </div>
 </div>
 
+<!-- ====== TREASURE HUNT SCENARIO DETAIL ====== -->
+<div id="thScenDetail" class="fixed inset-0 z-[103] hidden flex flex-col" style="background:#0f172a;overflow:hidden">
+    <!-- Header -->
+    <div id="thScenDetailHeader" class="shrink-0 px-5 pt-8 pb-5 flex items-center gap-4">
+        <span id="thScenDetailEmoji" style="font-size:3.2rem;line-height:1;filter:drop-shadow(0 0 16px rgba(255,255,255,0.3))"></span>
+        <div class="flex-1 min-w-0">
+            <p id="thScenDetailName" class="text-white font-black leading-tight" style="font-size:1.7rem"></p>
+            <p id="thScenDetailDesc" class="text-white/60 text-sm mt-1 leading-snug"></p>
+        </div>
+        <button onclick="_thScenDetailClose()" class="shrink-0 w-10 h-10 rounded-full text-white/70 font-bold text-lg flex items-center justify-center" style="background:rgba(255,255,255,0.1)">✕</button>
+    </div>
+    <!-- Tabs -->
+    <div class="shrink-0 flex gap-2 px-5 pb-4">
+        <button id="thScenTabGuide" onclick="_thScenDetailTab('guide')" class="flex-1 py-2.5 rounded-xl font-black text-sm transition active:scale-95">📋 Chỉ dẫn</button>
+        <button id="thScenTabMap"   onclick="_thScenDetailTab('map')"   class="flex-1 py-2.5 rounded-xl font-black text-sm transition active:scale-95">🗺️ Hành trình</button>
+    </div>
+    <!-- Content -->
+    <div id="thScenDetailContent" class="flex-1 min-h-0 overflow-y-auto px-5 pb-4 no-scrollbar"></div>
+    <!-- Footer -->
+    <div class="shrink-0 px-5 pt-3 pb-7">
+        <button onclick="_thSelectScen()" class="w-full py-4 rounded-2xl font-black text-base active:scale-95 transition shadow-xl flex items-center justify-center gap-2" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#1f2937">
+            <i class="fas fa-check-circle"></i> Chọn kịch bản này
+        </button>
+    </div>
+</div>
+
 <!-- ====== TREASURE HUNT GAME OVERLAY ====== -->
 <div id="thOverlay" class="fixed inset-0 z-[96] hidden flex flex-col overflow-hidden">
     <!-- Top bar -->
@@ -1801,12 +1830,12 @@
         </div>
     </div>
     <!-- Special square popup -->
-    <div id="thSpecialPopup" class="hidden absolute inset-0 flex items-center justify-center" style="background:rgba(0,0,0,0.8);z-index:10">
-        <div class="bg-gray-900 rounded-3xl p-7 mx-5 text-center max-w-xs shadow-2xl" style="border:1.5px solid rgba(255,255,255,0.12)">
-            <p id="thPopupIcon" class="text-6xl mb-3 leading-none"></p>
-            <p id="thPopupGroup" class="text-white/50 text-sm font-bold mb-1"></p>
-            <p id="thPopupLabel" class="text-white font-black text-lg leading-snug mb-5"></p>
-            <button onclick="thClosePopup()" class="px-10 py-3 rounded-2xl font-black text-base active:scale-95 transition shadow-lg" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#1f2937">OK!</button>
+    <div id="thSpecialPopup" class="hidden absolute inset-0 flex items-center justify-center" style="background:rgba(0,0,0,0.88);z-index:10">
+        <div class="text-center px-8 w-full" style="max-width:860px">
+            <p id="thPopupIcon" style="font-size:clamp(5rem,15vw,9rem);line-height:1;margin-bottom:20px;filter:drop-shadow(0 0 24px rgba(255,255,255,0.25))"></p>
+            <p id="thPopupGroup" style="font-size:clamp(2rem,5vw,3.2rem);font-weight:900;color:white;margin-bottom:10px;text-shadow:0 2px 12px rgba(0,0,0,0.6)"></p>
+            <p id="thPopupLabel" style="font-size:clamp(2.2rem,6vw,4.5rem);font-weight:900;color:white;line-height:1.2;margin-bottom:40px;text-shadow:0 4px 24px rgba(0,0,0,0.6)"></p>
+            <button onclick="thClosePopup()" style="padding:18px 64px;border-radius:20px;font-size:clamp(1.1rem,2.5vw,1.6rem);font-weight:900;background:linear-gradient(135deg,#f59e0b,#d97706);color:#1f2937;border:none;cursor:pointer;box-shadow:0 0 24px rgba(245,158,11,0.5);transition:transform .15s" onmousedown="this.style.transform='scale(.95)'" onmouseup="this.style.transform=''">OK!</button>
         </div>
     </div>
     <!-- Winner screen -->
@@ -1844,6 +1873,110 @@
             </a>
         </div>
     </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- KNOWLEDGE BANK – SETUP MODAL                               -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="kbSetupBg" class="fixed inset-0 bg-black/70 z-[100] hidden" onclick="closeKbSetup()"></div>
+<div id="kbSetupModal" class="fixed inset-0 z-[101] hidden flex items-center justify-center p-4">
+    <div class="relative rounded-3xl p-6 max-w-md w-full max-h-[92vh] overflow-y-auto no-scrollbar" style="background:linear-gradient(150deg,#1e1b4b 0%,#0f172a 100%);border:1.5px solid rgba(129,140,248,0.35);box-shadow:0 0 60px rgba(99,102,241,0.3)">
+        <button onclick="closeKbSetup()" class="absolute top-4 right-4 text-white/40 hover:text-white font-black text-xl leading-none">✕</button>
+        <h2 class="text-white font-black text-xl mb-1">🏦 Ngân hàng Tri Thức</h2>
+        <p class="text-indigo-300 text-xs mb-5">Mỗi nhóm bắt đầu với <strong class="text-white">1 000</strong> đơn vị vốn · Nhiều nhất = thắng</p>
+        <!-- 4 bet level cards -->
+        <div class="grid grid-cols-2 gap-3 mb-5">
+            <div class="rounded-2xl p-4 text-center" style="background:#15803d"><div class="text-white font-black text-3xl">10%</div><div class="text-white font-black">An toàn</div><div class="text-white/70 text-xs">10% vốn</div></div>
+            <div class="rounded-2xl p-4 text-center" style="background:#0284c7"><div class="text-white font-black text-3xl">25%</div><div class="text-white font-black">Tự tin</div><div class="text-white/70 text-xs">25% vốn</div></div>
+            <div class="rounded-2xl p-4 text-center" style="background:#ea580c"><div class="text-white font-black text-3xl">50%</div><div class="text-white font-black">Chắc chắn</div><div class="text-white/70 text-xs">50% vốn</div></div>
+            <div class="rounded-2xl p-4 text-center" style="background:#dc2626"><div class="text-white font-black text-3xl">100%</div><div class="text-white font-black">TẤT TAY</div><div class="text-white/70 text-xs">Toàn bộ vốn</div></div>
+        </div>
+        <!-- Rules -->
+        <div class="space-y-2 text-sm text-white/80 mb-6 bg-white/5 rounded-2xl p-4">
+            <p>• Mỗi nhóm cược <strong>trước khi nhìn thấy câu hỏi</strong> — phải tự lượng sức.</p>
+            <p>• Đúng: <span class="text-green-400 font-bold">+đúng số đã cược</span>. Sai: <span class="text-red-400 font-bold">−đúng số đó</span>.</p>
+            <p>• Không kịp chọn → hệ thống tự đặt <strong>10%</strong> (an toàn).</p>
+            <p>• Vốn tụt dưới 100 → được cấp lại 100. <strong>Không ai bị loại.</strong></p>
+            <p>• Cuối buổi: bảng xếp hạng + phân tích chủ đề tự tin / mơ hồ.</p>
+        </div>
+        <button onclick="startKnowledgeBank()" class="w-full py-3 rounded-2xl font-black text-base text-white active:scale-95 transition" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);box-shadow:0 0 20px rgba(99,102,241,0.5)">
+            🚀 Bắt đầu
+        </button>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- KNOWLEDGE BANK – GAME OVERLAY                              -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="kbOverlay" class="fixed inset-0 z-[96] hidden flex flex-col overflow-hidden" style="background:#080808">
+
+    <!-- Top bar -->
+    <div class="shrink-0 flex items-center justify-between px-4 py-3 border-b border-white/10">
+        <div class="flex items-center gap-3">
+            <button onclick="kbClose()" class="text-white/40 hover:text-white font-black text-xl w-8 h-8 flex items-center justify-center rounded-xl hover:bg-white/10 transition">✕</button>
+            <span class="text-white font-black text-lg">🏦 Ngân hàng Tri Thức</span>
+        </div>
+        <div id="kbRoundBadge" class="px-4 py-1 rounded-full font-black text-sm text-white" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">Vòng 1</div>
+        <button onclick="kbEnd()" class="px-4 py-2 rounded-xl font-black text-xs text-white bg-white/10 hover:bg-white/20 transition active:scale-95">🏆 Kết thúc</button>
+    </div>
+
+    <!-- Body: 3 columns -->
+    <div class="flex-1 min-h-0 flex flex-row overflow-hidden">
+
+        <!-- LEFT: topic input + bet legend -->
+        <div class="shrink-0 overflow-y-auto no-scrollbar p-3 flex flex-col gap-3" style="width:175px;border-right:1px solid rgba(255,255,255,0.08)">
+            <div>
+                <p class="text-white/40 text-xs font-bold uppercase mb-1.5">📚 Chủ đề</p>
+                <input id="kbTopicInput" type="text" placeholder="VD: Toán chương 3…" maxlength="40"
+                    class="w-full rounded-xl px-3 py-2 text-sm font-bold text-white placeholder-white/20 outline-none"
+                    style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15)">
+            </div>
+            <div class="space-y-1.5">
+                <p class="text-white/40 text-xs font-bold uppercase">Mức cược</p>
+                <div class="rounded-xl p-2.5 text-center" style="background:#15803d99;border:1px solid #4ade8066">
+                    <div class="text-white font-black text-2xl leading-none">10%</div>
+                    <div class="text-green-300 text-xs font-bold mt-0.5">An toàn</div>
+                </div>
+                <div class="rounded-xl p-2.5 text-center" style="background:#0284c799;border:1px solid #38bdf866">
+                    <div class="text-white font-black text-2xl leading-none">25%</div>
+                    <div class="text-blue-300 text-xs font-bold mt-0.5">Tự tin</div>
+                </div>
+                <div class="rounded-xl p-2.5 text-center" style="background:#ea580c99;border:1px solid #fb923c66">
+                    <div class="text-white font-black text-2xl leading-none">50%</div>
+                    <div class="text-orange-300 text-xs font-bold mt-0.5">Chắc chắn</div>
+                </div>
+                <div class="rounded-xl p-2.5 text-center" style="background:#dc262699;border:1px solid #f8717166">
+                    <div class="text-white font-black text-2xl leading-none">100%</div>
+                    <div class="text-red-300 text-xs font-bold mt-0.5">TẤT TAY</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER: dynamic per phase -->
+        <div id="kbCenter" class="flex-1 min-w-0 overflow-y-auto no-scrollbar p-4"></div>
+
+        <!-- RIGHT: group standings -->
+        <div id="kbStandings" class="shrink-0 overflow-y-auto no-scrollbar p-3 flex flex-col gap-2" style="width:150px;border-left:1px solid rgba(255,255,255,0.08)"></div>
+
+    </div>
+
+    <!-- Action panel -->
+    <div id="kbActionPanel" class="shrink-0 px-4 py-3 border-t border-white/10"></div>
+
+    <!-- Final ranking screen -->
+    <div id="kbFinalRanking" class="hidden absolute inset-0 flex flex-col" style="background:rgba(8,8,8,0.97);z-index:10">
+        <div class="shrink-0 flex items-center justify-between px-4 py-4 border-b border-white/10">
+            <h3 class="text-white font-black text-base">🏆 Kết quả Ngân hàng Tri Thức</h3>
+            <button onclick="document.getElementById('kbFinalRanking').classList.add('hidden')" class="text-white/50 font-bold text-xl">✕</button>
+        </div>
+        <div id="kbFinalList" class="flex-1 overflow-y-auto p-4 no-scrollbar"></div>
+        <div class="shrink-0 p-4 pb-6">
+            <button onclick="kbClose()" class="w-full py-3 rounded-2xl font-black text-sm text-white active:scale-95" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">
+                <i class="fas fa-check mr-1"></i> Xong
+            </button>
+        </div>
+    </div>
+
 </div>
 
 <!-- RANDOM CALL MODAL -->
@@ -10399,7 +10532,8 @@ const TREASURE_SCENARIOS = [
             { frac: 0.50, type: 'forward', step: 4, icon: '🌺', label: 'Hoa chỉ lối! Tiến 4 ô' },
             { frac: 0.63, type: 'back',    step: 3, icon: '🪲', label: 'Bọ tấn công! Lùi 3 ô' },
             { frac: 0.78, type: 'bonus',   pts:  3, icon: '🏺', label: 'Bình cổ! +3 điểm' },
-            { frac: 0.88, type: 'goto',    sq:   1, icon: '🌀', label: 'Xoáy nước! Về ô 1' },
+            { frac: 0.88, type: 'goto',    target: 1, icon: '🌀', label: 'Xoáy nước! Về ô 1' },
+            { frac: 0.94, type: 'back',    step: 7, icon: '🌪️', label: 'CUỒNG PHONG TÀN PHÁ! Lùi 7 ô!', dramatic: true },
         ]
     },
     {
@@ -10413,7 +10547,8 @@ const TREASURE_SCENARIOS = [
             { frac: 0.55, type: 'forward', step: 3, icon: '🌌', label: 'Lỗ đen dương! Tiến 3 ô' },
             { frac: 0.65, type: 'back',    step: 4, icon: '🌑', label: 'Hố đen! Lùi 4 ô' },
             { frac: 0.80, type: 'bonus',   pts:  3, icon: '👾', label: 'Alien thân thiện! +3 điểm' },
-            { frac: 0.90, type: 'goto',    sq:   1, icon: '🌀', label: 'Cổng dịch chuyển! Về ô 1' },
+            { frac: 0.90, type: 'goto',    target: 1, icon: '🌀', label: 'Cổng dịch chuyển! Về ô 1' },
+            { frac: 0.94, type: 'back',    step: 8, icon: '💥', label: 'SIÊU TÂN TINH NỔ TUNG! Lùi 8 ô!', dramatic: true },
         ]
     },
     {
@@ -10427,6 +10562,7 @@ const TREASURE_SCENARIOS = [
             { frac: 0.55, type: 'forward', step: 5, icon: '🪄', label: 'Đũa thần! Tiến 5 ô' },
             { frac: 0.68, type: 'back',    step: 2, icon: '🐉', label: 'Rồng lửa! Lùi 2 ô' },
             { frac: 0.82, type: 'bonus',   pts:  4, icon: '👑', label: 'Vương miện! +4 điểm' },
+            { frac: 0.93, type: 'back',    step: 6, icon: '⚡', label: 'LỜI NGUYỀN SẤM SÉT! Lùi 6 ô!', dramatic: true },
         ]
     },
     {
@@ -10440,7 +10576,8 @@ const TREASURE_SCENARIOS = [
             { frac: 0.53, type: 'forward', step: 4, icon: '🐙', label: 'Bạch tuộc ném! Tiến 4 ô' },
             { frac: 0.67, type: 'back',    step: 3, icon: '🌊', label: 'Sóng lớn! Lùi 3 ô' },
             { frac: 0.80, type: 'bonus',   pts:  3, icon: '🐚', label: 'Ốc thần! +3 điểm' },
-            { frac: 0.91, type: 'goto',    sq:   1, icon: '🌀', label: 'Xoáy hải lưu! Về ô 1' },
+            { frac: 0.91, type: 'goto',    target: 1, icon: '🌀', label: 'Xoáy hải lưu! Về ô 1' },
+            { frac: 0.95, type: 'back',    step: 7, icon: '🌊', label: 'SÓNG THẦN KHỔNG LỒ! Lùi 7 ô!', dramatic: true },
         ]
     },
     {
@@ -10454,6 +10591,7 @@ const TREASURE_SCENARIOS = [
             { frac: 0.58, type: 'forward', step: 3, icon: '🏔️', label: 'Con đường tắt! Tiến 3 ô' },
             { frac: 0.72, type: 'back',    step: 2, icon: '🧊', label: 'Trượt băng! Lùi 2 ô' },
             { frac: 0.86, type: 'bonus',   pts:  3, icon: '🌟', label: 'Sao băng! +3 điểm' },
+            { frac: 0.94, type: 'back',    step: 6, icon: '🏔️', label: 'TUYẾT LỞ THẢM KHỐC! Lùi 6 ô!', dramatic: true },
         ]
     },
     {
@@ -10467,7 +10605,8 @@ const TREASURE_SCENARIOS = [
             { frac: 0.52, type: 'forward', step: 4, icon: '🦁', label: 'Sư tử trợ giúp! Tiến 4 ô' },
             { frac: 0.66, type: 'back',    step: 3, icon: '💀', label: 'Bẫy hầm mộ! Lùi 3 ô' },
             { frac: 0.79, type: 'bonus',   pts:  4, icon: '🔮', label: 'Bình tiên! +4 điểm' },
-            { frac: 0.90, type: 'goto',    sq:   1, icon: '🌀', label: 'Bẫy dịch chuyển! Về ô 1' },
+            { frac: 0.90, type: 'goto',    target: 1, icon: '🌀', label: 'Bẫy dịch chuyển! Về ô 1' },
+            { frac: 0.95, type: 'back',    step: 8, icon: '☠️', label: 'LỬA ĐỊA NGỤC THIÊU ĐỐT! Lùi 8 ô!', dramatic: true },
         ]
     }
 ];
@@ -10518,8 +10657,167 @@ function _thPickGrid(n) {
 }
 
 function _thPickScen(idx) {
-    _thPickedScen = idx;
+    _thShowScenDetail(idx);
+}
+
+// ── Scenario detail overlay ────────────────────────────────────────────────
+let _thDetailIdx = 0;
+
+function _thShowScenDetail(idx) {
+    _thDetailIdx = idx;
+    const s = TREASURE_SCENARIOS[idx];
+    document.getElementById('thScenDetailEmoji').textContent = s.emoji;
+    document.getElementById('thScenDetailName').textContent  = s.name;
+    document.getElementById('thScenDetailDesc').textContent  = s.desc;
+    document.getElementById('thScenDetailHeader').style.background =
+        `linear-gradient(160deg, ${s.color}ee 0%, ${s.color}44 60%, #0f172a 100%)`;
+    document.getElementById('thScenDetail').classList.remove('hidden');
+    _thScenDetailTab('guide');
+}
+
+function _thScenDetailClose() {
+    document.getElementById('thScenDetail').classList.add('hidden');
+}
+
+function _thSelectScen() {
+    _thPickedScen = _thDetailIdx;
+    _thScenDetailClose();
     _thRenderSetup();
+}
+
+function _thScenDetailTab(tab) {
+    const s    = TREASURE_SCENARIOS[_thDetailIdx];
+    const grid = _thPickedGrid;
+    const total = grid * grid;
+    const specials = _thBuildSpecials(s, total);
+
+    // Tab button styles
+    const activeStyle = `background:${s.color};color:white;box-shadow:0 0 16px ${s.color}99`;
+    const inactiveStyle = 'background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.55)';
+    document.getElementById('thScenTabGuide').style.cssText = tab === 'guide' ? activeStyle : inactiveStyle;
+    document.getElementById('thScenTabMap').style.cssText   = tab === 'map'   ? activeStyle : inactiveStyle;
+
+    const content = document.getElementById('thScenDetailContent');
+    content.innerHTML = tab === 'guide'
+        ? _thRenderScenGuide(s, specials, total)
+        : _thRenderScenMiniBoard(s, grid, specials, total);
+}
+
+function _thRenderScenGuide(s, specials, total) {
+    const endThreshold = Math.floor(total * 0.80);
+    const normalSp = specials.filter(sp => sp.sq <= endThreshold);
+    const endSp    = specials.filter(sp => sp.sq >  endThreshold);
+
+    const typeInfo = {
+        forward: { label: 'Tiến',       bg: '#15803d', border: '#4ade80', color: '#86efac' },
+        back:    { label: 'Lùi',        bg: '#991b1b', border: '#f87171', color: '#fca5a5' },
+        bonus:   { label: 'Điểm thưởng',bg: '#854d0e', border: '#fbbf24', color: '#fde68a' },
+        goto:    { label: 'Về đầu',     bg: '#312e81', border: '#a78bfa', color: '#c4b5fd' },
+    };
+
+    const card = (sp) => {
+        const t = typeInfo[sp.type];
+        const isDramatic = sp.dramatic;
+        return `<div class="flex items-center gap-3 p-3 rounded-2xl mb-2"
+            style="background:${t.bg}33;border:1.5px solid ${t.border}${isDramatic ? ';box-shadow:0 0 18px '+t.border+'66' : ''}">
+            <span style="font-size:${isDramatic ? '2.2' : '1.8'}rem;line-height:1;${isDramatic ? 'filter:drop-shadow(0 0 8px '+t.border+')' : ''}">${sp.icon}</span>
+            <div class="flex-1 min-w-0">
+                <p class="font-black leading-snug ${isDramatic ? 'text-red-200' : 'text-white'}" style="font-size:${isDramatic ? '1rem' : '0.875rem'}">${sp.label}</p>
+                <p class="text-white/45 text-xs mt-0.5">Ô ${sp.sq} / ${total}</p>
+            </div>
+            <span class="shrink-0 px-2 py-1 rounded-lg text-xs font-black" style="background:${t.bg};color:${t.color};border:1px solid ${t.border}55">${t.label}</span>
+        </div>`;
+    };
+
+    return `
+        <div class="mb-5">
+            <p class="text-white/40 text-[11px] font-black uppercase tracking-wider mb-3">📌 Luật chơi</p>
+            <div class="space-y-2.5 mb-4">
+                <div class="flex items-start gap-2.5">
+                    <span class="text-xl shrink-0 mt-0.5">🎲</span>
+                    <p class="text-white/80 text-sm leading-relaxed">Mỗi vòng giáo viên đánh dấu nhóm trả lời đúng, rồi tung xúc sắc — nhóm đúng mới được di chuyển.</p>
+                </div>
+                <div class="flex items-start gap-2.5">
+                    <span class="text-xl shrink-0 mt-0.5">⭐</span>
+                    <p class="text-white/80 text-sm leading-relaxed">Đến ô đặc biệt sẽ kích hoạt hiệu ứng: tiến thêm, lùi lại, nhận điểm thưởng hoặc về ô 1!</p>
+                </div>
+                <div class="flex items-start gap-2.5">
+                    <span class="text-xl shrink-0 mt-0.5">🏆</span>
+                    <p class="text-white/80 text-sm leading-relaxed">Nhóm đầu tiên đến ô ${total} thắng cuộc!</p>
+                </div>
+            </div>
+        </div>
+        ${normalSp.length ? `<p class="text-white/40 text-[11px] font-black uppercase tracking-wider mb-3">🗺️ Ô đặc biệt</p>${normalSp.map(card).join('')}` : ''}
+        ${endSp.length ? `<p class="text-red-400 text-[11px] font-black uppercase tracking-wider mb-3 mt-5">⚠️ BẪY VÒNG CHUNG KẾT (ô ${endThreshold + 1}–${total - 1})</p>${endSp.map(card).join('')}` : ''}
+    `;
+}
+
+function _thRenderScenMiniBoard(s, grid, specials, total) {
+    const specialMap = {};
+    specials.forEach(sp => { specialMap[sp.sq] = sp; });
+
+    // Same snake pattern as main board
+    const cells = [];
+    for (let row = 0; row < grid; row++) {
+        const fromBottom = grid - 1 - row;
+        for (let col = 0; col < grid; col++) {
+            const colInRow = (fromBottom % 2 === 0) ? col : (grid - 1 - col);
+            cells.push(fromBottom * grid + colInRow + 1);
+        }
+    }
+
+    const maxW    = Math.min(window.innerWidth - 40, 520);
+    const SIZE    = Math.max(28, Math.floor(maxW / grid) - 2);
+    const numFS   = Math.max(8,  Math.round(SIZE * 0.26));
+    const iconFS  = Math.max(11, Math.round(SIZE * 0.40));
+    const radius  = Math.round(SIZE * 0.2);
+    const endThreshold = Math.floor(total * 0.80);
+
+    const boardHtml = cells.map(sq => {
+        const sp = specialMap[sq];
+        const isEnd   = sq === total;
+        const isStart = sq === 1;
+        const isDramatic = sp && sp.dramatic;
+        let bg, border;
+        if (isEnd) {
+            bg = 'rgba(251,191,36,0.22)'; border = '2px solid #fbbf24';
+        } else if (isStart) {
+            bg = 'rgba(255,255,255,0.1)'; border = '1px solid rgba(255,255,255,0.3)';
+        } else if (sp) {
+            const st = TH_TYPE_STYLE[sp.type];
+            bg = `${st.bg}45`; border = `${isDramatic ? '2.5' : '1.5'}px solid ${st.border}`;
+        } else {
+            bg = 'rgba(255,255,255,0.05)'; border = '1px solid rgba(255,255,255,0.1)';
+        }
+        const icon     = isEnd ? '🏆' : (sp ? sp.icon : '');
+        const numColor = sp ? 'rgba(255,255,255,0.95)' : (isEnd ? '#fbbf24' : 'rgba(255,255,255,0.4)');
+        const pulse    = isDramatic ? 'animation:thBlink 1s ease-in-out infinite' : '';
+        const glow     = isDramatic && sp ? `box-shadow:0 0 14px ${TH_TYPE_STYLE[sp.type].border}99;` : '';
+
+        return `<div style="width:${SIZE}px;height:${SIZE}px;background:${bg};border:${border};${glow}border-radius:${radius}px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;${pulse}">
+            <span style="font-size:${numFS}px;color:${numColor};font-weight:900;line-height:1">${sq}</span>
+            ${icon ? `<span style="font-size:${iconFS}px;line-height:1">${icon}</span>` : ''}
+        </div>`;
+    }).join('');
+
+    // Legend
+    const usedTypes = [...new Set(specials.map(sp => sp.type))];
+    const legendInfo = {
+        forward: { sym: '↑', label: 'Tiến',       color: '#4ade80' },
+        back:    { sym: '↓', label: 'Lùi',        color: '#f87171' },
+        bonus:   { sym: '★', label: 'Điểm thưởng',color: '#fbbf24' },
+        goto:    { sym: '⤾', label: 'Về đầu',     color: '#a78bfa' },
+    };
+    const legendHtml = `<div class="flex gap-4 flex-wrap mt-4 justify-center">
+        ${usedTypes.map(t => `<span class="flex items-center gap-1 text-xs font-bold" style="color:${legendInfo[t].color}">${legendInfo[t].sym} ${legendInfo[t].label}</span>`).join('')}
+        <span class="flex items-center gap-1 text-xs font-bold text-amber-300">🏆 Đích</span>
+        <span class="flex items-center gap-1 text-xs font-bold text-red-300">⚠️ Bẫy cuối</span>
+    </div>`;
+
+    return `<div class="py-2 flex flex-col items-center">
+        <div style="display:grid;grid-template-columns:repeat(${grid},${SIZE}px);gap:2px">${boardHtml}</div>
+        ${legendHtml}
+    </div>`;
 }
 
 function _thRenderSetup() {
@@ -10660,12 +10958,15 @@ function _thRenderLegend() {
         const detail = sp.type === 'forward' ? `+${sp.step} ô`
                      : sp.type === 'back'    ? `-${sp.step} ô`
                      : sp.type === 'bonus'   ? `GV quy định`
-                     : `→ ô ${sp.sq}`;
-        return `<div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:10px;background:rgba(255,255,255,0.05);border-left:3px solid ${tc.color}90">
-            <span style="font-size:26px;line-height:1;flex-shrink:0">${sp.icon}</span>
+                     : `→ ô ${sp.target !== undefined ? sp.target : sp.sq}`;
+        const dramStyle = sp.dramatic
+            ? `background:rgba(248,113,113,0.15);border-left:3px solid #f87171;box-shadow:0 0 10px rgba(248,113,113,0.3);animation:thBlink 1.2s ease-in-out infinite`
+            : `background:rgba(255,255,255,0.05);border-left:3px solid ${tc.color}90`;
+        return `<div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:10px;${dramStyle}">
+            <span style="font-size:${sp.dramatic ? '30' : '26'}px;line-height:1;flex-shrink:0">${sp.icon}</span>
             <div>
-                <p style="color:rgba(255,255,255,0.5);font-size:13px;font-weight:800;line-height:1">Ô ${sp.sq}</p>
-                <p style="color:${tc.color};font-size:17px;font-weight:900;line-height:1.2">${detail}</p>
+                <p style="color:rgba(255,255,255,0.5);font-size:13px;font-weight:800;line-height:1">Ô ${sp.sq}${sp.dramatic ? ' ⚠️' : ''}</p>
+                <p style="color:${sp.dramatic ? '#f87171' : tc.color};font-size:${sp.dramatic ? '18' : '17'}px;font-weight:900;line-height:1.2">${detail}</p>
             </div>
         </div>`;
     }).join('');
@@ -10733,7 +11034,9 @@ function _thRenderBoard() {
             bgStyle = 'background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.25)';
         } else if (sp) {
             const st = TH_TYPE_STYLE[sp.type];
-            bgStyle = `background:${st.bg}30;border:1.5px solid ${st.border}90;box-shadow:${st.glow}`;
+            bgStyle = sp.dramatic
+                ? `background:${st.bg}55;border:2px solid ${st.border};box-shadow:0 0 18px ${st.border}bb;animation:thBlink 1s ease-in-out infinite`
+                : `background:${st.bg}30;border:1.5px solid ${st.border}90;box-shadow:${st.glow}`;
         } else {
             bgStyle = 'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12)';
         }
@@ -11026,6 +11329,7 @@ function _thMoveGroups(idxs) {
     });
 
     _thRender();
+    _thRenderDiceList(); // cập nhật "→ Ô X" ngay sau khi di chuyển
 
     if (_thState.winner !== null) {
         setTimeout(() => _thShowWinner(_thState.winner), 500);
@@ -11079,18 +11383,18 @@ function _thTriggerSpecial(gi, sp) {
     } else if (sp.type === 'bonus') {
         // Mystery gift box — teacher decides reward verbally, no auto pts
     } else if (sp.type === 'goto') {
-        positions[gi] = sp.sq;
+        positions[gi] = sp.target !== undefined ? sp.target : 1; // sp.sq là vị trí ô trên bảng, sp.target mới là đích đến
         moved = true;
     }
 
     // Show popup
     document.getElementById('thPopupIcon').textContent   = sp.icon;
     document.getElementById('thPopupGroup').textContent  = `Nhóm ${gi+1}`;
-    document.getElementById('thPopupGroup').style.color  = col;
     document.getElementById('thPopupLabel').textContent  = sp.label;
     document.getElementById('thSpecialPopup').classList.remove('hidden');
 
     _thRender();
+    if (moved) _thRenderDiceList(); // cập nhật "→ Ô X" ngay khi vị trí thay đổi do ô đặc biệt
 
     // Check winner after special move
     if (positions[gi] >= total && _thState.winner === null) {
@@ -11127,6 +11431,66 @@ function _thShowWinner(gi) {
     document.getElementById('thWinnerScreen').classList.remove('hidden');
 }
 
+// ── SHARED PYRAMID RANKING RENDERER ─────────────────────────────────────────
+function _renderGamePyramid(items) {
+    // items: [{gi, col, scoreText, detailText}]
+    if (!items.length) return '';
+    const PODIUM = [
+        { gradient:'linear-gradient(160deg,#92400e 0%,#fbbf24 100%)', border:'#fbbf24', glow:'rgba(251,191,36,0.5)',  medal:'🥇', tc:'#fef9c3' },
+        { gradient:'linear-gradient(160deg,#374151 0%,#9ca3af 100%)', border:'#9ca3af', glow:'rgba(156,163,175,0.35)',medal:'🥈', tc:'#f3f4f6' },
+        { gradient:'linear-gradient(160deg,#78350f 0%,#d97706 100%)', border:'#c2410c', glow:'rgba(194,65,12,0.4)',  medal:'🥉', tc:'#fcd34d' },
+    ];
+    function mStr(gi) {
+        const m = (_groupResult[gi]||[]);
+        const n = m.slice(0,3).map(s=>s.name).join(', ');
+        return m.length>3 ? n+'…' : n;
+    }
+    function card(item, ri, big) {
+        const pc = PODIUM[ri] || { gradient:'rgba(255,255,255,0.08)', border:'rgba(255,255,255,0.12)', glow:'none', medal:`#${ri+1}`, tc:'rgba(255,255,255,0.8)' };
+        const col = item.col, ms = mStr(item.gi);
+        const medalPx=big?60:42, namePx=big?28:20, scorePx=big?19:14, pad=big?'28px 20px':'18px 14px', dotSz=big?14:10;
+        return `<div style="background:${pc.gradient};border:2px solid ${pc.border};border-radius:22px;padding:${pad};text-align:center;box-shadow:0 0 32px ${pc.glow};position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${pc.border};opacity:.7"></div>
+            <div style="font-size:${medalPx}px;line-height:1;margin-bottom:8px">${pc.medal}</div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:5px">
+                <span style="display:inline-block;width:${dotSz}px;height:${dotSz}px;border-radius:50%;background:${col};border:2px solid rgba(255,255,255,.7);box-shadow:0 0 8px ${col}99;flex-shrink:0"></span>
+                <span style="color:white;font-weight:900;font-size:${namePx}px;text-shadow:0 2px 10px rgba(0,0,0,.6)">Nhóm ${item.gi+1}</span>
+            </div>
+            ${ms?`<p style="color:rgba(255,255,255,.6);font-size:${big?12:10}px;margin-bottom:6px;line-height:1.4">${ms}</p>`:''}
+            <p style="color:${pc.tc};font-weight:900;font-size:${scorePx}px">${item.scoreText}</p>
+            ${item.detailText?`<p style="color:rgba(255,255,255,.45);font-size:10px;margin-top:2px">${item.detailText}</p>`:''}
+        </div>`;
+    }
+    const [p1,p2,p3,...rest] = items;
+    let html = `<div style="margin-bottom:12px">${card(p1,0,true)}</div>`;
+    if (p2||p3) {
+        html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">`;
+        html += p2 ? card(p2,1,false) : '<div></div>';
+        html += p3 ? card(p3,2,false) : '<div></div>';
+        html += '</div>';
+    }
+    if (rest.length) {
+        html += '<div style="display:flex;flex-direction:column;gap:6px">';
+        rest.forEach((item,i)=>{
+            const rank=i+4, col=item.col, ms=mStr(item.gi);
+            html += `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(255,255,255,.06);border-radius:12px;border-left:4px solid ${col}">
+                <span style="color:rgba(255,255,255,.4);font-weight:900;font-size:15px;min-width:26px">#${rank}</span>
+                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${col};flex-shrink:0"></span>
+                <div style="flex:1;min-width:0">
+                    <span style="color:white;font-weight:900;font-size:15px">Nhóm ${item.gi+1}</span>
+                    ${ms?`<span style="color:rgba(255,255,255,.35);font-size:11px;margin-left:6px">${ms}</span>`:''}
+                </div>
+                <div style="text-align:right;flex-shrink:0">
+                    <div style="color:white;font-weight:700;font-size:14px">${item.scoreText}</div>
+                    ${item.detailText?`<div style="color:rgba(255,255,255,.4);font-size:10px">${item.detailText}</div>`:''}
+                </div>
+            </div>`;
+        });
+        html += '</div>';
+    }
+    return html;
+}
+
 function thShowFinalRanking() {
     if (!_thState) return;
     const { positions, total, bonusPts } = _thState;
@@ -11135,29 +11499,15 @@ function thShowFinalRanking() {
     const ranked = _groupResult.map((members, gi) => ({gi, members, pos: positions[gi], bonus: bonusPts[gi]}))
         .sort((a, b) => b.pos - a.pos || b.bonus - a.bonus || a.gi - b.gi);
 
+    const pyramidItems = ranked.map(r => ({
+        gi: r.gi,
+        col: GROUP_COLORS[r.gi % GROUP_COLORS.length],
+        scoreText: `Ô ${r.pos} / ${total}`,
+        detailText: `${Math.round((r.pos/total)*100)}%${r.bonus ? ' · +'+r.bonus+'đ' : ''}`,
+    }));
+    document.getElementById('thFinalList').innerHTML = _renderGamePyramid(pyramidItems);
+
     const MEDALS = ['🥇','🥈','🥉'];
-    let lastPos = null, rankDisplay = 0;
-
-    document.getElementById('thFinalList').innerHTML = ranked.map((r, i) => {
-        if (r.pos !== lastPos) { rankDisplay = i + 1; lastPos = r.pos; }
-        const col = GROUP_COLORS[r.gi % GROUP_COLORS.length];
-        const medal = MEDALS[rankDisplay - 1] || `#${rankDisplay}`;
-        const memberSnippet = r.members.slice(0,4).map(s=>s.name).join(', ') + (r.members.length>4?'…':'');
-        const pct = Math.round((r.pos / total) * 100);
-        return `<div class="flex items-center gap-3 p-3.5 rounded-2xl" style="background:rgba(255,255,255,0.07)">
-            <span class="text-3xl w-10 text-center shrink-0">${medal}</span>
-            <div style="width:12px;height:12px;border-radius:50%;background:${col};border:2px solid white;box-shadow:0 0 8px ${col}88;shrink:0"></div>
-            <div class="flex-1 overflow-hidden">
-                <p class="text-white font-black">Nhóm ${r.gi+1}</p>
-                <p class="text-white/40 text-xs truncate">${memberSnippet}</p>
-            </div>
-            <div class="text-right shrink-0">
-                <p class="text-white font-black">Ô ${r.pos}/${total}</p>
-                <p class="text-amber-300 text-xs font-bold">${pct}%${r.bonus ? ' · +'+r.bonus+'đ' : ''}</p>
-            </div>
-        </div>`;
-    }).join('');
-
     document.getElementById('thFinalAwardBtns').innerHTML = ranked.map((r, i) => {
         const medal = MEDALS[i] || '';
         const rankColors = [
@@ -11190,6 +11540,298 @@ function thAwardAll() {
     document.getElementById('thOverlay').classList.add('hidden');
     document.getElementById('thFinalRanking').classList.add('hidden');
     setTimeout(() => openGroupModal(all.map(s=>s.id), `Tất cả ${_groupResult.length} nhóm · ${all.length} học sinh`), 200);
+}
+
+// ============================================================
+// KNOWLEDGE BANK (Ngân hàng Tri Thức)
+// ============================================================
+let _kbState = null;
+
+const KB_BETS = [
+    { pct: 10,  label: 'An toàn',   sub: '10% vốn',     color: '#4ade80', bg: '#15803d' },
+    { pct: 25,  label: 'Tự tin',    sub: '25% vốn',     color: '#38bdf8', bg: '#0284c7' },
+    { pct: 50,  label: 'Chắc chắn', sub: '50% vốn',     color: '#fb923c', bg: '#ea580c' },
+    { pct: 100, label: 'TẤT TAY',   sub: 'Toàn bộ vốn', color: '#f87171', bg: '#dc2626' },
+];
+
+function openKbSetup() {
+    if (!_groupResult || _groupResult.length < 2) {
+        alert('Cần chia nhóm trước (ít nhất 2 nhóm)!');
+        return;
+    }
+    document.getElementById('kbSetupBg').classList.remove('hidden');
+    document.getElementById('kbSetupModal').classList.remove('hidden');
+}
+function closeKbSetup() {
+    document.getElementById('kbSetupBg').classList.add('hidden');
+    document.getElementById('kbSetupModal').classList.add('hidden');
+}
+
+function startKnowledgeBank() {
+    closeKbSetup();
+    const n = _groupResult.length;
+    _kbState = {
+        balances:   Array(n).fill(1000),
+        betLevels:  Array(n).fill(null),
+        betAmounts: Array(n).fill(0),
+        correct:    Array(n).fill(null),
+        phase: 'betting',
+        round: 1,
+        history: [],
+    };
+    document.getElementById('kbTopicInput').value = '';
+    document.getElementById('kbFinalRanking').classList.add('hidden');
+    document.getElementById('kbOverlay').classList.remove('hidden');
+    _kbRender();
+}
+
+function kbClose() {
+    document.getElementById('kbOverlay').classList.add('hidden');
+    _kbState = null;
+}
+
+function _kbRender() {
+    if (!_kbState) return;
+    const b = document.getElementById('kbRoundBadge');
+    if (b) b.textContent = `Vòng ${_kbState.round}`;
+    _kbRenderCenter();
+    _kbRenderStandings();
+    _kbRenderActionPanel();
+}
+
+function _kbRenderCenter() {
+    const el = document.getElementById('kbCenter');
+    if (!el || !_kbState) return;
+    const { phase, balances, betLevels, betAmounts, correct } = _kbState;
+    const n = _groupResult.length;
+    const cols = n <= 2 ? 1 : 2;
+
+    if (phase === 'betting') {
+        const cards = _groupResult.map((members, gi) => {
+            const col = GROUP_COLORS[gi % GROUP_COLORS.length];
+            const sel = betLevels[gi];
+            const betBtns = KB_BETS.map((kb, li) => {
+                const on = sel === li;
+                return `<button onclick="kbSelectBet(${gi},${li})" class="flex-1 rounded-xl py-2 font-black text-sm transition active:scale-90" style="${on ? `background:${kb.bg};color:white;box-shadow:0 0 10px ${kb.bg}99;border:1.5px solid rgba(255,255,255,0.6)` : `background:${kb.bg}44;color:rgba(255,255,255,0.55);border:1.5px solid ${kb.bg}55`}">${kb.pct}%</button>`;
+            }).join('');
+            const selLabel = sel !== null
+                ? `<span style="color:${KB_BETS[sel].color};font-size:12px;font-weight:900">Cược: ${KB_BETS[sel].pct}% = ${Math.round(balances[gi] * KB_BETS[sel].pct / 100).toLocaleString()} VND</span>`
+                : `<span style="color:rgba(255,255,255,0.25);font-size:12px">Chưa chọn</span>`;
+            return `<div class="rounded-2xl p-3" style="background:rgba(255,255,255,0.05);border:1.5px solid ${sel !== null ? KB_BETS[sel].bg + '99' : 'rgba(255,255,255,0.1)'}">
+                <div class="flex items-center gap-2 mb-2">
+                    <span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:${col}"></span>
+                    <span style="color:white;font-weight:900;font-size:16px">N${gi + 1}</span>
+                    <span style="color:rgba(255,255,255,0.35);font-size:11px">${balances[gi].toLocaleString()} VND</span>
+                </div>
+                <div style="margin-bottom:6px">${selLabel}</div>
+                <div style="display:flex;gap:6px">${betBtns}</div>
+            </div>`;
+        }).join('');
+        el.innerHTML = `<p style="color:rgba(255,255,255,0.35);font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Chọn mức cược cho từng nhóm</p><div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:12px">${cards}</div>`;
+
+    } else if (phase === 'answering') {
+        const cards = _groupResult.map((members, gi) => {
+            const col = GROUP_COLORS[gi % GROUP_COLORS.length];
+            const li = betLevels[gi] !== null ? betLevels[gi] : 0;
+            const amt = betAmounts[gi];
+            const isOk = correct[gi];
+            return `<div class="rounded-2xl p-3" style="background:rgba(255,255,255,0.05);border:1.5px solid ${col}44">
+                <div class="flex items-center gap-2 mb-3">
+                    <span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:${col}"></span>
+                    <span style="color:white;font-weight:900;font-size:16px">N${gi + 1}</span>
+                    <span style="background:${KB_BETS[li].bg};color:white;font-size:10px;font-weight:900;padding:2px 8px;border-radius:99px">${KB_BETS[li].pct}%</span>
+                    <span style="color:${KB_BETS[li].color};font-weight:900;font-size:14px;margin-left:auto">±${amt.toLocaleString()}</span>
+                </div>
+                <div style="display:flex;gap:8px">
+                    <button onclick="kbSetCorrect(${gi},true)" class="flex-1 py-2.5 rounded-xl font-black text-sm transition active:scale-95" style="${isOk === true ? 'background:#16a34a;color:white;box-shadow:0 0 12px rgba(22,163,74,0.5);border:1.5px solid rgba(255,255,255,0.5)' : 'background:rgba(22,163,74,0.18);color:rgba(255,255,255,0.45);border:1.5px solid rgba(22,163,74,0.3)'}">✓ Đúng</button>
+                    <button onclick="kbSetCorrect(${gi},false)" class="flex-1 py-2.5 rounded-xl font-black text-sm transition active:scale-95" style="${isOk === false ? 'background:#dc2626;color:white;box-shadow:0 0 12px rgba(220,38,38,0.5);border:1.5px solid rgba(255,255,255,0.5)' : 'background:rgba(220,38,38,0.18);color:rgba(255,255,255,0.45);border:1.5px solid rgba(220,38,38,0.3)'}">✗ Sai</button>
+                </div>
+            </div>`;
+        }).join('');
+        el.innerHTML = `<p style="color:rgba(255,255,255,0.35);font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Đánh dấu kết quả từng nhóm</p><div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:12px">${cards}</div>`;
+
+    } else if (phase === 'result') {
+        const last = _kbState.history[_kbState.history.length - 1];
+        const cards = _groupResult.map((members, gi) => {
+            const col = GROUP_COLORS[gi % GROUP_COLORS.length];
+            const ok = last.correct[gi];
+            const delta = ok ? last.betAmounts[gi] : -last.betAmounts[gi];
+            const newBal = last.balancesAfter[gi];
+            const wasReset = last.resetted[gi];
+            return `<div class="rounded-2xl p-4 text-center" style="background:rgba(255,255,255,0.06);border:2px solid ${ok ? '#16a34a' : '#dc2626'}66">
+                <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:6px">
+                    <span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:${col}"></span>
+                    <span style="color:white;font-weight:900;font-size:16px">N${gi + 1}</span>
+                </div>
+                <p style="color:${ok ? '#4ade80' : '#f87171'};font-weight:900;font-size:32px;line-height:1">${ok ? '+' : ''}${delta.toLocaleString()}</p>
+                <p style="color:${ok ? '#4ade80' : '#f87171'};font-size:13px;font-weight:700;margin-top:2px">${ok ? '✓ Đúng' : '✗ Sai'}</p>
+                <p style="color:rgba(255,255,255,0.45);font-size:11px;margin-top:6px">Còn: <strong style="color:white">${newBal.toLocaleString()}</strong>${wasReset ? ' <span style="color:#fbbf24">🔄+100</span>' : ''}</p>
+            </div>`;
+        }).join('');
+        const topicLine = last.topic ? `<p style="color:#818cf8;font-size:11px;font-weight:700;margin-bottom:10px">📚 ${last.topic}</p>` : '';
+        el.innerHTML = `${topicLine}<div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:12px">${cards}</div>`;
+    }
+}
+
+function _kbBalStyle(bal) {
+    if (bal > 1500) return { color: '#4ade80', extra: 'animation:thBlink 0.8s ease-in-out infinite' };
+    if (bal > 1000) return { color: '#fbbf24', extra: '' };
+    if (bal >= 500)  return { color: 'rgba(255,255,255,0.85)', extra: '' };
+    return { color: '#f87171', extra: '' };
+}
+
+function _kbRenderStandings() {
+    const el = document.getElementById('kbStandings');
+    if (!el || !_kbState) return;
+    const { balances, betLevels } = _kbState;
+    const rows = _groupResult.map((members, gi) => {
+        const col = GROUP_COLORS[gi % GROUP_COLORS.length];
+        const bal = balances[gi];
+        const { color: bc, extra } = _kbBalStyle(bal);
+        const li = betLevels[gi];
+        const badge = li !== null ? `<span style="background:${KB_BETS[li].bg};color:white;font-size:9px;font-weight:900;padding:1px 5px;border-radius:99px">${KB_BETS[li].pct}%</span>` : '';
+        return `<div style="background:rgba(255,255,255,0.06);border-left:4px solid ${col};border-radius:10px;padding:7px 8px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:2px">
+                <span style="color:white;font-weight:900;font-size:14px">N${gi + 1}</span>${badge}
+            </div>
+            <p style="color:${bc};font-weight:900;font-size:24px;line-height:1.1;letter-spacing:-1px;${extra}">${bal.toLocaleString()}</p>
+        </div>`;
+    }).join('');
+    el.innerHTML = `<p style="color:rgba(255,255,255,0.3);font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:1px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:4px">💰 Vốn</p>${rows}`;
+}
+
+function _kbRenderActionPanel() {
+    const el = document.getElementById('kbActionPanel');
+    if (!el || !_kbState) return;
+    const { phase, betLevels, correct } = _kbState;
+    const n = _groupResult.length;
+
+    if (phase === 'betting') {
+        const done = betLevels.filter(l => l !== null).length;
+        const allDone = done === n;
+        el.innerHTML = `<div style="display:flex;align-items:center;gap:12px">
+            <p style="color:rgba(255,255,255,0.4);font-size:12px;flex:1">${allDone ? '✅ Tất cả đã cược — sẵn sàng!' : `${done}/${n} nhóm đã chọn`}</p>
+            <button onclick="kbOpenQuestion()" class="px-6 py-3 rounded-2xl font-black text-sm text-white transition active:scale-95" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);box-shadow:0 0 16px rgba(99,102,241,0.4);opacity:${allDone ? 1 : 0.75}">
+                📣 Mở câu hỏi
+            </button>
+        </div>`;
+
+    } else if (phase === 'answering') {
+        const done = correct.filter(c => c !== null).length;
+        const allDone = done === n;
+        el.innerHTML = `<div style="display:flex;align-items:center;gap:12px">
+            <p style="color:rgba(255,255,255,0.4);font-size:12px;flex:1">${allDone ? '✅ Sẵn sàng chốt!' : `${done}/${n} nhóm đã chấm`}</p>
+            <button onclick="kbFinalize()" ${allDone ? '' : 'disabled'} class="px-6 py-3 rounded-2xl font-black text-sm text-white transition active:scale-95" style="background:linear-gradient(135deg,#16a34a,#15803d);opacity:${allDone ? 1 : 0.5};box-shadow:${allDone ? '0 0 16px rgba(22,163,74,0.4)' : 'none'}">
+                ✅ Chốt vòng
+            </button>
+        </div>`;
+
+    } else if (phase === 'result') {
+        el.innerHTML = `<div style="display:flex;gap:10px;justify-content:flex-end">
+            <button onclick="kbNextRound()" class="px-6 py-3 rounded-2xl font-black text-sm text-white transition active:scale-95" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);box-shadow:0 0 16px rgba(99,102,241,0.4)">➡️ Vòng tiếp</button>
+            <button onclick="kbEnd()" class="px-6 py-3 rounded-2xl font-black text-sm text-white transition active:scale-95" style="background:linear-gradient(135deg,#be185d,#7c3aed)">🏆 Kết thúc</button>
+        </div>`;
+    }
+}
+
+function kbSelectBet(gi, li) {
+    if (!_kbState || _kbState.phase !== 'betting') return;
+    _kbState.betLevels[gi] = li;
+    _kbRenderCenter();
+    _kbRenderStandings();
+    _kbRenderActionPanel();
+}
+
+function kbOpenQuestion() {
+    if (!_kbState) return;
+    // Auto-assign 10% to groups that didn't bet
+    _kbState.betLevels = _kbState.betLevels.map(l => l !== null ? l : 0);
+    // Calculate actual bet amounts
+    _kbState.betAmounts = _kbState.betLevels.map((li, gi) =>
+        Math.max(1, Math.round(_kbState.balances[gi] * KB_BETS[li].pct / 100))
+    );
+    _kbState.phase = 'answering';
+    _kbRender();
+}
+
+function kbSetCorrect(gi, val) {
+    if (!_kbState || _kbState.phase !== 'answering') return;
+    _kbState.correct[gi] = val;
+    _kbRenderCenter();
+    _kbRenderActionPanel();
+}
+
+function kbFinalize() {
+    if (!_kbState || _kbState.phase !== 'answering') return;
+    if (_kbState.correct.some(c => c === null)) return;
+    const { balances, betLevels, betAmounts, correct, round } = _kbState;
+    const topic = (document.getElementById('kbTopicInput') || {}).value || '';
+    const balancesBefore = [...balances];
+    const raw = balances.map((b, gi) => correct[gi] ? b + betAmounts[gi] : b - betAmounts[gi]);
+    const resetted = raw.map(b => b < 100);
+    const balancesAfter = raw.map(b => Math.max(100, b));
+    _kbState.history.push({ round, topic, betLevels: [...betLevels], betAmounts: [...betAmounts], correct: [...correct], balancesBefore, balancesAfter, resetted });
+    _kbState.balances = balancesAfter;
+    _kbState.phase = 'result';
+    _kbRender();
+}
+
+function kbNextRound() {
+    if (!_kbState) return;
+    _kbState.round++;
+    _kbState.phase = 'betting';
+    _kbState.betLevels  = _groupResult.map(() => null);
+    _kbState.betAmounts = _groupResult.map(() => 0);
+    _kbState.correct    = _groupResult.map(() => null);
+    document.getElementById('kbTopicInput').value = '';
+    _kbRender();
+}
+
+function kbEnd() {
+    if (!_kbState) return;
+    _kbRenderFinalRanking();
+    document.getElementById('kbFinalRanking').classList.remove('hidden');
+}
+
+function _kbRenderFinalRanking() {
+    const el = document.getElementById('kbFinalList');
+    if (!el || !_kbState) return;
+    const { balances, history } = _kbState;
+    const sorted = _groupResult.map((m, gi) => ({ gi, bal: balances[gi] })).sort((a, b) => b.bal - a.bal);
+    const pyramidItems = sorted.map(({ gi, bal }) => {
+        const delta = bal - 1000;
+        return {
+            gi,
+            col: GROUP_COLORS[gi % GROUP_COLORS.length],
+            scoreText: bal.toLocaleString() + ' VND',
+            detailText: (delta >= 0 ? '+' : '') + delta.toLocaleString() + ' so đầu',
+        };
+    });
+
+    // Topic confidence analysis
+    let analysisHtml = '';
+    const topicRows = history.filter(h => h.topic).map(h => {
+        const avgLv = h.betLevels.reduce((a, b) => a + b, 0) / h.betLevels.length;
+        const correctCount = h.correct.filter(Boolean).length;
+        let conf, confColor;
+        if (avgLv >= 2.5)      { conf = '🔥 Rất tự tin'; confColor = '#4ade80'; }
+        else if (avgLv >= 1.5) { conf = '💪 Tự tin'; confColor = '#fbbf24'; }
+        else if (avgLv >= 0.5) { conf = '🛡️ Dè dặt'; confColor = '#fb923c'; }
+        else                   { conf = '❓ Mơ hồ'; confColor = '#f87171'; }
+        const resultIcon = correctCount === _groupResult.length ? '✅' : correctCount === 0 ? '❌' : '⚠️';
+        return `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(255,255,255,0.04);border-radius:10px">
+            <span style="color:rgba(255,255,255,0.65);font-size:12px;flex:1">Vòng ${h.round}${h.topic ? ': ' + h.topic : ''}</span>
+            <span style="color:${confColor};font-size:11px;font-weight:700">${conf}</span>
+            <span style="font-size:15px">${resultIcon}</span>
+        </div>`;
+    }).join('');
+    if (topicRows) {
+        analysisHtml = `<div style="margin-top:20px">
+            <p style="color:rgba(255,255,255,0.35);font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Phân tích tự tin theo chủ đề</p>
+            <div style="display:flex;flex-direction:column;gap:6px">${topicRows}</div>
+        </div>`;
+    }
+    el.innerHTML = _renderGamePyramid(pyramidItems) + analysisHtml;
 }
 
 // ============================================================
