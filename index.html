@@ -30,6 +30,7 @@
         @keyframes streakShimmer{0%{background-position:200% center}100%{background-position:-200% center}}
         @keyframes streakPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,200,0,0.4)}50%{transform:scale(1.03);box-shadow:0 0 0 8px rgba(255,200,0,0)}}
         @keyframes badgePop{0%{transform:scale(0) rotate(-15deg);opacity:0}70%{transform:scale(1.15) rotate(3deg)}100%{transform:scale(1) rotate(0);opacity:1}}
+        @keyframes thBlink{0%,100%{opacity:1;text-shadow:0 0 12px #4ade80,0 0 24px #4ade8088}50%{opacity:0.4;text-shadow:0 0 4px #4ade8044}}
         .streak-card{animation:streakPulse 2.5s ease-in-out infinite}
         .streak-badge-pop{animation:badgePop .5s cubic-bezier(.175,.885,.32,1.275) forwards}
         .streak-shimmer{background:linear-gradient(90deg,rgba(255,255,255,0) 0%,rgba(255,255,255,0.3) 50%,rgba(255,255,255,0) 100%);background-size:200% 100%;animation:streakShimmer 2s linear infinite}
@@ -1726,6 +1727,13 @@
         <p class="text-white/40 text-[10px] font-bold uppercase tracking-wider mb-1.5">Ô đặc biệt trong kịch bản này:</p>
         <div id="thSpecialPreview" class="flex flex-wrap gap-1.5"></div>
     </div>
+    <!-- Custom rule input -->
+    <div class="shrink-0 px-5 pt-3">
+        <p class="text-white/50 text-xs font-black uppercase tracking-wider mb-2">📝 Luật thêm tự chọn (tuỳ chọn)</p>
+        <textarea id="thCustomRuleInput" rows="3" placeholder="VD: Nhóm đến ô 12 được câu hỏi bonus&#10;Nhóm về đích được +5 điểm thưởng..."
+            class="w-full rounded-2xl text-sm text-white p-3 resize-none"
+            style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);outline:none;line-height:1.5"></textarea>
+    </div>
     <!-- Start -->
     <div class="shrink-0 p-5">
         <button onclick="startTreasureHunt()" class="w-full py-4 rounded-2xl font-black text-base active:scale-95 transition shadow-xl flex items-center justify-center gap-2" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#1f2937">
@@ -1742,14 +1750,16 @@
         <h2 id="thTitle" class="text-white font-black text-sm"></h2>
         <button onclick="endTreasureHunt()" class="text-amber-300 text-xs font-black flex items-center gap-1"><i class="fas fa-flag-checkered"></i> Kết thúc</button>
     </div>
-    <!-- Middle: board (left) + group status panel (right, vertical, large) -->
+    <!-- Middle: legend (left) + board (center) + groups (right) -->
     <div class="flex-1 min-h-0 flex flex-row overflow-hidden">
-        <!-- Board -->
-        <div id="thBoardWrap" class="flex-1 min-w-0 flex items-center justify-center" style="padding:6px">
+        <!-- Left: special squares legend (wider, large text) -->
+        <div id="thLegendPanel" class="shrink-0 overflow-y-auto no-scrollbar py-2 px-2" style="width:162px;display:flex;flex-direction:column;gap:7px;background:rgba(0,0,0,0.45)"></div>
+        <!-- Center: board -->
+        <div id="thBoardWrap" class="flex-1 min-w-0 flex items-center justify-center" style="padding:4px">
             <div id="thBoard" class="grid" style="gap:2px"></div>
         </div>
-        <!-- Group status — right column, large, always visible -->
-        <div id="thGroupBar" class="shrink-0 overflow-y-auto no-scrollbar py-2 pr-2 pl-1.5" style="width:148px;display:flex;flex-direction:column;gap:6px;background:rgba(0,0,0,0.5)"></div>
+        <!-- Right: group positions — one large line per group -->
+        <div id="thGroupBar" class="shrink-0 overflow-y-auto no-scrollbar py-2 px-1.5" style="width:100px;display:flex;flex-direction:column;gap:5px;background:rgba(0,0,0,0.45)"></div>
     </div>
     <!-- Action panel -->
     <div class="shrink-0 px-4 pb-5 pt-3" style="background:rgba(0,0,0,0.5)">
@@ -1781,7 +1791,7 @@
             <p id="thDiceTitle" class="text-white/50 text-xs font-black uppercase tracking-widest"></p>
             <span id="thDiceStatus" class="text-amber-300 text-sm font-black"></span>
         </div>
-        <div id="thDiceList" class="flex-1 overflow-y-auto px-4 py-2" style="display:flex;flex-direction:column;gap:12px"></div>
+        <div id="thDiceList" class="flex-1 overflow-y-auto px-3 py-2"></div>
         <div id="thDiceFooter" class="shrink-0 p-5 pb-6 hidden">
             <button id="thDiceChot" onclick="thCloseDiceOverlay()"
                 class="w-full py-4 rounded-2xl font-black text-xl active:scale-95 transition shadow-xl flex items-center justify-center gap-3"
@@ -1827,6 +1837,11 @@
             <button onclick="thAwardAll()" class="w-full py-3 rounded-2xl font-black text-sm bg-dojo-blue text-white active:scale-95 shadow">
                 <i class="fas fa-users mr-1"></i> Cho điểm tất cả nhóm
             </button>
+            <a href="https://chucmungsinhnhat-chi.vercel.app/" target="_blank" rel="noopener"
+               class="flex items-center justify-center gap-2 w-full py-3 rounded-2xl font-black text-sm active:scale-95 transition"
+               style="background:linear-gradient(135deg,#be185d,#7c3aed);color:white;box-shadow:0 0 18px rgba(190,24,93,0.5);text-decoration:none">
+                🎁 Trao giải đặc biệt
+            </a>
         </div>
     </div>
 </div>
@@ -10547,10 +10562,13 @@ function _thUpdateSpecialPreview() {
 }
 
 function _thBuildSpecials(scenario, total) {
-    // Map fractional positions to actual square numbers (1-indexed, clamp 2..total-1)
     return scenario.specials.map(sp => {
         const sq = Math.max(2, Math.min(total - 1, Math.round(sp.frac * total)));
-        return { ...sp, sq };
+        // Bonus squares → mystery gift box (teacher decides reward verbally)
+        const giftOverride = sp.type === 'bonus'
+            ? { icon: '🎁', label: '🎁 Hộp quà bí mật! Giáo viên quyết định phần thưởng' }
+            : {};
+        return { ...sp, ...giftOverride, sq };
     });
 }
 
@@ -10563,17 +10581,20 @@ function startTreasureHunt() {
     const scen = TREASURE_SCENARIOS[_thPickedScen];
     const specials = _thBuildSpecials(scen, total);
 
+    const customRule = (document.getElementById('thCustomRuleInput') || {}).value || '';
+
     _thState = {
         grid,
         total,
         scen,
         specials,
+        customRule,
         positions:   _groupResult.map(() => 0),
         diceResults: _groupResult.map(() => null),
         bonusPts:    _groupResult.map(() => 0),
         correct:     _groupResult.map(() => false),
         rolling:     false,
-        rolled:      false,   // true after dice rolled this round
+        rolled:      false,
         round:       1,
         winner:      null,
         popupQueue:  [],
@@ -10600,8 +10621,65 @@ function endTreasureHunt() {
 
 function _thRender() {
     _thRenderBoard();
+    _thRenderLegend();
     _thRenderGroupBar();
     _thRenderActions();
+}
+
+function _thRenderLegend() {
+    if (!_thState) return;
+    const panel = document.getElementById('thLegendPanel');
+    if (!panel) return;
+    const { scen, specials, customRule } = _thState;
+
+    const TC = {
+        forward: { color: '#4ade80', sym: '↑', label: 'Tiến ô' },
+        back:    { color: '#f87171', sym: '↓', label: 'Lùi ô' },
+        bonus:   { color: '#fbbf24', sym: '🎁', label: 'Hộp quà bí mật' },
+        goto:    { color: '#a78bfa', sym: '⤾', label: 'Về ô' },
+    };
+
+    // Type summary rows — large text
+    const types = [...new Set(specials.map(s => s.type))];
+    const typeRows = types.map(t => {
+        const tc = TC[t];
+        return `<div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:10px;background:${tc.color}18;border-left:3px solid ${tc.color}">
+            <span style="color:${tc.color};font-size:24px;font-weight:900;line-height:1;flex-shrink:0">${tc.sym}</span>
+            <span style="color:rgba(255,255,255,0.8);font-size:16px;font-weight:800;line-height:1.2">${tc.label}</span>
+        </div>`;
+    }).join('');
+
+    // Divider + section title
+    const divider = `<div style="border-top:1px solid rgba(255,255,255,0.1);margin:2px 0">
+        <p style="color:rgba(255,255,255,0.35);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:0.8px;padding:5px 2px 0">${scen.emoji} Ô đặc biệt</p>
+    </div>`;
+
+    // Each special square — large
+    const squareRows = specials.map(sp => {
+        const tc = TC[sp.type];
+        const detail = sp.type === 'forward' ? `+${sp.step} ô`
+                     : sp.type === 'back'    ? `-${sp.step} ô`
+                     : sp.type === 'bonus'   ? `GV quy định`
+                     : `→ ô ${sp.sq}`;
+        return `<div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:10px;background:rgba(255,255,255,0.05);border-left:3px solid ${tc.color}90">
+            <span style="font-size:26px;line-height:1;flex-shrink:0">${sp.icon}</span>
+            <div>
+                <p style="color:rgba(255,255,255,0.5);font-size:13px;font-weight:800;line-height:1">Ô ${sp.sq}</p>
+                <p style="color:${tc.color};font-size:17px;font-weight:900;line-height:1.2">${detail}</p>
+            </div>
+        </div>`;
+    }).join('');
+
+    // Custom rule block
+    const customBlock = customRule.trim() ? `
+        <div style="border-top:1px solid rgba(255,255,255,0.1);margin:2px 0">
+            <p style="color:rgba(255,255,255,0.35);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:0.8px;padding:5px 2px 0">📝 Luật thêm</p>
+        </div>
+        <div style="padding:8px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12)">
+            <p style="color:rgba(255,255,255,0.85);font-size:15px;font-weight:700;line-height:1.5;white-space:pre-wrap">${customRule.trim()}</p>
+        </div>` : '';
+
+    panel.innerHTML = typeRows + divider + squareRows + customBlock;
 }
 
 function _thRenderBoard() {
@@ -10683,47 +10761,49 @@ function _thRenderGroupBar() {
     const { positions, total, bonusPts, diceResults, correct } = _thState;
     const bar = document.getElementById('thGroupBar');
     if (!bar) return;
-    bar.innerHTML = _groupResult.map((members, gi) => {
+
+    // Header
+    const header = `<p style="color:rgba(255,255,255,0.35);font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:1px;padding:2px 4px 4px;border-bottom:1px solid rgba(255,255,255,0.08)">🏁 Vị trí</p>`;
+
+    const rows = _groupResult.map((members, gi) => {
         const col       = GROUP_COLORS[gi % GROUP_COLORS.length];
         const pos       = positions[gi];
         const dice      = diceResults[gi];
         const bonus     = bonusPts[gi];
         const isCorrect = correct[gi];
-        const pct       = Math.round((pos / total) * 100);
-        // Token: how many members (show up to 5 dots)
-        const memberCount = members.length;
 
-        // Dice badge (shown while rolling or after roll)
-        const diceBadge = (dice !== null && isCorrect)
-            ? `<div style="position:absolute;top:8px;right:8px;width:38px;height:38px;border-radius:10px;background:${col};display:flex;align-items:center;justify-content:center;box-shadow:0 0 14px ${col}cc">
-                   <span style="font-size:22px;font-weight:900;color:white;line-height:1">${dice}</span>
-               </div>`
+        // Progress-based position color
+        const pct = total > 0 ? (pos / total) * 100 : 0;
+        let posColor, posExtra;
+        if (pct >= 75) {
+            posColor = '#4ade80';
+            posExtra = 'animation:thBlink 0.8s ease-in-out infinite';
+        } else if (pct >= 25) {
+            posColor = '#fbbf24';
+            posExtra = '';
+        } else {
+            posColor = col;
+            posExtra = '';
+        }
+
+        // Dice mini badge
+        const diceStr = (dice !== null && isCorrect)
+            ? `<span style="display:inline-block;min-width:22px;height:22px;border-radius:5px;background:${col};text-align:center;font-size:14px;font-weight:900;color:white;line-height:22px;margin-top:2px">${dice}</span>`
+            : '';
+        const bonusStr = bonus
+            ? `<span style="color:#fbbf24;font-size:10px;font-weight:900">+${bonus}đ</span>`
             : '';
 
-        const bonusBadge = bonus
-            ? `<p style="color:#fbbf24;font-size:13px;font-weight:900;margin-top:3px;line-height:1">★ +${bonus}đ</p>`
-            : '';
-
-        return `<div style="position:relative;background:rgba(255,255,255,0.06);border:2px solid ${col}70;border-radius:16px;padding:10px 10px 9px;overflow:hidden">
-            <!-- Top color strip -->
-            <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${col};border-radius:16px 16px 0 0"></div>
-            <!-- Group dot + name -->
-            <div style="display:flex;align-items:center;gap:7px;margin-top:4px;margin-bottom:6px">
-                <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${col};border:2.5px solid white;box-shadow:0 0 10px ${col}cc;flex-shrink:0"></span>
-                <span style="color:white;font-weight:900;font-size:21px;line-height:1">N${gi+1}</span>
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 6px;border-radius:10px;background:rgba(255,255,255,0.06);border-left:4px solid ${col}">
+            <div>
+                <p style="color:white;font-weight:900;font-size:16px;line-height:1">N${gi+1}</p>
+                <div style="display:flex;gap:4px;align-items:center;margin-top:2px">${diceStr}${bonusStr}</div>
             </div>
-            <!-- Square position — LARGE -->
-            <p style="color:white;font-size:13px;font-weight:700;opacity:0.5;line-height:1;margin-bottom:1px">Ô</p>
-            <p style="color:white;font-weight:900;font-size:32px;line-height:1;letter-spacing:-1px">${pos}<span style="font-size:14px;opacity:0.4;font-weight:700"> /${total}</span></p>
-            <!-- Progress bar -->
-            <div style="height:5px;background:rgba(255,255,255,0.1);border-radius:5px;margin:7px 0 3px;overflow:hidden">
-                <div style="height:100%;width:${pct}%;background:${col};border-radius:5px;min-width:${pos>0?'6px':'0'}"></div>
-            </div>
-            <p style="color:${col};font-size:12px;font-weight:800;line-height:1">${pct}%</p>
-            ${bonusBadge}
-            ${diceBadge}
+            <p style="color:${posColor};font-weight:900;font-size:30px;line-height:1;letter-spacing:-1px;${posExtra}">${pos}</p>
         </div>`;
     }).join('');
+
+    bar.innerHTML = header + rows;
 }
 
 function _thRenderActions() {
@@ -10827,32 +10907,88 @@ function _thShowDiceOverlay(rolling) {
     _thRenderDiceList();
 }
 
+// Dice pip layout: positions as [x,y] percent within a 100x100 box
+const _TH_PIPS = {
+    1: [[50,50]],
+    2: [[25,25],[75,75]],
+    3: [[25,25],[50,50],[75,75]],
+    4: [[25,25],[75,25],[25,75],[75,75]],
+    5: [[25,25],[75,25],[50,50],[25,75],[75,75]],
+    6: [[25,22],[75,22],[25,50],[75,50],[25,78],[75,78]],
+};
+
+function _thDiceSvg(n, col, size) {
+    const pips = _TH_PIPS[n] || _TH_PIPS[1];
+    const r = size * 0.095;  // pip radius
+    const dots = pips.map(([x,y]) =>
+        `<circle cx="${x/100*size}" cy="${y/100*size}" r="${r}" fill="white" opacity="0.95"/>`
+    ).join('');
+    // Rounded square background in group color with glow
+    return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="${size}" height="${size}" rx="${size*0.18}" ry="${size*0.18}"
+            fill="${col}" filter="url(#glow${n})"/>
+        <defs>
+            <filter id="glow${n}" x="-30%" y="-30%" width="160%" height="160%">
+                <feGaussianBlur stdDeviation="${size*0.08}" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+        </defs>
+        <!-- Inner shadow for depth -->
+        <rect x="2" y="2" width="${size-4}" height="${size-4}" rx="${size*0.16}" ry="${size*0.16}"
+            fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>
+        ${dots}
+    </svg>`;
+}
+
 function _thRenderDiceList() {
     if (!_thState) return;
-    const { correct, diceResults } = _thState;
+    const { correct, diceResults, positions, total } = _thState;
     const list = document.getElementById('thDiceList');
     if (!list) return;
-    list.innerHTML = _groupResult.map((members, gi) => {
-        if (!correct[gi]) return '';
-        const col = GROUP_COLORS[gi % GROUP_COLORS.length];
-        const dice = diceResults[gi];
-        const memberSnippet = members.slice(0, 4).map(s => s.name).join(', ') + (members.length > 4 ? '…' : '');
-        const diceDisplay = dice !== null ? dice : '?';
-        const pos    = _thState.positions[gi];
-        const total  = _thState.total;
-        const newPos = Math.min(pos, total);
-        return `<div style="display:flex;align-items:center;gap:16px;padding:16px 18px;border-radius:20px;background:rgba(255,255,255,0.07);border:2px solid ${col}55">
-            <span style="display:inline-block;width:20px;height:20px;border-radius:50%;background:${col};border:3px solid white;box-shadow:0 0 16px ${col}99;flex-shrink:0"></span>
-            <div style="flex:1;overflow:hidden">
-                <p style="color:white;font-weight:900;font-size:22px;line-height:1.1">Nhóm ${gi + 1}</p>
-                <p style="color:rgba(255,255,255,0.4);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${memberSnippet}</p>
-                <p style="color:${col};font-size:14px;font-weight:800;margin-top:4px">Ô ${newPos} / ${total}</p>
+
+    const correctGroups = _groupResult.map((members, gi) => ({ members, gi })).filter(({gi}) => correct[gi]);
+    if (!correctGroups.length) { list.innerHTML = ''; return; }
+
+    const n = correctGroups.length;
+    // Max 4 columns; fewer columns = bigger dice
+    const cols = n === 1 ? 1 : n <= 4 ? 2 : n <= 9 ? 3 : 4;
+    const diceSize = cols === 1 ? 120 : cols === 2 ? 96 : cols === 3 ? 78 : 62;
+    const namePx   = cols === 1 ? 38  : cols === 2 ? 30  : cols === 3 ? 22  : 17;
+    const scorePx  = cols === 1 ? 24  : cols === 2 ? 20  : cols === 3 ? 16  : 13;
+    const dotPx    = cols === 1 ? 16  : cols === 2 ? 12  : cols === 3 ? 10  : 8;
+    const padPx    = cols === 1 ? 18  : cols === 2 ? 14  : cols === 3 ? 10  : 8;
+
+    list.style.display = 'grid';
+    list.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    list.style.gap = cols <= 2 ? '12px' : '8px';
+    list.style.padding = '4px 2px 8px';
+    list.style.alignContent = 'start';
+
+    list.innerHTML = correctGroups.map(({ members, gi }) => {
+        const col     = GROUP_COLORS[gi % GROUP_COLORS.length];
+        const dice    = diceResults[gi];
+        const pos     = positions[gi];
+        const newPos  = Math.min(pos, total);
+        const diceVal = dice !== null ? dice : null;
+        const svgStr  = diceVal ? _thDiceSvg(diceVal, col, diceSize) : '';
+        const spinner = `<div style="width:${diceSize}px;height:${diceSize}px;border-radius:${Math.round(diceSize*0.18)}px;background:${col}22;border:2px dashed ${col}66;display:flex;align-items:center;justify-content:center">
+            <span style="font-size:${Math.round(diceSize*0.38)}px;line-height:1;opacity:0.4">🎲</span></div>`;
+
+        const scoreBlock = diceVal ? `
+            <div style="width:100%;border-radius:10px;padding:${cols<=2?8:5}px 6px;background:${col}22;border:1.5px solid ${col}55;text-align:center">
+                <p style="color:${col};font-size:${scorePx}px;font-weight:900;line-height:1.1">+${diceVal} ô</p>
+                <p style="color:white;font-size:${Math.round(scorePx*1.3)}px;font-weight:900;line-height:1.2;letter-spacing:-0.5px">→ Ô <span style="color:${col}">${newPos}</span></p>
+            </div>` : '';
+
+        return `<div style="display:flex;flex-direction:column;align-items:center;gap:${cols<=2?8:6}px;padding:${padPx}px ${Math.round(padPx*0.7)}px;border-radius:${cols<=2?20:14}px;background:rgba(255,255,255,0.07);border:2px solid ${col}55;text-align:center">
+            <div style="display:flex;align-items:center;gap:${cols<=2?7:5}px">
+                <span style="display:inline-block;width:${dotPx}px;height:${dotPx}px;border-radius:50%;background:${col};border:2px solid white;box-shadow:0 0 ${dotPx}px ${col}cc;flex-shrink:0"></span>
+                <span style="color:white;font-weight:900;font-size:${namePx}px;line-height:1">Nhóm ${gi+1}</span>
             </div>
-            <div style="width:88px;height:88px;border-radius:18px;background:${col};display:flex;align-items:center;justify-content:center;box-shadow:0 0 24px ${col}99;flex-shrink:0">
-                <span style="font-size:54px;font-weight:900;color:white;line-height:1">${diceDisplay}</span>
-            </div>
+            ${diceVal ? svgStr : spinner}
+            ${scoreBlock}
         </div>`;
-    }).filter(Boolean).join('');
+    }).join('');
 }
 
 function _thShowDiceResult() {
@@ -10941,8 +11077,7 @@ function _thTriggerSpecial(gi, sp) {
         positions[gi] = Math.max(positions[gi] - sp.step, 1);
         moved = true;
     } else if (sp.type === 'bonus') {
-        _thState.roundBonus[gi] = ((_thState.roundBonus[gi] || 0) + sp.pts);
-        bonusPts[gi] += sp.pts;
+        // Mystery gift box — teacher decides reward verbally, no auto pts
     } else if (sp.type === 'goto') {
         positions[gi] = sp.sq;
         moved = true;
